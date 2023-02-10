@@ -120,6 +120,32 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
   
 }
 
+// Functions that takes SPS as input
+extension PS {
+  
+  static func union(s1: SPS, s2: SPS) -> SPS {
+    return s1.union(s2)
+  }
+  
+  static func intersection(s1: SPS, s2: SPS) -> SPS {
+    var res: SPS = []
+    for ps1 in s1 {
+      for ps2 in s2 {
+        switch (ps1, ps2) {
+        case (.empty, _):
+          break
+        case (_, .empty):
+          break
+        case (.ps(let inc1, let exc1), .ps(let inc2, let exc2)):
+          res.insert(.ps(inc1.union(inc2), exc1.union(exc2)))
+        }
+      }
+    }
+    return res
+  }
+  
+}
+
 extension PS: CustomStringConvertible {
   public var description: String {
     switch self {
