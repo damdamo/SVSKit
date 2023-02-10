@@ -1,20 +1,9 @@
 public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content == Int {
 
   typealias SPS = Set<PS<PlaceType>>
-  // Predicate structure: (Include set, Exclude set)
-//  let include: Set<Marking<PlaceType>>
-//  let exclude: Set<Marking<PlaceType>>
   
   case empty
   case ps(Set<Marking<PlaceType>>, Set<Marking<PlaceType>>)
-
-//  public init(include: Set<Marking<PlaceType>>, exclude: Set<Marking<PlaceType>>) {
-//    guard include != [] && exclude != [] else {
-//      fatalError("Cannot have a predicate structure of the form (∅,∅)")
-//    }
-//    self.include = include
-//    self.exclude = exclude
-//  }
   
   func notPS() -> SPS {
     switch self {
@@ -119,6 +108,9 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
             }
           }
           canExclude.insert(markingTemp)
+        }
+        if canInclude.isEmpty && canExclude.isEmpty {
+          return .empty
         }
         return .ps(canInclude, canExclude)
       }
