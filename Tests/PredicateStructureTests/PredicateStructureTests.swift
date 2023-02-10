@@ -27,6 +27,19 @@ final class PredicateStructureTests: XCTestCase {
       XCTAssertEqual(PS.convMax(markings: [marking1, marking2]), [expectedConvMax])
       XCTAssertEqual(PS.convMin(markings: [marking1, marking2]), [expectedConvMin])
       
-      print(model.fire(transition: .t1, from: marking1))
+      let marking3 = Marking<P>([.p1: 3, .p2: 5, .p3: 6])
+      let marking4 = Marking<P>([.p1: 0, .p2: 4, .p3: 0])
+      
+      XCTAssertEqual(PS.minSet(markings: [marking1, marking2, marking3, marking4]), [marking4])
+
+      let marking5 = Marking<P>([.p1: 4, .p2: 42, .p3: 6])
+      let ps = PS(include: [marking1, marking3], exclude: [marking2])
+      let psCan = PS(include: [marking1], exclude: [marking5])
+      
+      print(psCan)
+      
+      XCTAssertEqual(ps.canPS(), psCan)
+
+//      print(model.fire(transition: .t1, from: marking1))
     }
 }

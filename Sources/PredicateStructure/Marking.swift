@@ -86,7 +86,7 @@ extension Marking: Equatable where PlaceType.Content: Equatable {}
 
 extension Marking: Hashable where PlaceType.Content: Hashable {}
 
-extension Marking: Comparable where PlaceType.Content: Comparable & Sequence {
+extension Marking: Comparable where PlaceType.Content: Comparable {
 
   public static func < (lhs: Marking, rhs: Marking) -> Bool {
     for place in PlaceType.allCases {

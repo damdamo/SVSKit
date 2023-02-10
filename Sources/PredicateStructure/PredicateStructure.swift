@@ -25,6 +25,10 @@ public struct PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content 
   }
   
   static func convMax(markings: Set<Marking<PlaceType>>) -> Set<Marking<PlaceType>> {
+    if markings.isEmpty {
+      return []
+    }
+    
     var markingDic: [PlaceType: Int] = [:]
     for marking in markings {
       for place in PlaceType.allCases {
@@ -41,6 +45,10 @@ public struct PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content 
   }
   
   static func convMin(markings: Set<Marking<PlaceType>>) -> Set<Marking<PlaceType>> {
+    if markings.isEmpty {
+      return []
+    }
+    
     var markingDic: [PlaceType: Int] = [:]
     for marking in markings {
       for place in PlaceType.allCases {
@@ -56,6 +64,56 @@ public struct PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content 
     return [Marking(markingDic)]
   }
   
+  static func minSet(markings: Set<Marking<PlaceType>>) -> Set<Marking<PlaceType>> {
+    if markings.isEmpty {
+      return []
+    }
+    
+    // Extract markings that are included in other ones
+    var invalidMarkings: Set<Marking<PlaceType>> = []
+    for marking1 in markings {
+      for marking2 in markings {
+        if marking1 != marking2 {
+          if marking2 < marking1 {
+            invalidMarkings.insert(marking1)
+            break
+          }
+        }
+      }
+    }
+    
+    // The result is the subtraction between the original markings and thus that are already included
+    return markings.subtracting(invalidMarkings)
+  }
+  
+  func canPS() -> PS {
+    let canInclude = PS.convMax(markings: include)
+    let preCanExclude = PS.minSet(markings: exclude)
+    
+    if let markingInclude = canInclude.first {
+//      for marking in exclude {
+//        if marking <= markingInclude {
+//          return
+//        }
+//      }
+      var canExclude: Set<Marking<PlaceType>> = []
+      var markingTemp: Marking<PlaceType>
+      for marking in preCanExclude {
+        markingTemp = marking
+        for place in PlaceType.allCases {
+          if markingTemp[place] < markingInclude[place] {
+            markingTemp[place] = markingInclude[place]
+          }
+        }
+        canExclude.insert(markingTemp)
+      }
+      return PS(include: canInclude, exclude: canExclude)
+    }
+    
+    return PS(include: [], exclude: preCanExclude)
+    
+  }
+  
   public static func == (lhs: PS<PlaceType>, rhs: PS<PlaceType>) -> Bool {
     return lhs.include == rhs.include && lhs.exclude == rhs.exclude
   }
@@ -66,3 +124,8 @@ public struct PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content 
   }
 }
 
+extension PS: CustomStringConvertible {
+  public var description: String {
+    return "(\(include), \(exclude))"
+  }
+}
