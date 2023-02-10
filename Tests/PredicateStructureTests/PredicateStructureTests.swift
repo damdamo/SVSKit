@@ -33,8 +33,8 @@ final class PredicateStructureTests: XCTestCase {
       XCTAssertEqual(PS.minSet(markings: [marking1, marking2, marking3, marking4]), [marking4])
 
       let marking5 = Marking<P>([.p1: 4, .p2: 42, .p3: 6])
-      let ps = PS(include: [marking1, marking3], exclude: [marking2])
-      let psCan = PS(include: [marking1], exclude: [marking5])
+      let ps = PS.ps([marking1, marking3], [marking2])
+      let psCan = PS.ps([marking1], [marking5])
       
       print(psCan)
       
