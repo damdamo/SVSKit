@@ -5,6 +5,8 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
   case empty
   case ps(Set<Marking<PlaceType>>, Set<Marking<PlaceType>>)
   
+  /// Compute the negation of a predicate structure, which is a set of predicate structures
+  /// - Returns: Returns the negation of the predicate structure
   func notPS() -> SPS {
     switch self {
     case .empty:
@@ -186,7 +188,7 @@ extension PS {
       spsWithoutFirst.remove(first)
       let rTemp = notSPS(sps: spsWithoutFirst)
       for ps in negSPS {
-        res = res.union(distribute(ps: ps, sps: rTemp))
+        res = union(s1: res, s2: distribute(ps: ps, sps: rTemp))
       }
     }
     return res
@@ -213,6 +215,25 @@ extension PS {
       }
     }
     return [ps]
+  }
+  
+  
+  /// Is the left set of predicate structures included in the right one ?
+  /// - Parameters:
+  ///   - s1: The left set of predicate structures
+  ///   - s2: The right set of predicate structures
+  /// - Returns: True if it is included, false otherwise
+  static func isIncluded(s1: SPS, s2: SPS) -> Bool {
+    return intersection(s1: s1, s2: notSPS(sps: s2)) == []
+  }
+  
+  /// Are two sets of predicate structures equivalent ?
+  /// - Parameters:
+  ///   - s1: First set of predicate structures
+  ///   - s2: Second set of predicate structures
+  /// - Returns: True is they are equivalentm false otherwise
+  static func equiv(s1: SPS, s2: SPS) -> Bool {
+    return isIncluded(s1: s1, s2: s2) && isIncluded(s1: s2, s2: s1)
   }
   
   // Old version of notSPS
