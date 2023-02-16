@@ -23,6 +23,10 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
     }
   }
   
+  /// convMax, for convergence maximal, is a function to compute a singleton containing a marking where each value is the maximum of all places for a given place.
+  /// This is the convergent point such as all marking of markings are included in this convergent marking.
+  /// - Parameter markings: The marking set
+  /// - Returns: The singleton that contains one marking where each place takes the maximum between all markings.
   static func convMax(markings: Set<Marking<PlaceType>>) -> Set<Marking<PlaceType>> {
     if markings.isEmpty {
       return []
@@ -43,6 +47,10 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
     return [Marking(markingDic)]
   }
   
+  /// convMin, for convergence minimal, is a function to compute a singleton containing a marking where each value is the minimum of all places for a given place.
+  /// This is the convergent point such as the convergent marking is included in all the other markings.
+  /// - Parameter markings: The marking set
+  /// - Returns: The singleton that contains one marking where each place takes the minimum between all markings.
   static func convMin(markings: Set<Marking<PlaceType>>) -> Set<Marking<PlaceType>> {
     if markings.isEmpty {
       return []
@@ -63,6 +71,10 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
     return [Marking(markingDic)]
   }
   
+  /// minSet for minimum set is a function that removes all markings that could be redundant, i.e. a marking that is already included in another one.
+  /// It would mean that the greater marking is already contained in lower one. Thus, we keep only the lowest marking when some of them are included in each other.
+  /// - Parameter markings: The marking set
+  /// - Returns: The minimal set of markings with no inclusion between all of them.
   static func minSet(markings: Set<Marking<PlaceType>>) -> Set<Marking<PlaceType>> {
     if markings.isEmpty {
       return []
@@ -85,6 +97,10 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
     return markings.subtracting(invalidMarkings)
   }
   
+  /// Returns the canonical form of a predicate structure. Let suppose (a,b) in PS
+  /// By canonical form, we mean reducing a in a singleton, removing all possible inclusions in b, and no marking in b included in a.
+  /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
+  /// - Returns: The canonical form of the predicate structure.
   func canPS() -> PS {
     switch self {
     case .empty:
@@ -127,6 +143,11 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
 // Functions that takes SPS as input
 extension PS {
   
+  /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
+  /// - Parameters:
+  ///   - s1: The first set of predicate structures
+  ///   - s2: The first set of predicate structures
+  /// - Returns: The result of the union.
   static func union(s1: SPS, s2: SPS) -> SPS {
     var union = s1.union(s2)
     if union.contains(.empty) {
