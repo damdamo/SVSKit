@@ -38,7 +38,7 @@
 ///     }
 ///     // Prints "[.on: 1, .off: 0]"
 ///
-public struct HeroNet<PlaceType, TransitionType>
+public struct PetriNet<PlaceType, TransitionType>
 where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
 {
 
@@ -114,9 +114,9 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
 
     for arc in arcs {
       if arc.isPre {
-        HeroNet.add(arc: arc, to: &pre)
+        PetriNet.add(arc: arc, to: &pre)
       } else {
-        HeroNet.add(arc: arc, to: &post)
+        PetriNet.add(arc: arc, to: &post)
       }
     }
 
@@ -178,6 +178,65 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
     }
   }
 
+}
+
+extension PetriNet {
+  
+  
+  /// Compute the inverse of the firing function. It takes the marking and the transition, and it adds tokens in the pre places and removes token in the post places.
+  /// - Parameters:
+  ///   - marking: The marking
+  ///   - transition: The transition
+  /// - Returns: The new marking after the revert firing.
+  public func revert(marking: Marking<PlaceType>, transition: TransitionType) -> Marking<PlaceType> {
+    var markingRes = marking
+    for place in PlaceType.allCases {
+      if let pre = input[transition]?[place] {
+        if let post = output[transition]?[place] {
+          if marking[place] <= post {
+            print(pre)
+            markingRes[place] = pre
+          } else {
+            markingRes[place] = marking[place] + pre - post
+          }
+        } else {
+          markingRes[place] = marking[place] + pre
+        }
+      } else {
+        if let post = output[transition]?[place] {
+          if marking[place] <= post {
+            markingRes[place] = 0
+          } else {
+            markingRes[place] = marking[place] - post
+          }
+        }
+      }
+    }
+    return markingRes
+  }
+  
+  /// Apply the revert function for all transitions
+  /// - Parameter marking: The marking
+  /// - Returns: A set of markings that contains each new marking for each transition
+  func revert(marking: Marking<PlaceType>) -> Set<Marking<PlaceType>> {
+    var res: Set<Marking<PlaceType>> = []
+    for transition in TransitionType.allCases {
+      res.insert(revert(marking: marking, transition: transition))
+    }
+    return res
+  }
+  
+  /// Apply the revert on a set of markings.
+  /// - Parameter markings: The set of markings
+  /// - Returns: The new sets of markings, which is a union of all revert firing for each marking.
+  func revert(markings: Set<Marking<PlaceType>>) -> Set<Marking<PlaceType>> {
+    var res: Set<Marking<PlaceType>> = []
+    for marking in markings {
+      res = res.union(revert(marking: marking))
+    }
+    return res
+  }
+  
 }
 
 /// A place in a Petri net.
