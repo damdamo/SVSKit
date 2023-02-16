@@ -57,7 +57,7 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(ps.canPS(), psCan)
   }
   
-  func testSPS() {
+  func testSPS1() {
     typealias SPS = Set<PS<P>>
     enum P: Place {
       typealias Content = Int
@@ -77,7 +77,7 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS.ps([marking1], [marking2])
     let ps2 = PS.ps([marking3], [marking4])
     
-    XCTAssertEqual(PS.intersection(s1: [ps1], s2: [ps2]), [PS.ps([marking1, marking3], [marking2, marking4])])
+    XCTAssertEqual(PS.intersection(s1: [ps1], s2: [ps2] , isCanonical: false), [PS.ps([marking1, marking3], [marking2, marking4])])
     
     let ps3 = PS.ps([marking2], [marking3])
     
@@ -86,7 +86,30 @@ final class PredicateStructureTests: XCTestCase {
       .ps([marking3, marking2], [marking3, marking4]),
     ]
     
-    XCTAssertEqual(PS.intersection(s1: [ps1,ps2], s2: [ps3]), expectedSPS)
+    XCTAssertEqual(PS.intersection(s1: [ps1,ps2], s2: [ps3], isCanonical: false), expectedSPS)
   }
+  
+  func testSPS2() {
+    typealias SPS = Set<PS<P>>
+    enum P: Place {
+      typealias Content = Int
+      
+      case p1,p2
+    }
+    
+    enum T: Transition {
+      case t1//, t2
+    }
+    
+    let marking1 = Marking<P>([.p1: 1, .p2: 2])
+    let marking2 = Marking<P>([.p1: 3, .p2: 2])
+    let marking3 = Marking<P>([.p1: 3, .p2: 0])
+    let marking4 = Marking<P>([.p1: 5, .p2: 8])
+    let sps: SPS = [.ps([marking1], [marking2]), .ps([marking3], [marking4])]
+    let expectedSPS: SPS = [.ps([], [marking1, marking3]), .ps([marking4], [])]
+    
+    XCTAssertEqual(PS.notSPS(sps: sps), expectedSPS)
+  }
+
   
 }

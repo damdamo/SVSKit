@@ -90,7 +90,7 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
     case .ps(let inc, let exc):
       let canInclude = PS.convMax(markings: inc)
       let preCanExclude = PS.minSet(markings: exc)
-      
+            
       if let markingInclude = canInclude.first {
         // In (a,b) ∈ PS, if a marking in b is included in a, it returns empty
         for marking in preCanExclude {
@@ -98,6 +98,8 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
             return .empty
           }
         }
+        
+        // In ({q},b) ∈ PS, forall q_b in b, if q(p) >= q_b(p) => q_b(p) = q(p)
         var canExclude: Set<Marking<PlaceType>> = []
         var markingTemp: Marking<PlaceType>
         for marking in preCanExclude {
@@ -124,11 +126,22 @@ public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content ==
 extension PS {
   
   static func union(s1: SPS, s2: SPS) -> SPS {
-    return s1.union(s2)
+    var union = s1.union(s2)
+    if union.contains(.empty) {
+      union.remove(.empty)
+    }
+    return union
   }
   
-  static func intersection(s1: SPS, s2: SPS) -> SPS {
+  /// Apply the intersection between two sets of predicate structures.
+  /// - Parameters:
+  ///   - s1: The first set of predicate structures
+  ///   - s2: The second set of predicate structures
+  ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
+  /// - Returns: The result of the intersection.
+  static func intersection(s1: SPS, s2: SPS, isCanonical: Bool = true) -> SPS {
     var res: SPS = []
+    var temp: PS
     for ps1 in s1 {
       for ps2 in s2 {
         switch (ps1, ps2) {
@@ -137,12 +150,111 @@ extension PS {
         case (_, .empty):
           break
         case (.ps(let inc1, let exc1), .ps(let inc2, let exc2)):
-          res.insert(.ps(inc1.union(inc2), exc1.union(exc2)))
+          if isCanonical {
+            temp = PS.ps(inc1.union(inc2), exc1.union(exc2)).canPS()
+            switch temp {
+            case .empty:
+              break
+            default:
+              res.insert(
+                (PS.ps(inc1.union(inc2), exc1.union(exc2))).canPS()
+              )
+            }
+          } else {
+            res.insert(
+              .ps(inc1.union(inc2), exc1.union(exc2))
+            )
+          }
         }
       }
     }
     return res
   }
+  
+  
+  /// Compute the negation of a set of predicate structures. This is the result of a combination of all elements inside a predicate structure with each element of the other predicate structures. E.g.: notSPS({([q1], [q2]), ([q3], [q4]), ([q5], [q6])}) = {([],[q1,q3,q5]), ([q6],[q1,q3]), ([q4],[q1,q5]), ([q4,q6],[q1]), ([q2],[q3,q5]), ([q2, q6],[q3]), ([q2, q4],[q5]), ([q2, q4,q6],[])}
+  /// - Parameter sps: The set of predicate structures
+  /// - Returns: The negation of the set of predicate structures
+  static func notSPS(sps: SPS) -> SPS {
+    if sps.isEmpty {
+      return []
+    }
+    var res: SPS = []
+    if let first = sps.first {
+      let negSPS = first.notPS()
+      var spsWithoutFirst = sps
+      spsWithoutFirst.remove(first)
+      let rTemp = notSPS(sps: spsWithoutFirst)
+      for ps in negSPS {
+        res = res.union(distribute(ps: ps, sps: rTemp))
+      }
+    }
+    return res
+  }
+    
+  
+  /// Product between a predicate structure and a set of predicate structures: ps * {ps1, ..., psn} = (ps ∩ ps1) ∪ ... ∪ (ps ∩ psn)
+  /// - Parameters:
+  ///   - ps: The predicate structure
+  ///   - sps: The set of predicate structures
+  /// - Returns: The product between both parameters
+  static func distribute(ps: PS, sps: SPS) -> SPS {
+    if let first = sps.first {
+      switch ps {
+      case .empty:
+        return []
+      case let ps:
+        var rest = sps
+        rest.remove(first)
+        if rest == [] {
+          return intersection(s1: [ps], s2: [first])
+        }
+        return intersection(s1: [ps], s2: [first]).union(distribute(ps: ps, sps: rest))
+      }
+    }
+    return [ps]
+  }
+  
+  // Old version of notSPS
+  //  static func notSPS(sps: SPS) -> SPS {
+  //    if sps.isEmpty {
+  //      return []
+  //    }
+  //    if let first = sps.first {
+  //      var rest = sps
+  //      rest.remove(first)
+  //      return notSPSRec(ps: first, sps: rest)
+  //    }
+  //    return []
+  //  }
+  //
+  //  static func notSPSRec(ps: PS, sps: SPS) -> SPS {
+  //    var res: SPS = []
+  //    switch ps {
+  //    case .empty:
+  //      fatalError("Not possible")
+  //    case .ps([], []):
+  //      break
+  //    case .ps(let inc, []):
+  //      let negSPS = notSPS(sps: sps)
+  //      for marking in inc {
+  //        res = res.union(distribute(ps: .ps([], [marking]), sps: negSPS))
+  //      }
+  //    case .ps([], let exc):
+  //      let negSPS = notSPS(sps: sps)
+  //      for marking in exc {
+  //        res = res.union(distribute(ps: .ps([marking], []), sps: negSPS))
+  //      }
+  //    case .ps(let inc, let exc):
+  //      if let firstInc = inc.first {
+  //        var restInc = inc
+  //        restInc.remove(firstInc)
+  //        res = distribute(ps: .ps([], [firstInc]), sps: notSPS(sps: sps)).union(notSPS(sps: union(s1: [.ps(restInc, exc)], s2: sps)))
+  //      }
+  //    }
+  //    return res
+  //  }
+
   
 }
 
