@@ -148,8 +148,8 @@ extension PS {
   ///   - s1: The first set of predicate structures
   ///   - s2: The first set of predicate structures
   /// - Returns: The result of the union.
-  static func union(s1: SPS, s2: SPS) -> SPS {
-    var union = s1.union(s2)
+  static func union(sps1: SPS, sps2: SPS) -> SPS {
+    var union = sps1.union(sps2)
     if union.contains(.empty) {
       union.remove(.empty)
     }
@@ -162,11 +162,11 @@ extension PS {
   ///   - s2: The second set of predicate structures
   ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
   /// - Returns: The result of the intersection.
-  static func intersection(s1: SPS, s2: SPS, isCanonical: Bool = true) -> SPS {
+  static func intersection(sps1: SPS, sps2: SPS, isCanonical: Bool = true) -> SPS {
     var res: SPS = []
     var temp: PS
-    for ps1 in s1 {
-      for ps2 in s2 {
+    for ps1 in sps1 {
+      for ps2 in sps2 {
         switch (ps1, ps2) {
         case (.empty, _):
           break
@@ -209,7 +209,7 @@ extension PS {
       spsWithoutFirst.remove(first)
       let rTemp = notSPS(sps: spsWithoutFirst)
       for ps in negSPS {
-        res = union(s1: res, s2: distribute(ps: ps, sps: rTemp))
+        res = union(sps1: res, sps2: distribute(ps: ps, sps: rTemp))
       }
     }
     return res
@@ -230,9 +230,9 @@ extension PS {
         var rest = sps
         rest.remove(first)
         if rest == [] {
-          return intersection(s1: [ps], s2: [first])
+          return intersection(sps1: [ps], sps2: [first])
         }
-        return intersection(s1: [ps], s2: [first]).union(distribute(ps: ps, sps: rest))
+        return intersection(sps1: [ps], sps2: [first]).union(distribute(ps: ps, sps: rest))
       }
     }
     return [ps]
@@ -244,8 +244,8 @@ extension PS {
   ///   - s1: The left set of predicate structures
   ///   - s2: The right set of predicate structures
   /// - Returns: True if it is included, false otherwise
-  static func isIncluded(s1: SPS, s2: SPS) -> Bool {
-    return intersection(s1: s1, s2: notSPS(sps: s2)) == []
+  static func isIncluded(sps1: SPS, sps2: SPS) -> Bool {
+    return intersection(sps1: sps1, sps2: notSPS(sps: sps2)) == []
   }
   
   /// Are two sets of predicate structures equivalent ?
@@ -253,8 +253,12 @@ extension PS {
   ///   - s1: First set of predicate structures
   ///   - s2: Second set of predicate structures
   /// - Returns: True is they are equivalentm false otherwise
-  static func equiv(s1: SPS, s2: SPS) -> Bool {
-    return isIncluded(s1: s1, s2: s2) && isIncluded(s1: s2, s2: s1)
+  static func equiv(sps1: SPS, sps2: SPS) -> Bool {
+    return isIncluded(sps1: sps1, sps2: sps2) && isIncluded(sps1: sps2, sps2: sps1)
+  }
+  
+  static func isIn(ps: PS, sps: SPS) -> Bool {
+    return isIncluded(sps1: [ps], sps2: sps)
   }
   
   // Old version of notSPS
