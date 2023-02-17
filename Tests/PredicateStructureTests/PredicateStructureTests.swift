@@ -26,7 +26,7 @@ final class PredicateStructureTests: XCTestCase {
   
   func testPS() {
     
-    typealias SPS = Set<PS<P>>
+    typealias SPS = Set<PS<P,T>>
     enum P: Place {
       typealias Content = Int
       
@@ -42,23 +42,23 @@ final class PredicateStructureTests: XCTestCase {
     let expectedConvMax = Marking<P>([.p1: 4, .p2: 42, .p3: 6])
     let expectedConvMin = Marking<P>([.p1: 1, .p2: 5, .p3: 2])
 
-    XCTAssertEqual(PS.convMax(markings: [marking1, marking2]), [expectedConvMax])
-    XCTAssertEqual(PS.convMin(markings: [marking1, marking2]), [expectedConvMin])
+    XCTAssertEqual(PS<P,T>.convMax(markings: [marking1, marking2]), [expectedConvMax])
+    XCTAssertEqual(PS<P,T>.convMin(markings: [marking1, marking2]), [expectedConvMin])
     
     let marking3 = Marking<P>([.p1: 3, .p2: 5, .p3: 6])
     let marking4 = Marking<P>([.p1: 0, .p2: 4, .p3: 0])
     
-    XCTAssertEqual(PS.minSet(markings: [marking1, marking2, marking3, marking4]), [marking4])
+    XCTAssertEqual(PS<P,T>.minSet(markings: [marking1, marking2, marking3, marking4]), [marking4])
 
     let marking5 = Marking<P>([.p1: 4, .p2: 42, .p3: 6])
-    let ps = PS.ps([marking1, marking3], [marking2])
-    let psCan = PS.ps([marking1], [marking5])
+    let ps = PS<P,T>.ps([marking1, marking3], [marking2])
+    let psCan = PS<P,T>.ps([marking1], [marking5])
           
     XCTAssertEqual(ps.canPS(), psCan)
   }
   
   func testSPS1() {
-    typealias SPS = Set<PS<P>>
+    typealias SPS = Set<PS<P,T>>
     enum P: Place {
       typealias Content = Int
       
@@ -74,13 +74,13 @@ final class PredicateStructureTests: XCTestCase {
     let marking3 = Marking<P>([.p1: 3, .p2: 5, .p3: 6])
     let marking4 = Marking<P>([.p1: 0, .p2: 4, .p3: 0])
     
-    let ps1 = PS.ps([marking1], [marking2])
-    let ps2 = PS.ps([marking3], [marking4])
+    let ps1 = PS<P,T>.ps([marking1], [marking2])
+    let ps2 = PS<P,T>.ps([marking3], [marking4])
     
-    XCTAssertEqual(PS.union(sps1: [ps1], sps2: [.empty]), [ps1])
-    XCTAssertEqual(PS.intersection(sps1: [ps1], sps2: [ps2] , isCanonical: false), [PS.ps([marking1, marking3], [marking2, marking4])])
+    XCTAssertEqual(PS<P,T>.union(sps1: [ps1], sps2: [.empty]), [ps1])
+    XCTAssertEqual(PS<P,T>.intersection(sps1: [ps1], sps2: [ps2] , isCanonical: false), [PS.ps([marking1, marking3], [marking2, marking4])])
     
-    let ps3 = PS.ps([marking2], [marking3])
+    let ps3 = PS<P,T>.ps([marking2], [marking3])
     
     let expectedSPS: SPS = [
       .ps([marking1, marking2], [marking2, marking3]),
@@ -91,7 +91,7 @@ final class PredicateStructureTests: XCTestCase {
   }
   
   func testSPS2() {
-    typealias SPS = Set<PS<P>>
+    typealias SPS = Set<PS<P,T>>
     enum P: Place {
       typealias Content = Int
       
@@ -113,7 +113,7 @@ final class PredicateStructureTests: XCTestCase {
   }
   
   func testSPSObservator() {
-    typealias SPS = Set<PS<P>>
+    typealias SPS = Set<PS<P,T>>
     enum P: Place {
       typealias Content = Int
       
@@ -163,6 +163,39 @@ final class PredicateStructureTests: XCTestCase {
     // {({(1,2)}, {(5,8)}), ({(3,0)}, {(3,2)})} ≈ {({(1,2)}, {(3,2)}), ({(3,0)}, {(5,8)})}
     XCTAssertTrue(PS.equiv(sps1: sps1, sps2: sps2))
   }
+  
+  func testRevertPS() {
+    enum P: Place {
+      typealias Content = Int
+
+      case p0,p1
+    }
+
+    enum T: Transition {
+      case t0, t1
+    }
+
+    let model = PetriNet<P, T>(
+      .pre(from: .p0, to: .t0, labeled: 2),
+      .post(from: .t0, to: .p0, labeled: 1),
+      .post(from: .t0, to: .p1, labeled: 1),
+      .pre(from: .p0, to: .t1, labeled: 1),
+      .pre(from: .p1, to: .t1, labeled: 1)
+    )
+    let marking1 = Marking<P>([.p0: 0, .p1: 1])
+    let marking2 = Marking<P>([.p0: 1, .p1: 1])
+
+    let revertT0 = Marking<P>([.p0: 2, .p1: 0])
+    let revertT1 = Marking<P>([.p0: 1, .p1: 2])
+    let revertT2 = Marking<P>([.p0: 2, .p1: 2])
+//    print(model.fire(transition: .t1, from: marking1))
+    
+    XCTAssertEqual(PS.revert(ps: .ps([marking1], []), transition: .t0, petrinet: model), PS.ps([revertT0], []))
+    XCTAssertEqual(PS.revert(ps: .ps([marking1], []), transition: .t1, petrinet: model), PS.ps([revertT1], []))
+    XCTAssertEqual(PS.revert(ps: .ps([marking1,marking2], []), transition: .t1, petrinet: model), PS.ps([revertT1, revertT2], []))
+    print(model.revert(marking: marking2))    
+  }
+
 
   
 }

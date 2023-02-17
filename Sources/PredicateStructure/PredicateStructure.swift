@@ -1,6 +1,6 @@
-public enum PS<PlaceType>: Hashable where PlaceType: Place, PlaceType.Content == Int {
+public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition {
 
-  typealias SPS = Set<PS<PlaceType>>
+  typealias SPS = Set<PS<PlaceType, TransitionType>>
   
   case empty
   case ps(Set<Marking<PlaceType>>, Set<Marking<PlaceType>>)
@@ -259,6 +259,33 @@ extension PS {
   
   static func isIn(ps: PS, sps: SPS) -> Bool {
     return isIncluded(sps1: [ps], sps2: sps)
+  }
+  
+  static func revert(ps: PS, transition: TransitionType, petrinet: PetriNet<PlaceType, TransitionType>) -> PS {
+    switch ps {
+    case .empty:
+      return .empty
+    case .ps(let a, let b):
+      var aTemp: Set<Marking<PlaceType>> = []
+      var bTemp: Set<Marking<PlaceType>> = []
+      
+      if a == [] {
+        aTemp = [Marking(petrinet.input[transition]!)]
+      } else {
+        for marking in a {
+          aTemp.insert(petrinet.revert(marking: marking, transition: transition))
+        }
+      }
+      if b == [] {
+        bTemp = []
+      } else {
+        for marking in b {
+          bTemp.insert(petrinet.revert(marking: marking, transition: transition))
+        }
+      }
+      return .ps(aTemp, bTemp)
+    }
+    
   }
   
   // Old version of notSPS
