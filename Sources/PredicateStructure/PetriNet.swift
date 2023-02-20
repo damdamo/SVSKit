@@ -182,6 +182,7 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
 
 extension PetriNet {
   
+  
   /// Compute the inverse of the firing function. It takes the marking and the transition, and it adds tokens in the pre places and removes token in the post places.
   /// - Parameters:
   ///   - marking: The marking
