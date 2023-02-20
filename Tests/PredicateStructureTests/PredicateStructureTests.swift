@@ -193,7 +193,8 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(PS.revert(ps: .ps([marking1], []), transition: .t0, petrinet: model), PS.ps([revertT0], []))
     XCTAssertEqual(PS.revert(ps: .ps([marking1], []), transition: .t1, petrinet: model), PS.ps([revertT1], []))
     XCTAssertEqual(PS.revert(ps: .ps([marking1,marking2], []), transition: .t1, petrinet: model), PS.ps([revertT1, revertT2], []))
-    print(model.revert(marking: marking2))    
+    XCTAssertEqual(PS.revert(ps: .ps([marking1], []), petrinet: model), [.ps([revertT0], []), .ps([revertT1], [])])
+    XCTAssertEqual(PS.revert(sps: [.ps([marking1], [])], petrinet: model), [.ps([revertT0], []), .ps([revertT1], [])])
   }
 
 

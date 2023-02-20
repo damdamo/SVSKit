@@ -182,7 +182,6 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
 
 extension PetriNet {
   
-  
   /// Compute the inverse of the firing function. It takes the marking and the transition, and it adds tokens in the pre places and removes token in the post places.
   /// - Parameters:
   ///   - marking: The marking
@@ -235,6 +234,30 @@ extension PetriNet {
       res = res.union(revert(marking: marking))
     }
     return res
+  }
+  
+  func inputMarkingForATransition(transition: TransitionType) -> Marking<PlaceType> {
+    var dicMarking: [PlaceType: Int] = [:]
+    for place in PlaceType.allCases {
+      if let v = input[transition]![place] {
+        dicMarking[place] = v
+      } else {
+        dicMarking[place] = 0
+      }
+    }
+    return Marking(dicMarking)
+  }
+  
+  func outputMarkingForATransition(transition: TransitionType) -> Marking<PlaceType> {
+    var dicMarking: [PlaceType: Int] = [:]
+    for place in PlaceType.allCases {
+      if let v = output[transition]![place] {
+        dicMarking[place] = v
+      } else {
+        dicMarking[place] = 0
+      }
+    }
+    return Marking(dicMarking)
   }
   
 }

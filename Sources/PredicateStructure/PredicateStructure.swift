@@ -285,7 +285,27 @@ extension PS {
       }
       return .ps(aTemp, bTemp)
     }
-    
+
+  }
+  
+  static func revert(ps: PS, petrinet: PetriNet<PlaceType, TransitionType>) -> SPS {
+    var res: SPS = []
+    for transition in TransitionType.allCases {
+      res.insert(revert(ps: ps, transition: transition, petrinet: petrinet))
+    }
+    return res
+  }
+  
+  static func revert(sps: SPS, petrinet: PetriNet<PlaceType, TransitionType>) -> SPS {
+    var res: SPS = []
+    for ps in sps {
+      res = res.union(revert(ps: ps, petrinet: petrinet))
+    }
+    return res
+  }
+  
+  static func revertTilde(sps: SPS, petrinet: PetriNet<PlaceType, TransitionType>) -> SPS {
+    return notSPS(sps: PS.revert(sps: PS.notSPS(sps: sps), petrinet: petrinet))
   }
   
   // Old version of notSPS

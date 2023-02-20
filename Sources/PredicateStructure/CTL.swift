@@ -1,8 +1,10 @@
-indirect enum CTL {
+indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition {
   
+  // Basic case
+  case ap(TransitionType)
+  case after(TransitionType)
   // Boolean logic
   case `true`
-  case `false`
   case and(CTL, CTL)
   case not(CTL)
   // CTL operators
