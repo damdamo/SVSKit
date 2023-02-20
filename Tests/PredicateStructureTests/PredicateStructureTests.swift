@@ -149,6 +149,8 @@ final class PredicateStructureTests: XCTestCase {
     
     // ∅ ⊆ {({(4,5)}, {(9,10)})}
     XCTAssertTrue(PS.isIncluded(sps1: [], sps2: sps1))
+    // {({(4,5)}, {(9,10)})} ⊆ ∅
+    XCTAssertFalse(PS.isIncluded(sps1: sps1, sps2: []))
     
     XCTAssertTrue(PS.equiv(sps1: sps1, sps2: sps1))
     

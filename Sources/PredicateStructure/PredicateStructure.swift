@@ -10,7 +10,11 @@ public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, Plac
   func notPS() -> SPS {
     switch self {
     case .empty:
-      return []
+      var dicMarking: [PlaceType: Int] = [:]
+      for place in PlaceType.allCases {
+        dicMarking[place] = 0
+      }
+      return [.ps([Marking(dicMarking)], [])]
     case .ps(let inc, let exc):
       var sps: SPS = []
       for el in inc {
@@ -245,6 +249,12 @@ extension PS {
   ///   - s2: The right set of predicate structures
   /// - Returns: True if it is included, false otherwise
   static func isIncluded(sps1: SPS, sps2: SPS) -> Bool {
+    if sps2 == [] {
+      if sps1 == [] {
+        return true
+      }
+      return false
+    }
     return intersection(sps1: sps1, sps2: notSPS(sps: sps2)) == []
   }
   
@@ -306,6 +316,16 @@ extension PS {
   
   static func revertTilde(sps: SPS, petrinet: PetriNet<PlaceType, TransitionType>) -> SPS {
     return notSPS(sps: PS.revert(sps: PS.notSPS(sps: sps), petrinet: petrinet))
+  }
+  
+  static func simplifiedSPS(sps: SPS) -> SPS {
+    var reducedSPS: SPS = []
+    for ps in sps {
+      if !PS.isIncluded(sps1: [ps], sps2: sps.filter({!($0 == ps)})) {
+        reducedSPS.insert(ps)
+      }
+    }
+    return reducedSPS
   }
   
   // Old version of notSPS

@@ -59,17 +59,17 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
   func evalEF(petrinet: PN) -> SPS {
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
-    while !PS.equiv(sps1: res, sps2: resTemp) {
+    repeat {
       resTemp = res
       res = PS.union(sps1: res, sps2: PS.revert(sps: res, petrinet: petrinet))
-    }
+    } while !PS.isIncluded(sps1: res, sps2: resTemp)
     return res
   }
   
   func evalAF(petrinet: PN) -> SPS {
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
-    while !PS.equiv(sps1: res, sps2: resTemp) {
+    repeat {
       resTemp = res
       res = PS.union(
         sps1: res,
@@ -78,14 +78,14 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
           sps2: PS.revertTilde(sps: res, petrinet: petrinet)
         )
       )
-    }
+    } while !PS.isIncluded(sps1: res, sps2: resTemp)
     return res
   }
   
   func evalEG(petrinet: PN) -> SPS {
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
-    while !PS.equiv(sps1: res, sps2: resTemp) {
+    repeat {
       resTemp = res
       res = PS.intersection(
         sps1: res,
@@ -94,17 +94,17 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
           sps2: PS.revertTilde(sps: res, petrinet: petrinet)
         )
       )
-    }
+    } while !PS.isIncluded(sps1: resTemp, sps2: res)
     return res
   }
   
   func evalAG(petrinet: PN) -> SPS {
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
-    while !PS.equiv(sps1: res, sps2: resTemp) {
+    repeat {
       resTemp = res
       res = PS.intersection(sps1: res, sps2: PS.revertTilde(sps: res, petrinet: petrinet))
-    }
+    } while !PS.isIncluded(sps1: resTemp, sps2: res)
     return res
   }
   
@@ -112,7 +112,7 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
     let phi = self.eval(petrinet: petrinet)
     var res = ctl.eval(petrinet: petrinet)
     var resTemp: SPS = []
-    while !PS.equiv(sps1: res, sps2: resTemp) {
+    repeat {
       resTemp = res
       res = PS.union(
         sps1: res,
@@ -121,7 +121,7 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
           sps2: PS.revert(sps: res, petrinet: petrinet)
         )
       )
-    }
+    } while !PS.isIncluded(sps1: res, sps2: resTemp)
     return res
   }
   
@@ -129,7 +129,7 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
     let phi = self.eval(petrinet: petrinet)
     var res = ctl.eval(petrinet: petrinet)
     var resTemp: SPS = []
-    while !PS.equiv(sps1: res, sps2: resTemp) {
+    repeat {
       resTemp = res
       res = PS.union(
         sps1: res,
@@ -140,7 +140,7 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
             sps2: PS.revertTilde(sps: res, petrinet: petrinet))
         )
       )
-    }
+    } while !PS.isIncluded(sps1: res, sps2: resTemp)
     return res
   }
 
