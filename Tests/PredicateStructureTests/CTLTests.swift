@@ -17,7 +17,7 @@ final class CTLTests: XCTestCase {
     // Following Petri net:
     //          t0   p2   t3
     //       -> ▭ -> o -> ▭
-    // p0    /
+    // p0  /
     // o -
     //     \
     //       -> ▭ -> o -> ▭
