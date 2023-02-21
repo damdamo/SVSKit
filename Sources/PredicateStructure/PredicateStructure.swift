@@ -280,7 +280,7 @@ extension PS {
       var bTemp: Set<Marking<PlaceType>> = []
       
       if a == [] {
-        aTemp = [Marking(petrinet.input[transition]!)]
+        aTemp = [petrinet.inputMarkingForATransition(transition: transition)]
       } else {
         for marking in a {
           aTemp.insert(petrinet.revert(marking: marking, transition: transition))
