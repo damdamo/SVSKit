@@ -194,7 +194,6 @@ extension PetriNet {
       if let pre = input[transition]?[place] {
         if let post = output[transition]?[place] {
           if marking[place] <= post {
-            print(pre)
             markingRes[place] = pre
           } else {
             markingRes[place] = marking[place] + pre - post
@@ -240,7 +239,7 @@ extension PetriNet {
   func inputMarkingForATransition(transition: TransitionType) -> Marking<PlaceType> {
     var dicMarking: [PlaceType: Int] = [:]
     for place in PlaceType.allCases {
-      if let v = input[transition]![place] {
+      if let v = input[transition]?[place] {
         dicMarking[place] = v
       } else {
         dicMarking[place] = 0
