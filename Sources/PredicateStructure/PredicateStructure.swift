@@ -318,10 +318,127 @@ extension PS {
     return notSPS(sps: PS.revert(sps: PS.notSPS(sps: sps), petrinet: petrinet))
   }
   
+  
+  /// Try to merge two predicate structures if there are comparable.
+  /// The principle is similar to intervals, where the goal is to reunified intervals if they can be merged.
+  /// Otherwise, nothing is changed.
+  /// - Parameters:
+  ///   - ps1: The first predicate structure
+  ///   - ps2: The second predicate structure
+  /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
+  static func merge(ps1: PS, ps2: PS) -> SPS {
+    var ps1Temp = ps1
+    var ps2Temp = ps2
+    
+    switch (ps1, ps2) {
+    case (.ps(let a, _), .ps(let c, _)):
+      if let am = a.first, let cm = c.first  {
+        if !(am <= cm) {
+          ps1Temp = ps2
+          ps2Temp = ps1
+        }
+      }
+    default:
+      return [ps1,ps2]
+    }
+    
+    switch (ps1Temp, ps2Temp) {
+    case (.ps(let a, let b), .ps(let c, let d)):
+      if let am = a.first, let cm = c.first {
+        if let bm = b.first {
+          if cm <= bm && am <= cm {
+            if let dm = d.first {
+              if bm <= dm {
+                return [.ps(a,d)]
+              }
+              return [.ps(a,b)]
+            }
+            return [.ps(a,d)]
+          }
+        }
+        if am <= cm {
+          return [.ps(a,b)]
+        }
+      }
+    default:
+      return [ps1,ps2]
+    }
+    return [ps1,ps2]
+  }
+  
+  
+  
+  /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:
+  /// ps1 = ([(p0: 0, p1: 2, p2: 1)], [(p0: 1, p1: 2, p2: 1)])
+  /// ps2 = ([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)])
+  /// ps3 = ([(p0: 1, p1: 2, p2: 1)], [])
+  /// ps1 and ps2 can be both merged with ps3, however, once this merging is done, it is not possible do it with the resting predicate structure.
+  /// Thus, both choices are correct in their final results:
+  /// {([(p0: 0, p1: 2, p2: 1)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 1, p1: 2, p2: 0)], [])}
+  /// or
+  /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
+  /// - Parameter sps: The set of predicate structures to simplify
+  /// - Returns: The simplified version of the sps.
   static func simplifiedSPS(sps: SPS) -> SPS {
-    var reducedSPS: SPS = []
+    var mergedSPS: SPS = []
+    var mergedTemp: SPS = []
+    var spsTemp: SPS = []
+    var psFirst: PS = .empty
+    var psFirstTemp: PS = .empty
+    
     for ps in sps {
-      if !PS.isIncluded(sps1: [ps], sps2: sps.filter({!($0 == ps)})) {
+      spsTemp.insert(ps.canPS())
+    }
+    
+    if spsTemp == [] {
+      return []
+    }
+        
+    while !spsTemp.isEmpty {
+      psFirst = spsTemp.first!
+      psFirstTemp = psFirst
+      spsTemp.remove(psFirst)
+      switch psFirst {
+      case .ps(let a, let b):
+        if b.count <= 1 {
+          for ps in spsTemp {
+            switch ps {
+            case .ps(let c, let d):
+              if d.count <= 1 {
+                if let am = a.first, let bm = b.first, let cm = c.first {
+                  if cm <= bm && am <= cm {
+                    mergedTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d))
+                    if mergedTemp.count == 1 {
+                      psFirstTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d)).first!
+                      spsTemp.remove(.ps(c, d))
+                    }
+                  }
+                }
+                if let am = a.first, let cm = c.first, let dm = d.first {
+                  if am <= dm && cm <= am {
+                    mergedTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d))
+                    if mergedTemp.count == 1 {
+                      psFirstTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d)).first!
+                      spsTemp.remove(.ps(c, d))
+                    }
+                  }
+                }
+              }
+            case .empty:
+              break
+            }
+          }
+        }
+      case .empty:
+        break
+      }
+      mergedSPS.insert(psFirstTemp)
+    }
+    
+    var reducedSPS: SPS = []
+    
+    for ps in mergedSPS {
+      if !PS.isIncluded(sps1: [ps], sps2: mergedSPS.filter({!($0 == ps)})) {
         reducedSPS.insert(ps)
       }
     }
@@ -377,7 +494,7 @@ extension PS: CustomStringConvertible {
     case .empty:
       return "∅"
     case .ps(let inc, let exc):
-      return "(\(inc), \(exc))"
+      return "(\(inc), \(exc)) \n"
     }
   }
 }

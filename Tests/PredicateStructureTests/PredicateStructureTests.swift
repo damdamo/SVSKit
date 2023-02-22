@@ -164,6 +164,24 @@ final class PredicateStructureTests: XCTestCase {
 
     // {({(1,2)}, {(5,8)}), ({(3,0)}, {(3,2)})} ≈ {({(1,2)}, {(3,2)}), ({(3,0)}, {(5,8)})}
     XCTAssertTrue(PS.equiv(sps1: sps1, sps2: sps2))
+    
+    let ps1: PS<P,T> = .ps([Marking([.p1: 1, .p2: 4])], [Marking([.p1: 5, .p2: 5])])
+    let ps2: PS<P,T> = .ps([Marking([.p1: 5, .p2: 5])], [Marking([.p1: 10, .p2: 7])])
+    let ps3: PS<P,T> = .ps([Marking([.p1: 1, .p2: 4])], [Marking([.p1: 10, .p2: 7])])
+
+    XCTAssertTrue(PS.equiv(sps1: [ps1,ps2], sps2: [ps3]))
+    
+    let ps4: PS<P,T> = .ps([Marking([.p1: 2, .p2: 3])], [Marking([.p1: 8, .p2: 9])])
+    let ps5: PS<P,T> = .ps([Marking([.p1: 7, .p2: 8])], [Marking([.p1: 10, .p2: 10])])
+    let ps6: PS<P,T> = .ps([Marking([.p1: 2, .p2: 3])], [Marking([.p1: 10, .p2: 10])])
+    XCTAssertTrue(PS.equiv(sps1: [ps4,ps5], sps2: [ps6]))
+    
+    let ps7: PS<P,T> = .ps([Marking([.p1: 4, .p2: 1])], [Marking([.p1: 4, .p2: 4])])
+    let ps8: PS<P,T> = .ps([Marking([.p1: 1, .p2: 4])], [])
+    let ps9: PS<P,T> = .ps([Marking([.p1: 4, .p2: 1])], [])
+    let ps10: PS<P,T> = .ps([Marking([.p1: 1, .p2: 4])], [Marking([.p1: 4, .p2: 4])])
+    
+    XCTAssertTrue(PS.equiv(sps1: [ps7,ps8], sps2: [ps9,ps10]))
   }
   
   func testRevertPS() {
