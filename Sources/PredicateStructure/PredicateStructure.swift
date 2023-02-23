@@ -216,6 +216,34 @@ public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, Plac
     return markingSet
   }
   
+  
+  /// Encode a marking into a predicate structure. This predicate structure encodes a singe marking.
+  /// - Parameter marking: The marking to encode
+  /// - Returns: The predicate structure that represents the marking
+  static func encodeMarking(_ marking: Marking<PlaceType>) -> PS {
+    var bMarkings: Set<Marking<PlaceType>> = []
+    var markingTemp = marking
+    for place in PlaceType.allCases {
+      markingTemp[place] += 1
+      bMarkings.insert(markingTemp)
+      markingTemp = marking
+    }
+    
+    return .ps([marking], bMarkings)
+  }
+  
+  /// Encode a set of markings into a set of predicate structures.
+  /// - Parameter markingSet: The marking set to encode
+  /// - Returns: A set of predicate structures that encodes the set of markings
+  static func encodeMarkingSet(_ markingSet: Set<Marking<PlaceType>>) -> SPS {
+    var sps: SPS = []
+    for marking in markingSet {
+      sps.insert(encodeMarking(marking))
+    }
+    return PS.simplifiedSPS(sps: sps)
+  }
+
+  
 }
 
 // Functions that takes SPS as input
@@ -529,47 +557,6 @@ extension PS {
     }
     return reducedSPS
   }
-  
-  // Old version of notSPS
-  //  static func notSPS(sps: SPS) -> SPS {
-  //    if sps.isEmpty {
-  //      return []
-  //    }
-  //    if let first = sps.first {
-  //      var rest = sps
-  //      rest.remove(first)
-  //      return notSPSRec(ps: first, sps: rest)
-  //    }
-  //    return []
-  //  }
-  //
-  //  static func notSPSRec(ps: PS, sps: SPS) -> SPS {
-  //    var res: SPS = []
-  //    switch ps {
-  //    case .empty:
-  //      fatalError("Not possible")
-  //    case .ps([], []):
-  //      break
-  //    case .ps(let inc, []):
-  //      let negSPS = notSPS(sps: sps)
-  //      for marking in inc {
-  //        res = res.union(distribute(ps: .ps([], [marking]), sps: negSPS))
-  //      }
-  //    case .ps([], let exc):
-  //      let negSPS = notSPS(sps: sps)
-  //      for marking in exc {
-  //        res = res.union(distribute(ps: .ps([marking], []), sps: negSPS))
-  //      }
-  //    case .ps(let inc, let exc):
-  //      if let firstInc = inc.first {
-  //        var restInc = inc
-  //        restInc.remove(firstInc)
-  //        res = distribute(ps: .ps([], [firstInc]), sps: notSPS(sps: sps)).union(notSPS(sps: union(s1: [.ps(restInc, exc)], s2: sps)))
-  //      }
-  //    }
-  //    return res
-  //  }
-
   
 }
 

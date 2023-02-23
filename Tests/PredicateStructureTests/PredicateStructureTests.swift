@@ -51,10 +51,20 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(PS<P,T>.minSet(markings: [marking1, marking2, marking3, marking4]), [marking4])
 
     let marking5 = Marking<P>([.p1: 4, .p2: 42, .p3: 6])
-    let ps = PS<P,T>.ps([marking1, marking3], [marking2])
+    let ps: PS<P,T> = .ps([marking1, marking3], [marking2])
     let psCan = PS<P,T>.ps([marking1], [marking5])
           
     XCTAssertEqual(ps.canPS(), psCan)
+    
+    let marking6: Marking<P> = [.p1: 1, .p2: 3, .p3: 5]
+    
+    let expectedPS1: PS<P,T> = .ps([marking6], [Marking([.p1: 2, .p2: 3, .p3: 5]), Marking([.p1: 1, .p2: 4, .p3: 5]), Marking([.p1: 1, .p2: 3, .p3: 6])])
+    XCTAssertEqual(PS.encodeMarking(marking6), expectedPS1)
+    
+    let marking7: Marking<P> = [.p1: 1, .p2: 3, .p3: 6]
+    let expectedPS2: PS<P,T> = .ps([marking7], [Marking([.p1: 2, .p2: 3, .p3: 6]), Marking([.p1: 1, .p2: 4, .p3: 6]), Marking([.p1: 1, .p2: 3, .p3: 7])])
+    
+    XCTAssertEqual(PS<P,T>.encodeMarkingSet([marking6, marking7]), [expectedPS1,expectedPS2])
   }
   
   func testSPS1() {
