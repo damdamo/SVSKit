@@ -181,22 +181,32 @@ final class CTLTests: XCTestCase {
   }
   
   func testForMe() {
-    enum P: Place {
-      typealias Content = Int
-
-      case p0,p1
-    }
-
-    enum T: Transition {
-      case t0
-    }
-    
-    let sps1: Set<PS<P,T>> = [.ps([Marking([.p0: 0, .p1: 1])], [])]
-    let sps2: Set<PS<P,T>> = [
-      .ps([Marking([.p0: 1, .p1: 2])], []),
-      .ps([Marking([.p0: 0, .p1: 2])], [Marking([.p0: 0, .p1: 2])])
-    ]
-    print(PS.isIncluded(sps1: sps1, sps2: sps2))
+//    enum P: Place {
+//      typealias Content = Int
+//
+//      case p0,p1,p2
+//    }
+//
+//    enum T: Transition {
+//      case t0
+//    }
+//    
+//    let pn = PetriNet<P, T>(
+//      .pre(from: .p0, to: .t0, labeled: 1),
+//      .post(from: .t0, to: .p1, labeled: 1),
+//      capacity: [.p0: 3, .p1: 3, .p2: 3]
+//    )
+//    
+//    let ps: PS<P,T> = .ps([Marking([.p0: 0, .p1: 1, .p2: 0])], [Marking([.p0: 1, .p1: 1, .p2: 0]), Marking([.p0: 0, .p1: 2, .p2: 0]), Marking([.p0: 0, .p1: 1, .p2: 1])])
+//    
+//    print(ps.underlyingMarkings(petrinet: pn).count)
+//    
+//    let sps1: Set<PS<P,T>> = [.ps([Marking([.p0: 0, .p1: 1])], [])]
+//    let sps2: Set<PS<P,T>> = [
+//      .ps([Marking([.p0: 1, .p1: 2])], []),
+//      .ps([Marking([.p0: 0, .p1: 2])], [Marking([.p0: 0, .p1: 2])])
+//    ]
+//    print(PS.isIncluded(sps1: sps1, sps2: sps2))
 //
 //    resTemp [([[p0: 0, p1: 1]], [])
 //    ]

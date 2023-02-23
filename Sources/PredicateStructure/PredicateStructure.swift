@@ -153,6 +153,7 @@ public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, Plac
     var lowerBound: Int
     var upperBound: Int
     
+    // Create a dictionnary where the key is the place and whose values is a set of all possibles integers that can be taken
     switch canonizedPS {
     case .empty:
       return []
@@ -172,6 +173,7 @@ public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, Plac
       }
     }
     
+    // Using the previous constructed dictionnary, it applies a combinatory to connect each value of each place with the other ones.
     while !placeSetValues.isEmpty {
       if let (place, values) = placeSetValues.first {
         resTemp = []
@@ -186,6 +188,7 @@ public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, Plac
                 return new
               }))
             }
+            res = resTemp
           }
         }
         placeSetValues.removeValue(forKey: place)
@@ -193,10 +196,24 @@ public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, Plac
     }
     
     // Convert all dictionnaries into markings
-    return Set(resTemp.map({(el: [PlaceType: Int]) -> Marking<PlaceType> in
+    var markingSet: Set<Marking<PlaceType>> = Set(res.map({(el: [PlaceType: Int]) -> Marking<PlaceType> in
       Marking<PlaceType>(el)
     }))
     
+    switch canonizedPS {
+    case .ps(_, let b):
+      for mb in b {
+        for marking in markingSet {
+          if mb <= marking {
+            markingSet.remove(marking)
+          }
+        }
+      }
+    case .empty:
+      fatalError("Cannot be empty")
+    }
+    
+    return markingSet
   }
   
 }
