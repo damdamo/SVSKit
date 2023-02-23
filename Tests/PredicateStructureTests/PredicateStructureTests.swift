@@ -244,6 +244,8 @@ final class PredicateStructureTests: XCTestCase {
     ps = .ps([Marking([.p0: 0, .p1: 0, .p2: 1])], [])
     XCTAssertEqual(ps.underlyingMarkings(petrinet: pn).count, 48)
 
+    ps = .ps([Marking([.p0: 0, .p1: 0, .p2: 2])], [Marking([.p0: 0, .p1: 0, .p2: 1])])
+    XCTAssertEqual(ps.underlyingMarkings(petrinet: pn).count, 0)
   }
 
   
