@@ -89,7 +89,7 @@ public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, Plac
     for marking1 in markings {
       for marking2 in markings {
         if marking1 != marking2 {
-          if marking2 < marking1 {
+          if marking2 <= marking1 {
             invalidMarkings.insert(marking1)
             break
           }
