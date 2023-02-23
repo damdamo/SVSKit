@@ -271,7 +271,7 @@ extension PS {
     return isIncluded(sps1: [ps], sps2: sps)
   }
   
-  static func revert(ps: PS, transition: TransitionType, petrinet: PetriNet<PlaceType, TransitionType>) -> PS {
+  static func revert(ps: PS, transition: TransitionType, petrinet: PetriNet<PlaceType, TransitionType>) -> PS? {
     switch ps {
     case .empty:
       return .empty
@@ -283,14 +283,20 @@ extension PS {
         aTemp = [petrinet.inputMarkingForATransition(transition: transition)]
       } else {
         for marking in a {
-          aTemp.insert(petrinet.revert(marking: marking, transition: transition))
+          if let rev = petrinet.revert(marking: marking, transition: transition) {
+            aTemp.insert(rev)
+          } else {
+            return nil
+          }
         }
       }
       if b == [] {
         bTemp = []
       } else {
         for marking in b {
-          bTemp.insert(petrinet.revert(marking: marking, transition: transition))
+          if let rev = petrinet.revert(marking: marking, transition: transition) {
+            bTemp.insert(rev)
+          }
         }
       }
       return .ps(aTemp, bTemp)
@@ -301,7 +307,9 @@ extension PS {
   static func revert(ps: PS, petrinet: PetriNet<PlaceType, TransitionType>) -> SPS {
     var res: SPS = []
     for transition in TransitionType.allCases {
-      res.insert(revert(ps: ps, transition: transition, petrinet: petrinet))
+      if let rev = revert(ps: ps, transition: transition, petrinet: petrinet) {
+        res.insert(rev)
+      }
     }
     return res
   }

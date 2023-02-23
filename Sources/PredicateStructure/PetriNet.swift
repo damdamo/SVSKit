@@ -128,7 +128,7 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
     if capacity == [:] {
       var newCap: [PlaceType: Int] = [:]
       for place in PlaceType.allCases {
-        newCap[place] = 20
+        newCap[place] = 10
       }
       self.capacity = newCap
     } else {
@@ -204,7 +204,7 @@ extension PetriNet {
   ///   - marking: The marking
   ///   - transition: The transition
   /// - Returns: The new marking after the revert firing.
-  public func revert(marking: Marking<PlaceType>, transition: TransitionType) -> Marking<PlaceType> {
+  public func revert(marking: Marking<PlaceType>, transition: TransitionType) -> Marking<PlaceType>? {
     var markingRes = marking
     for place in PlaceType.allCases {
       if let pre = input[transition]?[place] {
@@ -216,6 +216,9 @@ extension PetriNet {
           }
         } else {
           markingRes[place] = marking[place] + pre
+        }
+        if marking[place] > capacity[place]! {
+          return nil
         }
       } else {
         if let post = output[transition]?[place] {
@@ -236,7 +239,9 @@ extension PetriNet {
   func revert(marking: Marking<PlaceType>) -> Set<Marking<PlaceType>> {
     var res: Set<Marking<PlaceType>> = []
     for transition in TransitionType.allCases {
-      res.insert(revert(marking: marking, transition: transition))
+      if let rev = revert(marking: marking, transition: transition) {
+        res.insert(rev)
+      }
     }
     return res
   }

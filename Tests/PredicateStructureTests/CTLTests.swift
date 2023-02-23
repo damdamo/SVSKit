@@ -89,15 +89,61 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(expectedSPS, PS.simplifiedSPS(sps: sps))
   }
   
-  func testCTLEval() {
+  // No answers for EG/AG
+  func testCTLEval1() {
     enum P: Place {
       typealias Content = Int
 
-      case p0,p1,p2
+      case p0,p1
     }
 
     enum T: Transition {
-      case t0,t1,t2,t3
+      case t0,t1,t2
+    }
+
+    // Following Petri net:
+    //          t0
+    //       -> ▭
+    // p0  /
+    // o -
+    //     \
+    //       -> ▭ -> o -> ▭
+    //          t1   p1   t2
+    let pn = PetriNet<P, T>(
+      .pre(from: .p0, to: .t0, labeled: 1),
+      .pre(from: .p0, to: .t1, labeled: 1),
+      .post(from: .t1, to: .p1, labeled: 1),
+      .pre(from: .p1, to: .t2, labeled: 1),
+      capacity: [.p0: 4, .p1: 4]
+    )
+    
+    let ctlFormula1: CTL<P,T> = .AF(.ap(.t2))
+    let ctlFormula2: CTL<P,T> = .EG(.ap(.t2))
+    let ctlFormula3: CTL<P,T> = .AG(.ap(.t2))
+    let sps1 = ctlFormula1.eval(petrinet: pn)
+    let simpliedSPS1 = PS.simplifiedSPS(sps: sps1)
+    let sps2 = ctlFormula2.eval(petrinet: pn)
+    let simpliedSPS2 = PS.simplifiedSPS(sps: sps2)
+    let sps3 = ctlFormula3.eval(petrinet: pn)
+    let simpliedSPS3 = PS.simplifiedSPS(sps: sps3)
+    
+    let ps: PS<P,T> = .ps([Marking([.p0: 0, .p1: 1])], [])
+    let expectedRes: Set<PS<P,T>> = [ps]
+    
+    XCTAssertEqual(simpliedSPS1, expectedRes)
+    XCTAssertEqual(simpliedSPS2, [])
+    XCTAssertEqual(simpliedSPS3, [])
+  }
+  
+  func testCTLEval2() {
+    enum P: Place {
+      typealias Content = Int
+
+      case p0,p1
+    }
+
+    enum T: Transition {
+      case t0,t1,t2
     }
 
     // Following Petri net:
@@ -116,29 +162,22 @@ final class CTLTests: XCTestCase {
       .post(from: .t2, to: .p1, labeled: 1)
     )
     
-    let ps1: PS<P,T> = .ps([Marking([.p0: 1, .p1: 2, .p2: 1])], [])
-    let ps2: PS<P,T> = .ps([], [Marking([.p0: 1, .p1: 0, .p2: 0]), Marking([.p0: 0, .p1: 1, .p2: 0]), Marking([.p0: 0, .p1: 0, .p2: 1])])
-    let ps3: PS<P,T> = .ps([Marking([.p0: 0, .p1: 2, .p2: 0])], [Marking([.p0: 1, .p1: 2, .p2: 0]), Marking([.p0: 0, .p1: 2, .p2: 1])])
-    let ps4: PS<P,T> = .ps([Marking([.p0: 0, .p1: 2, .p2: 1])], [Marking([.p0: 1, .p1: 2, .p2: 1])])
-    let ps5: PS<P,T> = .ps([Marking([.p0: 1, .p1: 2, .p2: 0])], [Marking([.p0: 1, .p1: 2, .p2: 1])])
-    
-    let expectedSPS: Set<PS<P,T>> = [ps1, ps2, ps3, ps4, ps5]
-    
     let ctlFormula1: CTL<P,T> = .AF(.ap(.t2))
     let ctlFormula2: CTL<P,T> = .EG(.ap(.t2))
     let ctlFormula3: CTL<P,T> = .AG(.ap(.t2))
     let sps1 = ctlFormula1.eval(petrinet: pn)
-//    let sps2 = PS.simplifiedSPS(sps: ctlFormula2.eval(petrinet: pn))
-//    let sps3 = PS.simplifiedSPS(sps: ctlFormula3.eval(petrinet: pn))
-//    let simpliedSPS = PS.simplifiedSPS(sps: sps)
-//    XCTAssertEqual(Equatable, <#T##expression2: Equatable##Equatable#>)
-//    print(sps1)
-//    print("-----------------------------------")
-//    print(PS.simplifiedSPS(sps: sps1))
+    let simpliedSPS1 = PS.simplifiedSPS(sps: sps1)
+    let sps2 = ctlFormula2.eval(petrinet: pn)
+    let simpliedSPS2 = PS.simplifiedSPS(sps: sps2)
+    let sps3 = ctlFormula3.eval(petrinet: pn)
+    let simpliedSPS3 = PS.simplifiedSPS(sps: sps3)
     
-//    print(PS.simplifiedSPS(sps: sps1))
-    print(PS.simplifiedSPS(sps: expectedSPS))
+    let ps: PS<P,T> = .ps([Marking([.p0: 0, .p1: 1])], [])
+    let expectedRes: Set<PS<P,T>> = [ps]
     
+    XCTAssertEqual(simpliedSPS1, expectedRes)
+    XCTAssertEqual(simpliedSPS2, expectedRes)
+    XCTAssertEqual(simpliedSPS3, expectedRes)
   }
   
   func testForMe() {
@@ -152,23 +191,17 @@ final class CTLTests: XCTestCase {
       case t0
     }
     
-//    let ps1: PS<P,T> = .ps([Marking([.p0: 1, .p1: 4])], [Marking([.p0: 5, .p1: 5])])
-//    let ps2: PS<P,T> = .ps([Marking([.p0: 5, .p1: 5])], [Marking([.p0: 10, .p1: 7])])
-//    let ps3: PS<P,T> = .ps([Marking([.p0: 1, .p1: 4])], [Marking([.p0: 10, .p1: 7])])
+    let sps1: Set<PS<P,T>> = [.ps([Marking([.p0: 0, .p1: 1])], [])]
+    let sps2: Set<PS<P,T>> = [
+      .ps([Marking([.p0: 1, .p1: 2])], []),
+      .ps([Marking([.p0: 0, .p1: 2])], [Marking([.p0: 0, .p1: 2])])
+    ]
+    print(PS.isIncluded(sps1: sps1, sps2: sps2))
 //
-//    XCTAssertTrue(PS.equiv(sps1: [ps1,ps2], sps2: [ps3]))
-//    
-//    let ps4: PS<P,T> = .ps([Marking([.p0: 2, .p1: 3])], [Marking([.p0: 8, .p1: 9])])
-//    let ps5: PS<P,T> = .ps([Marking([.p0: 7, .p1: 8])], [Marking([.p0: 10, .p1: 10])])
-//    let ps6: PS<P,T> = .ps([Marking([.p0: 2, .p1: 3])], [Marking([.p0: 10, .p1: 10])])
-//    XCTAssertTrue(PS.equiv(sps1: [ps4,ps5], sps2: [ps6]))
-//    
-//    let ps7: PS<P,T> = .ps([Marking([.p0: 4, .p1: 1])], [Marking([.p0: 4, .p1: 4])])
-//    let ps8: PS<P,T> = .ps([Marking([.p0: 1, .p1: 4])], [])
-//    let ps9: PS<P,T> = .ps([Marking([.p0: 4, .p1: 1])], [])
-//    let ps10: PS<P,T> = .ps([Marking([.p0: 1, .p1: 4])], [Marking([.p0: 4, .p1: 4])])
-//    
-//    XCTAssertTrue(PS.equiv(sps1: [ps7,ps8], sps2: [ps9,ps10]))
+//    resTemp [([[p0: 0, p1: 1]], [])
+//    ]
+//    res [([[p0: 1, p1: 2]], [])
+//    , ([[p0: 0, p1: 2]], [[p0: 1, p1: 2]])
   }
   
 }
