@@ -34,4 +34,27 @@ final class PetriNetTests: XCTestCase {
     
   }
   
+  func testCapacity() {
+    enum P: Place {
+      typealias Content = Int
+
+      case p0,p1
+    }
+
+    enum T: Transition {
+      case t0
+    }
+
+    let model = PetriNet<P, T>(
+      .pre(from: .p0, to: .t0, labeled: 1),
+      .post(from: .t0, to: .p1, labeled: 2),
+      capacity: [.p0: 2, .p1: 2]
+    )
+    let marking1 = Marking<P>([.p0: 1, .p1: 0])
+    let marking2 = Marking<P>([.p0: 1, .p1: 1])
+
+    XCTAssertEqual(model.fire(transition: .t0, from: marking1), Marking<P>([.p0: 0, .p1: 2]))
+    XCTAssertNil(model.fire(transition: .t0, from: marking2))
+  }
+  
 }

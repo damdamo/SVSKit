@@ -103,12 +103,15 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
 
   /// This net's output matrix.
   public let output: [TransitionType: [PlaceType: ArcLabel]]
+  
+  /// The maximum number of tokens inside a place
+  public let capacity: [PlaceType: Int]
 
   /// Initializes a Petri net with a sequence describing its preconditions and postconditions.
   ///
   /// - Parameters:
   ///   - arcs: A sequence containing the descriptions of the Petri net's arcs.
-  public init<Arcs>(_ arcs: Arcs) where Arcs: Sequence, Arcs.Element == ArcDescription {
+  public init<Arcs>(_ arcs: Arcs, capacity: [PlaceType: Int]) where Arcs: Sequence, Arcs.Element == ArcDescription {
     var pre: [TransitionType: [PlaceType: ArcLabel]] = [:]
     var post: [TransitionType: [PlaceType: ArcLabel]] = [:]
 
@@ -122,19 +125,28 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
 
     self.input = pre
     self.output = post
+    if capacity == [:] {
+      var newCap: [PlaceType: Int] = [:]
+      for place in PlaceType.allCases {
+        newCap[place] = 20
+      }
+      self.capacity = newCap
+    } else {
+      self.capacity = capacity
+    }
   }
 
   /// Initializes a Petri net with descriptions of its preconditions and postconditions.
   ///
   /// - Parameters:
   ///   - arcs: A variadic argument representing the descriptions of the Petri net's arcs.
-  public init(_ arcs: ArcDescription...) {
-    self.init(arcs)
+  public init(_ arcs: ArcDescription..., capacity: [PlaceType: Int] = [:]) {
+    self.init(arcs, capacity: capacity)
   }
 
   /// Computes the marking resulting from the firing of the given transition, from the given
   /// marking, assuming the former is fireable.
-  ///
+  /// If the number of tokens in a place would be greater than the capacity of the place, it returns nil.
   /// - Parameters:
   ///   - transition: The transition to fire.
   ///   - marking: The marking from which the given transition should be fired.
@@ -158,6 +170,10 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
 
       if let n = post?[place] {
         newMarking[place] += n
+        // If the marking generates a number of tokens greater than the capacity, we return nil
+        if newMarking[place] > capacity[place]! {
+          return nil
+        }
       }
     }
 
