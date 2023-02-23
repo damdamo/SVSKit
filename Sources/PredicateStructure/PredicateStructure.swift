@@ -493,15 +493,18 @@ extension PS {
                     if mergedTemp.count == 1 {
                       psFirstTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d)).first!
                       spsTemp.remove(.ps(c, d))
+                      spsTemp.insert(psFirstTemp)
                     }
                   }
-                }
-                if let am = a.first, let cm = c.first, let dm = d.first {
-                  if am <= dm && cm <= am {
-                    mergedTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d))
-                    if mergedTemp.count == 1 {
-                      psFirstTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d)).first!
-                      spsTemp.remove(.ps(c, d))
+                } else {
+                  if let am = a.first, let cm = c.first, let dm = d.first {
+                    if am <= dm && cm <= am {
+                      mergedTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d))
+                      if mergedTemp.count == 1 {
+                        psFirstTemp = merge(ps1: psFirstTemp, ps2: .ps(c, d)).first!
+                        spsTemp.remove(.ps(c, d))
+                        spsTemp.insert(psFirstTemp)
+                      }
                     }
                   }
                 }
