@@ -142,6 +142,63 @@ public enum PS<PlaceType, TransitionType>: Hashable where PlaceType: Place, Plac
     }
   }
   
+  /// Compute all the markings represented by the symbolic representation of a predicate structure.
+  /// - Parameter petrinet: The model to use
+  /// - Returns: The set of all possible markings, also known as the state space.
+  func underlyingMarkings(petrinet: PetriNet<PlaceType, TransitionType>) -> Set<Marking<PlaceType>> {
+    let canonizedPS = self.canPS()
+    var placeSetValues: [PlaceType: Set<Int>] = [:]
+    var res: Set<[PlaceType: Int]> = []
+    var resTemp = res
+    var lowerBound: Int
+    var upperBound: Int
+    
+    switch canonizedPS {
+    case .empty:
+      return []
+    case .ps(let a, _):
+      if let am = a.first {
+        for place in PlaceType.allCases {
+          lowerBound = am[place]
+          upperBound = petrinet.capacity[place]!
+          for i in lowerBound ..< upperBound+1 {
+            if let _ = placeSetValues[place] {
+              placeSetValues[place]!.insert(i)
+            } else {
+              placeSetValues[place] = [i]
+            }
+          }
+        }
+      }
+    }
+    
+    while !placeSetValues.isEmpty {
+      if let (place, values) = placeSetValues.first {
+        resTemp = []
+        if res.isEmpty {
+          for value in values {
+            res.insert([place: value])
+          }
+        } else {
+          for value in values {
+            for el in res {
+              resTemp.insert(el.merging([place: value], uniquingKeysWith: {(old: Int, new: Int) -> Int in
+                return new
+              }))
+            }
+          }
+        }
+        placeSetValues.removeValue(forKey: place)
+      }
+    }
+    
+    // Convert all dictionnaries into markings
+    return Set(resTemp.map({(el: [PlaceType: Int]) -> Marking<PlaceType> in
+      Marking<PlaceType>(el)
+    }))
+    
+  }
+  
 }
 
 // Functions that takes SPS as input
