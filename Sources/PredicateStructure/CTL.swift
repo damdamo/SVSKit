@@ -1,3 +1,6 @@
+/// The Computation tree logic (CTL), is a language to express temporal properties that must hold a model.
+///  Semantics are often based on Kripke structures. However, the computation here is made on the fly and does not know the whole state space beforehand.
+///   The strategy is to use the fixpoint to construct this state space, and thanks to monotonicity properties, the computation always finishes.
 indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition {
   
   typealias SPS = Set<PS<PlaceType, TransitionType>>
