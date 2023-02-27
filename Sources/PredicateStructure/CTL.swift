@@ -4,7 +4,7 @@
 ///   TODO: Replace all 'let ps = PredicateStructure(ps: .empty, petrinet: petrinet)' by a true structure for SPS to avoid this horrible trick
 indirect enum CTL {
   
-  typealias SPS = Set<PredicateStructure>
+  typealias SPS = Set<PS>
   typealias PN = PetriNet
   typealias PlaceType = String
   typealias TransitionType = String
@@ -27,15 +27,15 @@ indirect enum CTL {
   case AU(CTL, CTL)
   
   func eval(petrinet: PN) -> SPS {
-    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
+    let ps = PS(ps: nil, petrinet: petrinet)
     switch self {
     case .ap(let t):
       return [
-        PredicateStructure(ps: .ps([petrinet.inputMarkingForATransition(transition: t)], []), petrinet: petrinet)
+        PS(ps: ([petrinet.inputMarkingForATransition(transition: t)], []), petrinet: petrinet)
       ]
     case .after(let t):
       return [
-        PredicateStructure(ps:  .ps([], [petrinet.outputMarkingForATransition(transition: t)]), petrinet: petrinet)
+        PS(ps:  ([], [petrinet.outputMarkingForATransition(transition: t)]), petrinet: petrinet)
       ]
     case .true:
       var dicEmptyMarking: [PlaceType: Int] = [:]
@@ -43,7 +43,7 @@ indirect enum CTL {
         dicEmptyMarking[place] = 0
       }
       return [
-        PredicateStructure(ps: .ps([Marking(storage: dicEmptyMarking, petrinet: petrinet)], []), petrinet: petrinet)
+        PS(ps: ([Marking(storage: dicEmptyMarking, petrinet: petrinet)], []), petrinet: petrinet)
       ]
     case .and(let ctl1, let ctl2):
       return ps.intersection(sps1: ctl1.eval(petrinet: petrinet), sps2: ctl2.eval(petrinet: petrinet))
@@ -70,7 +70,7 @@ indirect enum CTL {
   }
 
   func evalEF(petrinet: PN) -> SPS {
-    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
+    let ps = PS(ps: nil, petrinet: petrinet)
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
@@ -81,7 +81,7 @@ indirect enum CTL {
   }
   
   func evalAF(petrinet: PN) -> SPS {
-    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
+    let ps = PS(ps: nil, petrinet: petrinet)
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
@@ -98,7 +98,7 @@ indirect enum CTL {
   }
   
   func evalEG(petrinet: PN) -> SPS {
-    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
+    let ps = PS(ps: nil, petrinet: petrinet)
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
@@ -115,7 +115,7 @@ indirect enum CTL {
   }
   
   func evalAG(petrinet: PN) -> SPS {
-    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
+    let ps = PS(ps: nil, petrinet: petrinet)
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
@@ -126,7 +126,7 @@ indirect enum CTL {
   }
   
   func evalEU(ctl: CTL, petrinet: PN) -> SPS {
-    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
+    let ps = PS(ps: nil, petrinet: petrinet)
     let phi = self.eval(petrinet: petrinet)
     var res = ctl.eval(petrinet: petrinet)
     var resTemp: SPS = []
@@ -144,7 +144,7 @@ indirect enum CTL {
   }
   
   func evalAU(ctl: CTL, petrinet: PN) -> SPS {
-    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
+    let ps = PS(ps: nil, petrinet: petrinet)
     let phi = self.eval(petrinet: petrinet)
     var res = ctl.eval(petrinet: petrinet)
     var resTemp: SPS = []
