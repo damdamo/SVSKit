@@ -48,7 +48,7 @@ indirect enum CTL {
     case .and(let ctl1, let ctl2):
       return ps.intersection(sps1: ctl1.eval(petrinet: petrinet), sps2: ctl2.eval(petrinet: petrinet))
     case .not(let ctl1):
-      return ps.notSPS(sps: ctl1.eval(petrinet: petrinet))
+      return ps.not(sps: ctl1.eval(petrinet: petrinet))
     case .EX(let ctl1):
       return ps.revert(sps: ctl1.eval(petrinet: petrinet))
     case .AX(let ctl1):

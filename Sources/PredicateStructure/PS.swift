@@ -22,7 +22,7 @@ public struct PS {
   
   /// Compute the negation of a predicate structure, which is a set of predicate structures
   /// - Returns: Returns the negation of the predicate structure
-  func notPS() -> SPS {
+  func not() -> SPS {
     if let p = ps {
       var sps: SPS = []
       for el in p.inc {
@@ -120,7 +120,7 @@ public struct PS {
   /// By canonical form, we mean reducing a in a singleton, removing all possible inclusions in b, and no marking in b included in a.
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
   /// - Returns: The canonical form of the predicate structure.
-  func canPS() -> PS {
+  func canonised() -> PS {
     if let p = ps {
       let canInclude = convMax(markings: p.inc)
       let preCanExclude = minSet(markings: p.exc)
@@ -160,7 +160,7 @@ public struct PS {
   /// - Parameter petrinet: The model to use
   /// - Returns: The set of all possible markings, also known as the state space.
   func underlyingMarkings() -> Set<Marking> {
-    let canonizedPS = self.canPS()
+    let canonizedPS = self.canonised()
     var placeSetValues: [PlaceType: Set<Int>] = [:]
     var res: Set<[PlaceType: Int]> = []
     var resTemp = res
@@ -248,7 +248,7 @@ public struct PS {
     for marking in markingSet {
       sps.insert(encodeMarking(marking))
     }
-    return simplifiedSPS(sps: sps)
+    return simplified(sps: sps)
   }
 
 }
@@ -294,7 +294,7 @@ extension PS {
         if let p1 = ps1.ps, let p2 = ps2.ps {
           let intersectRaw = PS(ps: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), petrinet: petrinet)
           if isCanonical {
-            temp = intersectRaw.canPS()
+            temp = intersectRaw.canonised()
             if let _ = temp.ps {
               res.insert(temp)
             }
@@ -312,16 +312,16 @@ extension PS {
   /// Compute the negation of a set of predicate structures. This is the result of a combination of all elements inside a predicate structure with each element of the other predicate structures. E.g.: notSPS({([q1], [q2]), ([q3], [q4]), ([q5], [q6])}) = {([],[q1,q3,q5]), ([q6],[q1,q3]), ([q4],[q1,q5]), ([q4,q6],[q1]), ([q2],[q3,q5]), ([q2, q6],[q3]), ([q2, q4],[q5]), ([q2, q4,q6],[])}
   /// - Parameter sps: The set of predicate structures
   /// - Returns: The negation of the set of predicate structures
-  func notSPS(sps: SPS) -> SPS {
+  func not(sps: SPS) -> SPS {
     if sps.isEmpty {
       return []
     }
     var res: SPS = []
     if let first = sps.first {
-      let negSPS = first.notPS()
+      let negSPS = first.not()
       var spsWithoutFirst = sps
       spsWithoutFirst.remove(first)
-      let rTemp = notSPS(sps: spsWithoutFirst)
+      let rTemp = not(sps: spsWithoutFirst)
       for ps in negSPS {
         res = union(sps1: res, sps2: ps.distribute(sps: rTemp))
       }
@@ -347,18 +347,6 @@ extension PS {
         return intersection(sps1: [ps1], sps2: [first]).union(ps1.distribute(sps: rest))
       }
       return []
-//      switch ps.ps {
-//      case .empty:
-//        return []
-//      case let p:
-//        let ps1 = PredicateStructure(ps: p, petrinet: petrinet)
-//        var rest = sps
-//        rest.remove(first)
-//        if rest == [] {
-//          return intersection(sps1: [ps1], sps2: [first])
-//        }
-//        return intersection(sps1: [ps1], sps2: [first]).union(distribute(ps: ps1, sps: rest))
-//      }
     }
     return [self]
   }
@@ -376,7 +364,7 @@ extension PS {
       }
       return false
     }
-    return intersection(sps1: sps1, sps2: notSPS(sps: sps2)) == []
+    return intersection(sps1: sps1, sps2: not(sps: sps2)) == []
   }
   
   /// Are two sets of predicate structures equivalent ?
@@ -384,7 +372,7 @@ extension PS {
   ///   - s1: First set of predicate structures
   ///   - s2: Second set of predicate structures
   /// - Returns: True is they are equivalentm false otherwise
-  func equiv(sps1: SPS, sps2: SPS) -> Bool {
+  func isEquiv(sps1: SPS, sps2: SPS) -> Bool {
     return isIncluded(sps1: sps1, sps2: sps2) && isIncluded(sps1: sps2, sps2: sps1)
   }
   
@@ -442,7 +430,7 @@ extension PS {
   }
   
   func revertTilde(sps: SPS) -> SPS {
-    return notSPS(sps: revert(sps: notSPS(sps: sps)))
+    return not(sps: revert(sps: not(sps: sps)))
   }
   
   
@@ -509,7 +497,7 @@ extension PS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-  func simplifiedSPS(sps: SPS) -> SPS {
+  func simplified(sps: SPS) -> SPS {
     var mergedSPS: SPS = []
     var mergedTemp: SPS = []
     var spsTemp: SPS = []
@@ -517,7 +505,7 @@ extension PS {
     var psFirstTemp = psFirst
     
     for ps in sps {
-      spsTemp.insert(ps.canPS())
+      spsTemp.insert(ps.canonised())
     }
     
     if spsTemp == [] {
