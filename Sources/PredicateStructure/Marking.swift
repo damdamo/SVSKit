@@ -24,6 +24,12 @@ public struct Marking {
   /// - Parameters:
   ///   - mapping: A total map representing this marking.
   public init(storage: [String: Int], petrinet: PetriNet) {
+    var places: Set<String> = []
+    for (place, _) in storage {
+      places.insert(place)
+    }
+    precondition(places == petrinet.places, "Places between the marking and the Petri net do not match.")
+    
     self.storage = storage
     self.petrinet = petrinet
   }

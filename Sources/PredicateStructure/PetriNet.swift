@@ -128,7 +128,14 @@ public class PetriNet
         PetriNet.add(arc: arc, to: &post)
       }
     }
-
+    
+    for (transition, dicPlaceToArc) in pre {
+      precondition(transitions.contains(transition), "All transitions have not been declared in transitions")
+      for (place, _) in dicPlaceToArc {
+        precondition(places.contains(place), "All places have not been declared in places")
+      }
+    }
+    
     self.input = pre
     self.output = post
     if capacity == [:] {
@@ -138,6 +145,7 @@ public class PetriNet
       }
       self.capacity = newCap
     } else {
+      precondition(Set(capacity.keys) == places, "The capacity do not match the required places")
       self.capacity = capacity
     }
   }
