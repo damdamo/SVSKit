@@ -38,11 +38,12 @@
 ///     }
 ///     // Prints "[.on: 1, .off: 0]"
 ///
-public struct PetriNet<PlaceType, TransitionType>
-where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
+public class PetriNet
 {
 
   public typealias ArcLabel = Int
+  public typealias PlaceType = String
+  public typealias TransitionType = String
 
   /// The description of an arc.
   public struct ArcDescription {
@@ -98,6 +99,8 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
 
   }
 
+  public let places: Set<PlaceType>
+  public let transitions: Set<TransitionType>
   /// This net's input matrix.
   public let input: [TransitionType: [PlaceType: ArcLabel]]
 
@@ -111,7 +114,10 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
   ///
   /// - Parameters:
   ///   - arcs: A sequence containing the descriptions of the Petri net's arcs.
-  public init<Arcs>(_ arcs: Arcs, capacity: [PlaceType: Int]) where Arcs: Sequence, Arcs.Element == ArcDescription {
+  public init<Arcs>(places: Set<PlaceType>, transitions: Set<TransitionType>, arcs: Arcs, capacity: [PlaceType: Int]) where Arcs: Sequence, Arcs.Element == ArcDescription {
+    
+    self.places = places
+    self.transitions = transitions
     var pre: [TransitionType: [PlaceType: ArcLabel]] = [:]
     var post: [TransitionType: [PlaceType: ArcLabel]] = [:]
 
@@ -127,7 +133,7 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
     self.output = post
     if capacity == [:] {
       var newCap: [PlaceType: Int] = [:]
-      for place in PlaceType.allCases {
+      for place in places {
         newCap[place] = 10
       }
       self.capacity = newCap
@@ -140,8 +146,12 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
   ///
   /// - Parameters:
   ///   - arcs: A variadic argument representing the descriptions of the Petri net's arcs.
-  public init(_ arcs: ArcDescription..., capacity: [PlaceType: Int] = [:]) {
-    self.init(arcs, capacity: capacity)
+  public convenience init(places: Set<PlaceType>, transitions: Set<TransitionType>, arcs: ArcDescription..., capacity: [PlaceType: Int] = [:]) {
+    self.init(
+      places: places,
+      transitions: transitions,
+      arcs: arcs,
+      capacity: capacity)
   }
 
   /// Computes the marking resulting from the firing of the given transition, from the given
@@ -153,25 +163,25 @@ where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition
   /// - Returns:
   ///   The marking that results from the firing of the given transition if it is fireable, or
   ///   `nil` otherwise.
-  public func fire(transition: TransitionType, from marking: Marking<PlaceType>)
-    -> Marking<PlaceType>?
+  public func fire(transition: TransitionType, from marking: Marking)
+    -> Marking?
   {
     var newMarking = marking
 
     let pre = input[transition]
     let post = output[transition]
 
-    for place in PlaceType.allCases {
+    for place in places {
       if let n = pre?[place] {
-        guard marking[place] >= n
+        guard marking[place]! >= n
           else { return nil }
-        newMarking[place] -= n
+        newMarking[place]! -= n
       }
 
       if let n = post?[place] {
-        newMarking[place] += n
+        newMarking[place]! += n
         // If the marking generates a number of tokens greater than the capacity, we return nil
-        if newMarking[place] > capacity[place]! {
+        if newMarking[place]! > capacity[place]! {
           return nil
         }
       }
@@ -204,28 +214,28 @@ extension PetriNet {
   ///   - marking: The marking
   ///   - transition: The transition
   /// - Returns: The new marking after the revert firing.
-  public func revert(marking: Marking<PlaceType>, transition: TransitionType) -> Marking<PlaceType>? {
+  public func revert(marking: Marking, transition: TransitionType) -> Marking? {
     var markingRes = marking
-    for place in PlaceType.allCases {
+    for place in places {
       if let pre = input[transition]?[place] {
         if let post = output[transition]?[place] {
-          if marking[place] <= post {
+          if marking[place]! <= post {
             markingRes[place] = pre
           } else {
-            markingRes[place] = marking[place] + pre - post
+            markingRes[place] = marking[place]! + pre - post
           }
         } else {
-          markingRes[place] = marking[place] + pre
+          markingRes[place] = marking[place]! + pre
         }
-        if marking[place] > capacity[place]! {
+        if marking[place]! > capacity[place]! {
           return nil
         }
       } else {
         if let post = output[transition]?[place] {
-          if marking[place] <= post {
+          if marking[place]! <= post {
             markingRes[place] = 0
           } else {
-            markingRes[place] = marking[place] - post
+            markingRes[place] = marking[place]! - post
           }
         }
       }
@@ -236,9 +246,9 @@ extension PetriNet {
   /// Apply the revert function for all transitions
   /// - Parameter marking: The marking
   /// - Returns: A set of markings that contains each new marking for each transition
-  func revert(marking: Marking<PlaceType>) -> Set<Marking<PlaceType>> {
-    var res: Set<Marking<PlaceType>> = []
-    for transition in TransitionType.allCases {
+  func revert(marking: Marking) -> Set<Marking> {
+    var res: Set<Marking> = []
+    for transition in transitions {
       if let rev = revert(marking: marking, transition: transition) {
         res.insert(rev)
       }
@@ -249,46 +259,46 @@ extension PetriNet {
   /// Apply the revert on a set of markings.
   /// - Parameter markings: The set of markings
   /// - Returns: The new sets of markings, which is a union of all revert firing for each marking.
-  func revert(markings: Set<Marking<PlaceType>>) -> Set<Marking<PlaceType>> {
-    var res: Set<Marking<PlaceType>> = []
+  func revert(markings: Set<Marking>) -> Set<Marking> {
+    var res: Set<Marking> = []
     for marking in markings {
       res = res.union(revert(marking: marking))
     }
     return res
   }
   
-  func inputMarkingForATransition(transition: TransitionType) -> Marking<PlaceType> {
+  func inputMarkingForATransition(transition: TransitionType) -> Marking {
     var dicMarking: [PlaceType: Int] = [:]
-    for place in PlaceType.allCases {
+    for place in places {
       if let v = input[transition]?[place] {
         dicMarking[place] = v
       } else {
         dicMarking[place] = 0
       }
     }
-    return Marking(dicMarking)
+    return Marking(storage: dicMarking, petrinet: self)
   }
   
-  func outputMarkingForATransition(transition: TransitionType) -> Marking<PlaceType> {
+  func outputMarkingForATransition(transition: TransitionType) -> Marking {
     var dicMarking: [PlaceType: Int] = [:]
-    for place in PlaceType.allCases {
+    for place in places {
       if let v = output[transition]![place] {
         dicMarking[place] = v
       } else {
         dicMarking[place] = 0
       }
     }
-    return Marking(dicMarking)
+    return Marking(storage: dicMarking, petrinet: self)
   }
   
 }
 
-/// A place in a Petri net.
-public protocol Place: CaseIterable, Hashable {
-
-  associatedtype Content: Hashable
-
-}
-
-/// A transition in a Petri net.
-public protocol Transition: CaseIterable, Hashable {}
+///// A place in a Petri net.
+//public protocol Place: CaseIterable, Hashable {
+//
+//  associatedtype Content: Hashable
+//
+//}
+//
+///// A transition in a Petri net.
+//public protocol Transition: CaseIterable, Hashable {}

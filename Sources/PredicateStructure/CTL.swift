@@ -1,10 +1,13 @@
 /// The Computation tree logic (CTL), is a language to express temporal properties that must hold a model.
 ///  Semantics are often based on Kripke structures. However, the computation here is made on the fly and does not know the whole state space beforehand.
 ///   The strategy is to use the fixpoint to construct this state space, and thanks to monotonicity properties, the computation always finishes.
-indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, PlaceType.Content == Int, TransitionType: Transition {
+///   TODO: Replace all 'let ps = PredicateStructure(ps: .empty, petrinet: petrinet)' by a true structure for SPS to avoid this horrible trick
+indirect enum CTL {
   
-  typealias SPS = Set<PS<PlaceType, TransitionType>>
-  typealias PN = PetriNet<PlaceType, TransitionType>
+  typealias SPS = Set<PredicateStructure>
+  typealias PN = PetriNet
+  typealias PlaceType = String
+  typealias TransitionType = String
   
   // Basic case
   case ap(TransitionType)
@@ -24,25 +27,32 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
   case AU(CTL, CTL)
   
   func eval(petrinet: PN) -> SPS {
+    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
     switch self {
     case .ap(let t):
-      return [.ps([petrinet.inputMarkingForATransition(transition: t)], [])]
+      return [
+        PredicateStructure(ps: .ps([petrinet.inputMarkingForATransition(transition: t)], []), petrinet: petrinet)
+      ]
     case .after(let t):
-      return [.ps([], [petrinet.outputMarkingForATransition(transition: t)])]
+      return [
+        PredicateStructure(ps:  .ps([], [petrinet.outputMarkingForATransition(transition: t)]), petrinet: petrinet)
+      ]
     case .true:
       var dicEmptyMarking: [PlaceType: Int] = [:]
-      for place in PlaceType.allCases {
+      for place in petrinet.places {
         dicEmptyMarking[place] = 0
       }
-      return [.ps([Marking(dicEmptyMarking)], [])]
+      return [
+        PredicateStructure(ps: .ps([Marking(storage: dicEmptyMarking, petrinet: petrinet)], []), petrinet: petrinet)
+      ]
     case .and(let ctl1, let ctl2):
-      return PS.intersection(sps1: ctl1.eval(petrinet: petrinet), sps2: ctl2.eval(petrinet: petrinet))
+      return ps.intersection(sps1: ctl1.eval(petrinet: petrinet), sps2: ctl2.eval(petrinet: petrinet))
     case .not(let ctl1):
-      return PS.notSPS(sps: ctl1.eval(petrinet: petrinet))
+      return ps.notSPS(sps: ctl1.eval(petrinet: petrinet))
     case .EX(let ctl1):
-      return PS.revert(sps: ctl1.eval(petrinet: petrinet), petrinet: petrinet)
+      return ps.revert(sps: ctl1.eval(petrinet: petrinet))
     case .AX(let ctl1):
-      return PS.revertTilde(sps: ctl1.eval(petrinet: petrinet), petrinet: petrinet)
+      return ps.revertTilde(sps: ctl1.eval(petrinet: petrinet))
     case .EF(let ctl1):
       return ctl1.evalEF(petrinet: petrinet)
     case .AF(let ctl1):
@@ -60,90 +70,96 @@ indirect enum CTL<PlaceType, TransitionType>: Hashable where PlaceType: Place, P
   }
 
   func evalEF(petrinet: PN) -> SPS {
+    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
       resTemp = res
-      res = PS.union(sps1: res, sps2: PS.revert(sps: res, petrinet: petrinet))
-    } while !PS.isIncluded(sps1: res, sps2: resTemp)
+      res = ps.union(sps1: res, sps2: ps.revert(sps: res))
+    } while !ps.isIncluded(sps1: res, sps2: resTemp)
     return res
   }
   
   func evalAF(petrinet: PN) -> SPS {
+    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
       resTemp = res
-      res = PS.union(
+      res = ps.union(
         sps1: res,
-        sps2: PS.intersection(
-          sps1: PS.revert(sps: res, petrinet: petrinet),
-          sps2: PS.revertTilde(sps: res, petrinet: petrinet)
+        sps2: ps.intersection(
+          sps1: ps.revert(sps: res),
+          sps2: ps.revertTilde(sps: res)
         )
       )
-    } while !PS.isIncluded(sps1: res, sps2: resTemp)
+    } while !ps.isIncluded(sps1: res, sps2: resTemp)
     return res
   }
   
   func evalEG(petrinet: PN) -> SPS {
+    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
       resTemp = res
-      res = PS.intersection(
+      res = ps.intersection(
         sps1: res,
-        sps2: PS.union(
-          sps1: PS.revert(sps: res, petrinet: petrinet),
-          sps2: PS.revertTilde(sps: res, petrinet: petrinet)
+        sps2: ps.union(
+          sps1: ps.revert(sps: res),
+          sps2: ps.revertTilde(sps: res)
         )
       )
-    } while !PS.isIncluded(sps1: resTemp, sps2: res)
+    } while !ps.isIncluded(sps1: resTemp, sps2: res)
     return res
   }
   
   func evalAG(petrinet: PN) -> SPS {
+    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
     var res = self.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
       resTemp = res
-      res = PS.intersection(sps1: res, sps2: PS.revertTilde(sps: res, petrinet: petrinet))
-    } while !PS.isIncluded(sps1: resTemp, sps2: res)
+      res = ps.intersection(sps1: res, sps2: ps.revertTilde(sps: res))
+    } while !ps.isIncluded(sps1: resTemp, sps2: res)
     return res
   }
   
-  func evalEU(ctl: CTL<PlaceType, TransitionType>, petrinet: PN) -> SPS {
+  func evalEU(ctl: CTL, petrinet: PN) -> SPS {
+    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
     let phi = self.eval(petrinet: petrinet)
     var res = ctl.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
       resTemp = res
-      res = PS.union(
+      res = ps.union(
         sps1: res,
-        sps2: PS.intersection(
+        sps2: ps.intersection(
           sps1: phi,
-          sps2: PS.revert(sps: res, petrinet: petrinet)
+          sps2: ps.revert(sps: res)
         )
       )
-    } while !PS.isIncluded(sps1: res, sps2: resTemp)
+    } while !ps.isIncluded(sps1: res, sps2: resTemp)
     return res
   }
   
-  func evalAU(ctl: CTL<PlaceType, TransitionType>, petrinet: PN) -> SPS {
+  func evalAU(ctl: CTL, petrinet: PN) -> SPS {
+    let ps = PredicateStructure(ps: .empty, petrinet: petrinet)
     let phi = self.eval(petrinet: petrinet)
     var res = ctl.eval(petrinet: petrinet)
     var resTemp: SPS = []
     repeat {
       resTemp = res
-      res = PS.union(
+      res = ps.union(
         sps1: res,
-        sps2: PS.intersection(
+        sps2: ps.intersection(
           sps1: phi,
-          sps2: PS.intersection(
-            sps1: PS.revert(sps: res, petrinet: petrinet),
-            sps2: PS.revertTilde(sps: res, petrinet: petrinet))
+          sps2: ps.intersection(
+            sps1: ps.revert(sps: res),
+            sps2: ps.revertTilde(sps: res))
         )
       )
-    } while !PS.isIncluded(sps1: res, sps2: resTemp)
+    } while !ps.isIncluded(sps1: res, sps2: resTemp)
     return res
   }
 
