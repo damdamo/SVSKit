@@ -284,7 +284,7 @@ extension PetriNet {
         dicMarking[place] = 0
       }
     }
-    return Marking(storage: dicMarking, petrinet: self)
+    return Marking(dicMarking, net: self)
   }
   
   func outputMarkingForATransition(transition: TransitionType) -> Marking {
@@ -296,7 +296,7 @@ extension PetriNet {
         dicMarking[place] = 0
       }
     }
-    return Marking(storage: dicMarking, petrinet: self)
+    return Marking(dicMarking, net: self)
   }
   
 }

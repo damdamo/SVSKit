@@ -18,7 +18,7 @@ public struct PS {
 //  }
   
   let ps: (inc: Set<Marking>, exc: Set<Marking>)?
-  let petrinet: PetriNet
+  let net: PetriNet
   
   /// Compute the negation of a predicate structure, which is a set of predicate structures
   /// - Returns: Returns the negation of the predicate structure
@@ -27,19 +27,19 @@ public struct PS {
       var sps: SPS = []
       for el in p.inc {
         // .ps([], [el])
-        sps.insert(PS(ps: ([], [el]) , petrinet: petrinet))
+        sps.insert(PS(ps: ([], [el]) , net: net))
       }
       for el in p.exc {
-        sps.insert(PS(ps: ([el], []) , petrinet: petrinet))
+        sps.insert(PS(ps: ([el], []) , net: net))
       }
       return sps
     }
     
     var dicMarking: [PlaceType: Int] = [:]
-    for place in petrinet.places {
+    for place in net.places {
       dicMarking[place] = 0
     }
-    return [PS(ps: ([Marking(storage: dicMarking, petrinet: petrinet)], []), petrinet: petrinet)]
+    return [PS(ps: ([Marking(dicMarking, net: net)], []), net: net)]
   }
   
   /// convMax, for convergence maximal, is a function to compute a singleton containing a marking where each value is the maximum of all places for a given place.
@@ -53,7 +53,7 @@ public struct PS {
     
     var dicMarking: [PlaceType: Int] = [:]
     for marking in markings {
-      for place in petrinet.places {
+      for place in net.places {
         if let m = dicMarking[place] {
           if m < marking[place]! {
             dicMarking[place] = marking[place]
@@ -63,7 +63,7 @@ public struct PS {
         }
       }
     }
-    return [Marking(storage: dicMarking, petrinet: petrinet)]
+    return [Marking(dicMarking, net: net)]
   }
   
   /// convMin, for convergence minimal, is a function to compute a singleton containing a marking where each value is the minimum of all places for a given place.
@@ -77,7 +77,7 @@ public struct PS {
     
     var dicMarking: [PlaceType: Int] = [:]
     for marking in markings {
-      for place in petrinet.places {
+      for place in net.places {
         if let m = dicMarking[place] {
           if marking[place]! < m {
             dicMarking[place] = marking[place]
@@ -87,7 +87,7 @@ public struct PS {
         }
       }
     }
-    return [Marking(storage: dicMarking, petrinet: petrinet)]
+    return [Marking(dicMarking, net: net)]
   }
   
   /// minSet for minimum set is a function that removes all markings that could be redundant, i.e. a marking that is already included in another one.
@@ -129,7 +129,7 @@ public struct PS {
         // In (a,b) ∈ PS, if a marking in b is included in a, it returns empty
         for marking in preCanExclude {
           if marking <= markingInclude {
-            return PS(ps: nil, petrinet: petrinet)
+            return PS(ps: nil, net: net)
           }
         }
         
@@ -138,7 +138,7 @@ public struct PS {
         var markingTemp: Marking
         for marking in preCanExclude {
           markingTemp = marking
-          for place in petrinet.places {
+          for place in net.places {
             if markingTemp[place]! < markingInclude[place]! {
               markingTemp[place] = markingInclude[place]
             }
@@ -146,18 +146,18 @@ public struct PS {
           canExclude.insert(markingTemp)
         }
         if canInclude.isEmpty && canExclude.isEmpty {
-          return PS(ps: nil, petrinet: petrinet)
+          return PS(ps: nil, net: net)
         }
-        return PS(ps: (canInclude, canExclude), petrinet: petrinet)
+        return PS(ps: (canInclude, canExclude), net: net)
       }
-      return PS(ps: ([], preCanExclude), petrinet: petrinet)
+      return PS(ps: ([], preCanExclude), net: net)
     }
     
-    return PS(ps: nil, petrinet: petrinet)
+    return PS(ps: nil, net: net)
   }
   
   /// Compute all the markings represented by the symbolic representation of a predicate structure.
-  /// - Parameter petrinet: The model to use
+  /// - Parameter net: The model to use
   /// - Returns: The set of all possible markings, also known as the state space.
   func underlyingMarkings() -> Set<Marking> {
     let canonizedPS = self.canonised()
@@ -170,9 +170,9 @@ public struct PS {
     // Create a dictionnary where the key is the place and whose values is a set of all possibles integers that can be taken
     if let can = canonizedPS.ps {
       if let am = can.inc.first {
-        for place in petrinet.places {
+        for place in net.places {
           lowerBound = am[place]!
-          upperBound = petrinet.capacity[place]!
+          upperBound = net.capacity[place]!
           for i in lowerBound ..< upperBound+1 {
             if let _ = placeSetValues[place] {
               placeSetValues[place]!.insert(i)
@@ -210,7 +210,7 @@ public struct PS {
     
     // Convert all dictionnaries into markings
     var markingSet: Set<Marking> = Set(res.map({(el: [PlaceType: Int]) -> Marking in
-      Marking(storage: el, petrinet: petrinet)
+      Marking(el, net: net)
     }))
     
     for mb in canonizedPS.ps!.exc {
@@ -231,13 +231,13 @@ public struct PS {
   func encodeMarking(_ marking: Marking) -> PS {
     var bMarkings: Set<Marking> = []
     var markingTemp = marking
-    for place in petrinet.places {
+    for place in net.places {
       markingTemp[place]! += 1
       bMarkings.insert(markingTemp)
       markingTemp = marking
     }
     
-    return PS(ps: ([marking], bMarkings), petrinet: petrinet)
+    return PS(ps: ([marking], bMarkings), net: net)
   }
   
   /// Encode a set of markings into a set of predicate structures.
@@ -274,8 +274,8 @@ extension PS {
   /// - Returns: The result of the union.
   func union(sps1: SPS, sps2: SPS) -> SPS {
     var union = sps1.union(sps2)
-    if union.contains(PS(ps: nil, petrinet: petrinet)) {
-      union.remove(PS(ps: nil, petrinet: petrinet))
+    if union.contains(PS(ps: nil, net: net)) {
+      union.remove(PS(ps: nil, net: net))
     }
     return union
   }
@@ -292,7 +292,7 @@ extension PS {
     for ps1 in sps1 {
       for ps2 in sps2 {
         if let p1 = ps1.ps, let p2 = ps2.ps {
-          let intersectRaw = PS(ps: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), petrinet: petrinet)
+          let intersectRaw = PS(ps: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: net)
           if isCanonical {
             temp = intersectRaw.canonised()
             if let _ = temp.ps {
@@ -338,7 +338,7 @@ extension PS {
   func distribute(sps: SPS) -> SPS {
     if let first = sps.first {
       if let p = ps {
-        let ps1 = PS(ps: p, petrinet: petrinet)
+        let ps1 = PS(ps: p, net: net)
         var rest = sps
         rest.remove(first)
         if rest == [] {
@@ -386,10 +386,10 @@ extension PS {
       var bTemp: Set<Marking> = []
       
       if p.inc == [] {
-        aTemp = [petrinet.inputMarkingForATransition(transition: transition)]
+        aTemp = [net.inputMarkingForATransition(transition: transition)]
       } else {
         for marking in p.inc {
-          if let rev = petrinet.revert(marking: marking, transition: transition) {
+          if let rev = net.revert(marking: marking, transition: transition) {
             aTemp.insert(rev)
           } else {
             return nil
@@ -400,20 +400,20 @@ extension PS {
         bTemp = []
       } else {
         for marking in p.exc {
-          if let rev = petrinet.revert(marking: marking, transition: transition) {
+          if let rev = net.revert(marking: marking, transition: transition) {
             bTemp.insert(rev)
           }
         }
       }
-      return PS(ps: (aTemp, bTemp), petrinet: petrinet)
+      return PS(ps: (aTemp, bTemp), net: net)
     }
     
-    return PS(ps: nil, petrinet: petrinet)
+    return PS(ps: nil, net: net)
   }
   
   func revert() -> SPS {
     var res: SPS = []
-    for transition in petrinet.transitions {
+    for transition in net.transitions {
       if let rev = self.revert(transition: transition) {
         res.insert(rev)
       }
@@ -469,15 +469,15 @@ extension PS {
         if cm <= bm && am <= cm {
           if let dm = d.first {
             if bm <= dm {
-              return [PS(ps: (a,d), petrinet: petrinet)]
+              return [PS(ps: (a,d), net: net)]
             }
-            return [PS(ps: (a,b), petrinet: petrinet)]
+            return [PS(ps: (a,b), net: net)]
           }
-          return [PS(ps: (a,d), petrinet: petrinet)]
+          return [PS(ps: (a,d), net: net)]
         }
       }
       if am <= cm {
-        return [PS(ps: (a,b), petrinet: petrinet)]
+        return [PS(ps: (a,b), net: net)]
       }
     }
     
@@ -501,7 +501,7 @@ extension PS {
     var mergedSPS: SPS = []
     var mergedTemp: SPS = []
     var spsTemp: SPS = []
-    var psFirst: PS = PS(ps: nil, petrinet: petrinet)
+    var psFirst: PS = PS(ps: nil, net: net)
     var psFirstTemp = psFirst
     
     for ps in sps {
@@ -527,20 +527,20 @@ extension PS {
               if d.count <= 1 {
                 if let am = a.first, let bm = b.first, let cm = c.first {
                   if cm <= bm && am <= cm {
-                    mergedTemp = psFirstTemp.merge(PS(ps: (c, d), petrinet: petrinet))
+                    mergedTemp = psFirstTemp.merge(PS(ps: (c, d), net: net))
                     if mergedTemp.count == 1 {
-                      psFirstTemp = psFirstTemp.merge(PS(ps: (c, d), petrinet: petrinet)).first!
-                      spsTemp.remove(PS(ps: (c, d), petrinet: petrinet))
+                      psFirstTemp = psFirstTemp.merge(PS(ps: (c, d), net: net)).first!
+                      spsTemp.remove(PS(ps: (c, d), net: net))
                       spsTemp.insert(psFirstTemp)
                     }
                   }
                 } else {
                   if let am = a.first, let cm = c.first, let dm = d.first {
                     if am <= dm && cm <= am {
-                      mergedTemp = psFirstTemp.merge(PS(ps: (c, d), petrinet: petrinet))
+                      mergedTemp = psFirstTemp.merge(PS(ps: (c, d), net: net))
                       if mergedTemp.count == 1 {
-                        psFirstTemp = psFirstTemp.merge(PS(ps: (c, d), petrinet: petrinet)).first!
-                        spsTemp.remove(PS(ps: (c, d), petrinet: petrinet))
+                        psFirstTemp = psFirstTemp.merge(PS(ps: (c, d), net: net)).first!
+                        spsTemp.remove(PS(ps: (c, d), net: net))
                         spsTemp.insert(psFirstTemp)
                       }
                     }

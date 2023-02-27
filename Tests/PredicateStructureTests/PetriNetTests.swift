@@ -23,13 +23,13 @@ final class PetriNetTests: XCTestCase {
 //      .pre(from: .p1, to: .t1, labeled: 1)
 //    )
     
-    let marking = Marking(storage: ["p0": 0, "p1": 1], petrinet: pn)
+    let marking = Marking(["p0": 0, "p1": 1], net: pn)
     
 //    print(model)
 //    print(marking)
 
-    let revertT0 = Marking(storage: ["p0": 2, "p1": 0], petrinet: pn)
-    let revertT1 = Marking(storage: ["p0": 1, "p1": 2], petrinet: pn)
+    let revertT0 = Marking(["p0": 2, "p1": 0], net: pn)
+    let revertT1 = Marking(["p0": 1, "p1": 2], net: pn)
 ////    print(model.fire(transition: "t1", from: marking))
 //
     XCTAssertEqual(pn.revert(marking: marking, transition: "t0"), revertT0)
@@ -49,10 +49,10 @@ final class PetriNetTests: XCTestCase {
       capacity: ["p0": 2, "p1": 2]
     )
       
-    let marking1 = Marking(storage: ["p0": 1, "p1": 0], petrinet: pn)
-    let marking2 = Marking(storage: ["p0": 1, "p1": 1], petrinet: pn)
+    let marking1 = Marking(["p0": 1, "p1": 0], net: pn)
+    let marking2 = Marking(["p0": 1, "p1": 1], net: pn)
 
-    XCTAssertEqual(pn.fire(transition: "t0", from: marking1), Marking(storage: ["p0": 0, "p1": 2], petrinet: pn))
+    XCTAssertEqual(pn.fire(transition: "t0", from: marking1), Marking(["p0": 0, "p1": 2], net: pn))
     XCTAssertNil(pn.fire(transition: "t0", from: marking2))
   }
   

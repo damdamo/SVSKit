@@ -17,26 +17,26 @@ public struct Marking {
   
   /// The total map that backs this marking.
   var storage: [String: Int]
-  let petrinet: PetriNet
+  let net: PetriNet
 
   /// Initializes a marking.
   ///
   /// - Parameters:
   ///   - mapping: A total map representing this marking.
-  public init(storage: [String: Int], petrinet: PetriNet) {
+  public init(_ storage: [String: Int], net: PetriNet) {
     var places: Set<String> = []
     for (place, _) in storage {
       places.insert(place)
     }
-    precondition(places == petrinet.places, "Places between the marking and the Petri net do not match.")
+    precondition(places == net.places, "Places between the marking and the Petri net do not match.")
     
     self.storage = storage
-    self.petrinet = petrinet
+    self.net = net
   }
 
   /// A collection containing just the places of the marking.
   public var places: Set<String> {
-    return petrinet.places
+    return net.places
   }
   
   public subscript(place: String) -> Int? {
