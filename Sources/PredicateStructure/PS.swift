@@ -516,7 +516,7 @@ extension PS {
       psFirst = spsTemp.first!
       psFirstTemp = psFirst
       spsTemp.remove(psFirst)
-      if let p1 = ps {
+      if let p1 = psFirst.ps {
         let a = p1.inc
         let b = p1.exc
         if b.count <= 1 {
