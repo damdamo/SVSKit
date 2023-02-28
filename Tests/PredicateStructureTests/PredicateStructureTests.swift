@@ -218,38 +218,30 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(ps4.revert(transition: "t1"), ps5)
     print(net.revert(marking: marking2))
   }
-//
-//  func testUnderlyingMarking() {
-//    enum P: Place {
-//      typealias Content = Int
-//
-//      case p0,p1,p2
-//    }
-//
-//    enum T: Transition {
-//      case t0
-//    }
-//
-//    let pn = PetriNet<P, T>(
-//      .pre(from: .p0, to: .t0, labeled: 1),
-//      .post(from: .t0, to: .p1, labeled: 1),
-//      capacity: [.p0: 3, .p1: 3, .p2: 3]
-//    )
-//
-//    var ps: PS<P,T> = .ps([Marking([.p0: 0, .p1: 1, .p2: 0])], [Marking([.p0: 1, .p1: 1, .p2: 0]), Marking([.p0: 0, .p1: 2, .p2: 0]), Marking([.p0: 0, .p1: 1, .p2: 1])])
-//    XCTAssertEqual(ps.underlyingMarkings(petrinet: pn).count, 1)
-//
-//    // 4*4*4
-//    ps = .ps([Marking([.p0: 0, .p1: 0, .p2: 0])], [])
-//    XCTAssertEqual(ps.underlyingMarkings(petrinet: pn).count, 64)
-//
-//    // 4*4*3
-//    ps = .ps([Marking([.p0: 0, .p1: 0, .p2: 1])], [])
-//    XCTAssertEqual(ps.underlyingMarkings(petrinet: pn).count, 48)
-//
-//    ps = .ps([Marking([.p0: 0, .p1: 0, .p2: 2])], [Marking([.p0: 0, .p1: 0, .p2: 1])])
-//    XCTAssertEqual(ps.underlyingMarkings(petrinet: pn).count, 0)
-//  }
 
+  func testUnderlyingMarking() {
+
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1),
+      capacity: ["p0": 3, "p1": 3, "p2": 3]
+    )
+
+    var ps: PS = PS(ps: ([Marking(["p0": 0, "p1": 1, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 1, "p2": 0], net: net), Marking(["p0": 0, "p1": 2, "p2": 0], net: net), Marking(["p0": 0, "p1": 1, "p2": 1], net: net)]), net: net)
+    XCTAssertEqual(ps.underlyingMarkings().count, 1)
+
+    // 4*4*4
+    ps = PS(ps: ([Marking(["p0": 0, "p1": 0, "p2": 0], net: net)], []), net: net)
+    XCTAssertEqual(ps.underlyingMarkings().count, 64)
+
+    // 4*4*3
+    ps = PS(ps: ([Marking(["p0": 0, "p1": 0, "p2": 1], net: net)], []), net: net)
+    XCTAssertEqual(ps.underlyingMarkings().count, 48)
+
+    ps = PS(ps: ([Marking(["p0": 0, "p1": 0, "p2": 2], net: net)], [Marking(["p0": 0, "p1": 0, "p2": 1], net: net)]), net: net)
+    XCTAssertEqual(ps.underlyingMarkings().count, 0)
+  }
   
 }
