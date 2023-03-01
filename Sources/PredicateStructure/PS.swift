@@ -8,7 +8,7 @@
 /// However, for the sake of finite representations and to compute them, we use the Petri net capacity on places to bound them.
 public struct PS {
 
-  public typealias SPS = Set<PS>
+//  public typealias SPS = Set<PS>
   public typealias PlaceType = String
   public typealias TransitionType = String
   
@@ -24,7 +24,7 @@ public struct PS {
   /// - Returns: Returns the negation of the predicate structure
   func not() -> SPS {
     if let p = ps {
-      var sps: SPS = []
+      var sps: Set<PS> = []
       for el in p.inc {
         // .ps([], [el])
         sps.insert(PS(ps: ([], [el]) , net: net))
@@ -32,7 +32,7 @@ public struct PS {
       for el in p.exc {
         sps.insert(PS(ps: ([el], []) , net: net))
       }
-      return sps
+      return SPS(values: sps)
     }
     
     var dicMarking: [PlaceType: Int] = [:]
@@ -243,11 +243,11 @@ public struct PS {
   /// - Parameter markingSet: The marking set to encode
   /// - Returns: A set of predicate structures that encodes the set of markings
   func encodeMarkingSet(_ markingSet: Set<Marking>) -> SPS {
-    var sps: SPS = []
+    var sps: Set<PS> = []
     for marking in markingSet {
       sps.insert(encodeMarking(marking))
     }
-    return simplified(sps: sps)
+    return SPS(values: sps).simplified()
   }
   
   /// Product between a predicate structure and a set of predicate structures: ps * {ps1, ..., psn} = (ps ∩ ps1) ∪ ... ∪ (ps ∩ psn)
@@ -258,12 +258,12 @@ public struct PS {
     if let first = sps.first {
       if let p = ps {
         let ps1 = PS(ps: p, net: net)
-        var rest = sps
+        var rest = sps.values
         rest.remove(first)
         if rest == [] {
-          return intersection(sps1: [ps1], sps2: [first])
+          return SPS(values: [ps1]).intersection([first])
         }
-        return intersection(sps1: [ps1], sps2: [first]).union(ps1.distribute(sps: rest))
+        return SPS(values: [ps1]).intersection([first]).union(ps1.distribute(sps: SPS(values: rest)))
       }
       return []
     }
@@ -319,121 +319,8 @@ public struct PS {
     
     return [self, ps]
   }
-
-}
-
-extension PS: Hashable {
-  public static func == (lhs: PS, rhs: PS) -> Bool {
-    return lhs.ps?.inc == rhs.ps?.inc && lhs.ps?.exc == rhs.ps?.exc
-  }
-
-  public func hash(into hasher: inout Hasher) {
-    hasher.combine(ps?.inc)
-    hasher.combine(ps?.exc)
-  }
-}
-
-// Functions that takes SPS as input
-extension PS {
   
-  /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
-  /// - Parameters:
-  ///   - s1: The first set of predicate structures
-  ///   - s2: The first set of predicate structures
-  /// - Returns: The result of the union.
-  func union(sps1: SPS, sps2: SPS) -> SPS {
-    var union = sps1.union(sps2)
-    if union.contains(PS(ps: nil, net: net)) {
-      union.remove(PS(ps: nil, net: net))
-    }
-    return union
-  }
-  
-  /// Apply the intersection between two sets of predicate structures.
-  /// - Parameters:
-  ///   - s1: The first set of predicate structures
-  ///   - s2: The second set of predicate structures
-  ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
-  /// - Returns: The result of the intersection.
-  func intersection(sps1: SPS, sps2: SPS, isCanonical: Bool = true) -> SPS {
-    var res: SPS = []
-    var temp: PS
-    for ps1 in sps1 {
-      for ps2 in sps2 {
-        if let p1 = ps1.ps, let p2 = ps2.ps {
-          let intersectRaw = PS(ps: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: net)
-          if isCanonical {
-            temp = intersectRaw.canonised()
-            if let _ = temp.ps {
-              res.insert(temp)
-            }
-          } else {
-            res.insert(intersectRaw)
-          }
-        }
-      }
-    }
-
-    return res
-  }
-  
-  
-  /// Compute the negation of a set of predicate structures. This is the result of a combination of all elements inside a predicate structure with each element of the other predicate structures. E.g.: notSPS({([q1], [q2]), ([q3], [q4]), ([q5], [q6])}) = {([],[q1,q3,q5]), ([q6],[q1,q3]), ([q4],[q1,q5]), ([q4,q6],[q1]), ([q2],[q3,q5]), ([q2, q6],[q3]), ([q2, q4],[q5]), ([q2, q4,q6],[])}
-  /// - Parameter sps: The set of predicate structures
-  /// - Returns: The negation of the set of predicate structures
-  func not(sps: SPS) -> SPS {
-    if sps.isEmpty {
-      return []
-    }
-    var res: SPS = []
-    if let first = sps.first {
-      let negSPS = first.not()
-      var spsWithoutFirst = sps
-      spsWithoutFirst.remove(first)
-      let rTemp = not(sps: spsWithoutFirst)
-      for ps in negSPS {
-        res = union(sps1: res, sps2: ps.distribute(sps: rTemp))
-      }
-    }
-    return res
-  }
-  
-  
-  /// Is the left set of predicate structures included in the right one ?
-  /// - Parameters:
-  ///   - sps1: The left set of predicate structures
-  ///   - sps2: The right set of predicate structures
-  /// - Returns: True if it is included, false otherwise
-  func isIncluded(sps1: SPS, sps2: SPS) -> Bool {
-    if sps2 == [] {
-      if sps1 == [] {
-        return true
-      }
-      return false
-    }
-    return intersection(sps1: sps1, sps2: not(sps: sps2)) == []
-  }
-  
-  /// Are two sets of predicate structures equivalent ?
-  /// - Parameters:
-  ///   - sps1: First set of predicate structures
-  ///   - sps2: Second set of predicate structures
-  /// - Returns: True is they are equivalentm false otherwise
-  func isEquiv(sps1: SPS, sps2: SPS) -> Bool {
-    return isIncluded(sps1: sps1, sps2: sps2) && isIncluded(sps1: sps2, sps2: sps1)
-  }
-  
-  
-  /// Is a predicate structutre included in a sps ?
-  /// - Parameters:
-  ///   - ps: The predicate structure
-  ///   - sps: The set of predicate structures
-  /// - Returns: A boolean that returns true if ps is included, false otherwise
-  func isIn(ps: PS, sps: SPS) -> Bool {
-    return isIncluded(sps1: [ps], sps2: sps)
-  }
-  
-  func revert(transition: TransitionType) -> PS? {
+  func revert(transition: String) -> PS? {
     if let p = ps {
       var aTemp: Set<Marking> = []
       var bTemp: Set<Marking> = []
@@ -465,106 +352,26 @@ extension PS {
   }
   
   func revert() -> SPS {
-    var res: SPS = []
+    var res: Set<PS> = []
     for transition in net.transitions {
       if let rev = self.revert(transition: transition) {
         res.insert(rev)
       }
     }
-    return res
+    return SPS(values: res)
   }
-  
-  func revert(sps: SPS) -> SPS {
-    var res: SPS = []
-    for ps in sps {
-      res = res.union(ps.revert())
-    }
-    return res
+
+}
+
+extension PS: Hashable {
+  public static func == (lhs: PS, rhs: PS) -> Bool {
+    return lhs.ps?.inc == rhs.ps?.inc && lhs.ps?.exc == rhs.ps?.exc
   }
-  
-  func revertTilde(sps: SPS) -> SPS {
-    return not(sps: revert(sps: not(sps: sps)))
+
+  public func hash(into hasher: inout Hasher) {
+    hasher.combine(ps?.inc)
+    hasher.combine(ps?.exc)
   }
-  
-  
-  /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:
-  /// ps1 = ([(p0: 0, p1: 2, p2: 1)], [(p0: 1, p1: 2, p2: 1)])
-  /// ps2 = ([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)])
-  /// ps3 = ([(p0: 1, p1: 2, p2: 1)], [])
-  /// ps1 and ps2 can be both merged with ps3, however, once this merging is done, it is not possible do it with the resting predicate structure.
-  /// Thus, both choices are correct in their final results:
-  /// {([(p0: 0, p1: 2, p2: 1)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 1, p1: 2, p2: 0)], [])}
-  /// or
-  /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
-  /// - Parameter sps: The set of predicate structures to simplify
-  /// - Returns: The simplified version of the sps.
-  func simplified(sps: SPS) -> SPS {
-    var mergedSPS: SPS = []
-    var mergedTemp: SPS = []
-    var spsTemp: SPS = []
-    var psFirst: PS = PS(ps: nil, net: net)
-    var psFirstTemp = psFirst
-    
-    for ps in sps {
-      spsTemp.insert(ps.canonised())
-    }
-    
-    if spsTemp == [] {
-      return []
-    }
-        
-    while !spsTemp.isEmpty {
-      psFirst = spsTemp.first!
-      psFirstTemp = psFirst
-      spsTemp.remove(psFirst)
-      if let p1 = psFirst.ps {
-        let a = p1.inc
-        let b = p1.exc
-        if b.count <= 1 {
-          for ps in spsTemp {
-            if let p2 = ps.ps {
-              let c = p2.inc
-              let d = p2.exc
-              if d.count <= 1 {
-                if let am = a.first, let bm = b.first, let cm = c.first {
-                  if cm <= bm && am <= cm {
-                    mergedTemp = psFirstTemp.merge(PS(ps: (c, d), net: net))
-                    if mergedTemp.count == 1 {
-                      psFirstTemp = psFirstTemp.merge(PS(ps: (c, d), net: net)).first!
-                      spsTemp.remove(PS(ps: (c, d), net: net))
-                      spsTemp.insert(psFirstTemp)
-                    }
-                  }
-                } else {
-                  if let am = a.first, let cm = c.first, let dm = d.first {
-                    if am <= dm && cm <= am {
-                      mergedTemp = psFirstTemp.merge(PS(ps: (c, d), net: net))
-                      if mergedTemp.count == 1 {
-                        psFirstTemp = psFirstTemp.merge(PS(ps: (c, d), net: net)).first!
-                        spsTemp.remove(PS(ps: (c, d), net: net))
-                        spsTemp.insert(psFirstTemp)
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-      mergedSPS.insert(psFirstTemp)
-    }
-    
-    var reducedSPS: SPS = []
-    
-    for ps in mergedSPS {
-      if !isIncluded(sps1: [ps], sps2: mergedSPS.filter({!($0 == ps)})) {
-        reducedSPS.insert(ps)
-      }
-    }
-    return reducedSPS
-  }
-  
 }
 
 extension PS: CustomStringConvertible {

@@ -66,7 +66,6 @@ final class PredicateStructureTests: XCTestCase {
   }
   
   func testSPS1() {
-    typealias SPS = Set<PS>
     
     let net = PetriNet(
       places: ["p1", "p2", "p3"],
@@ -82,8 +81,8 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS(ps: ([marking1], [marking2]), net: net)
     let ps2 = PS(ps: ([marking3], [marking4]), net: net)
 
-    XCTAssertEqual(ps1.union(sps1: [ps1], sps2: [PS(ps: nil, net: net)]), [ps1])
-    XCTAssertEqual(ps1.intersection(sps1: [ps1], sps2: [ps2] , isCanonical: false), [PS(ps: ([marking1, marking3], [marking2, marking4]), net: net)])
+    XCTAssertEqual(SPS(values: [ps1]).union([PS(ps: nil, net: net)]), [ps1])
+    XCTAssertEqual(SPS(values: [ps1]).intersection([ps2], isCanonical: false), [PS(ps: ([marking1, marking3], [marking2, marking4]), net: net)])
 
     let ps3 = PS(ps: ([marking2], [marking3]), net: net)
 
@@ -91,14 +90,12 @@ final class PredicateStructureTests: XCTestCase {
       PS(ps: ([marking1, marking2], [marking2, marking3]), net: net),
       PS(ps: ([marking3, marking2], [marking3, marking4]), net: net),
     ]
-
-    XCTAssertEqual(ps1.intersection(sps1: [ps1,ps2], sps2: [ps3], isCanonical: false), expectedSPS)
+    
+    XCTAssertEqual(SPS(values: [ps1,ps2]).intersection([ps3], isCanonical: false), expectedSPS)
   }
 
   func testSPS2() {
-    
-    typealias SPS = Set<PS>
-    
+
     let net = PetriNet(
       places: ["p1", "p2"],
       transitions: ["t1"],
@@ -112,14 +109,11 @@ final class PredicateStructureTests: XCTestCase {
     let sps: SPS = [PS(ps: ([marking1], [marking2]), net: net), PS(ps: ([marking3], [marking4]), net: net)]
     let expectedSPS: SPS = [PS(ps: ([], [marking1, marking3]), net: net), PS(ps: ([marking4], []), net: net)]
 
-    let emptyPS = PS(ps: nil, net: net)
-    XCTAssertEqual(emptyPS.not(sps: sps), expectedSPS)
+    XCTAssertEqual(sps.not(), expectedSPS)
   }
 
   func testSPSObservator() {
-    
-    typealias SPS = Set<PS>
-    
+
     let net = PetriNet(
       places: ["p1", "p2"],
       transitions: ["t1"],
@@ -132,31 +126,30 @@ final class PredicateStructureTests: XCTestCase {
     var marking4 = Marking(["p1": 11, "p2": 10], net: net)
     var sps1: SPS = [PS(ps: ([marking1], [marking2]), net: net)]
     var sps2: SPS = [PS(ps: ([marking3], [marking4]), net: net)]
-    
-    let emptyPS = PS(ps: nil, net: net)
+
     // {({(4,5)}, {(9,10)})} ⊆ {({(3,5)}, {(11,10)})}
-    XCTAssertTrue(emptyPS.isIncluded(sps1: sps1, sps2: sps2))
+    XCTAssertTrue(sps1.isIncluded(sps2))
 
     marking4 = Marking(["p1": 11, "p2": 9], net: net)
     sps2 = [PS(ps: ([marking3], [marking4]), net: net)]
     // {({(4,5)}, {(9,10)})} ⊆ {({(3,5)}, {(11,9)})}
-    XCTAssertFalse(emptyPS.isIncluded(sps1: sps1, sps2: sps2))
+    XCTAssertFalse(sps1.isIncluded(sps2))
 
     marking4 = Marking(["p1": 7, "p2": 7], net: net)
     let marking5 = Marking(["p1": 6, "p2": 4], net: net)
     let marking6 = Marking(["p1": 14, "p2": 11], net: net)
     sps2 = [PS(ps: ([marking3], [marking4]), net: net), PS(ps: ([marking5], [marking6]), net: net)]
     // {({(4,5)}, {(9,10)})} ⊆ {({(3,5)}, {(7,7)}), ({(6,4)}, {(14,11)})}
-    XCTAssertTrue(emptyPS.isIncluded(sps1: sps1, sps2: sps2))
+    XCTAssertTrue(sps1.isIncluded(sps2))
     // ({(4,5)}, {(9,10)}) ∈ {({(3,5)}, {(7,7)}), ({(6,4)}, {(14,11)})}
-    XCTAssertTrue(emptyPS.isIn(ps: PS(ps: ([marking1], [marking2]), net: net), sps: sps2))
+    XCTAssertTrue(sps2.contains(ps: PS(ps: ([marking1], [marking2]), net: net)))
 
     // ∅ ⊆ {({(4,5)}, {(9,10)})}
-    XCTAssertTrue(emptyPS.isIncluded(sps1: [], sps2: sps1))
+    XCTAssertTrue(SPS(values: []).isIncluded(sps1))
     // {({(4,5)}, {(9,10)})} ⊆ ∅
-    XCTAssertFalse(emptyPS.isIncluded(sps1: sps1, sps2: []))
+    XCTAssertFalse(sps1.isIncluded([]))
 
-    XCTAssertTrue(emptyPS.isEquiv(sps1: sps1, sps2: sps1))
+    XCTAssertTrue(sps1.isEquiv(sps1))
 
     marking1 = Marking(["p1": 1, "p2": 2], net: net)
     marking2 = Marking(["p1": 5, "p2": 8], net: net)
@@ -167,25 +160,25 @@ final class PredicateStructureTests: XCTestCase {
     sps2 = [PS(ps: ([marking1], [marking4]), net: net), PS(ps: ([marking3], [marking2]), net: net)]
 
     // {({(1,2)}, {(5,8)}), ({(3,0)}, {(3,2)})} ≈ {({(1,2)}, {(3,2)}), ({(3,0)}, {(5,8)})}
-    XCTAssertTrue(emptyPS.isEquiv(sps1: sps1, sps2: sps2))
+    XCTAssertTrue(sps1.isEquiv(sps2))
 
     let ps1 = PS(ps: ([Marking(["p1": 1, "p2": 4], net: net)], [Marking(["p1": 5, "p2": 5], net: net)]), net: net)
     let ps2 = PS(ps: ([Marking(["p1": 5, "p2": 5], net: net)], [Marking(["p1": 10, "p2": 7], net: net)]), net: net)
     let ps3 = PS(ps: ([Marking(["p1": 1, "p2": 4], net: net)], [Marking(["p1": 10, "p2": 7], net: net)]), net: net)
 
-    XCTAssertTrue(emptyPS.isEquiv(sps1: [ps1,ps2], sps2: [ps3]))
+    XCTAssertTrue(SPS(values: [ps1, ps2]).isEquiv([ps3]))
 
     let ps4 = PS(ps: ([Marking(["p1": 2, "p2": 3], net: net)], [Marking(["p1": 8, "p2": 9], net: net)]), net: net)
     let ps5 = PS(ps: ([Marking(["p1": 7, "p2": 8], net: net)], [Marking(["p1": 10, "p2": 10], net: net)]), net: net)
     let ps6 = PS(ps: ([Marking(["p1": 2, "p2": 3], net: net)], [Marking(["p1": 10, "p2": 10], net: net)]), net: net)
-    XCTAssertTrue(emptyPS.isEquiv(sps1: [ps4,ps5], sps2: [ps6]))
+    XCTAssertTrue(SPS(values: [ps4, ps5]).isEquiv([ps6]))
 
     let ps7 = PS(ps: ([Marking(["p1": 4, "p2": 1], net: net)], [Marking(["p1": 4, "p2": 4], net: net)]), net: net)
     let ps8 = PS(ps: ([Marking(["p1": 1, "p2": 4], net: net)], []), net: net)
     let ps9 = PS(ps: ([Marking(["p1": 4, "p2": 1], net: net)], []), net: net)
     let ps10 = PS(ps: ([Marking(["p1": 1, "p2": 4], net: net)], [Marking(["p1": 4, "p2": 4], net: net)]), net: net)
 
-    XCTAssertTrue(emptyPS.isEquiv(sps1: [ps7,ps8], sps2: [ps9,ps10]))
+    XCTAssertTrue(SPS(values: [ps7, ps8]).isEquiv([ps9,ps10]))
   }
 
   func testRevertPS() {
@@ -206,7 +199,7 @@ final class PredicateStructureTests: XCTestCase {
     let revertT1 = Marking(["p0": 1, "p1": 2], net: net)
     let revertT2 = Marking(["p0": 2, "p1": 2], net: net)
 //    print(model.fire(transition: .t1, from: marking1))
-    
+
     let ps1 = PS(ps: ([marking1], []), net: net)
     let ps2 = PS(ps: ([revertT0], []), net: net)
     let ps3 = PS(ps: ([revertT1], []), net: net)

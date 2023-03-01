@@ -4,7 +4,6 @@
 ///   TODO: Replace all 'let ps = PredicateStructure(ps: .empty, net: net)' by a true structure for SPS to avoid this horrible trick
 indirect enum CTL {
   
-  typealias SPS = Set<PS>
   typealias PN = PetriNet
   typealias PlaceType = String
   typealias TransitionType = String
@@ -27,7 +26,6 @@ indirect enum CTL {
   case AU(CTL, CTL)
   
   func eval(net: PN) -> SPS {
-    let ps = PS(ps: nil, net: net)
     switch self {
     case .ap(let t):
       return [
@@ -46,13 +44,13 @@ indirect enum CTL {
         PS(ps: ([Marking(dicEmptyMarking, net: net)], []), net: net)
       ]
     case .and(let ctl1, let ctl2):
-      return ps.intersection(sps1: ctl1.eval(net: net), sps2: ctl2.eval(net: net))
+      return ctl1.eval(net: net).intersection(ctl2.eval(net: net))
     case .not(let ctl1):
-      return ps.not(sps: ctl1.eval(net: net))
+      return ctl1.eval(net: net).not()
     case .EX(let ctl1):
-      return ps.revert(sps: ctl1.eval(net: net))
+      return ctl1.eval(net: net).revert()
     case .AX(let ctl1):
-      return ps.revertTilde(sps: ctl1.eval(net: net))
+      return ctl1.eval(net: net).revertTilde()
     case .EF(let ctl1):
       return ctl1.evalEF(net: net)
     case .AF(let ctl1):
@@ -70,96 +68,95 @@ indirect enum CTL {
   }
 
   func evalEF(net: PN) -> SPS {
-    let ps = PS(ps: nil, net: net)
     var res = self.eval(net: net)
-    var resTemp: SPS = []
+    var resTemp: SPS
     repeat {
       resTemp = res
-      res = ps.union(sps1: res, sps2: ps.revert(sps: res))
-    } while !ps.isIncluded(sps1: res, sps2: resTemp)
+      res = res.union(res.revert())
+    } while !res.isIncluded(resTemp)
     return res
   }
   
   func evalAF(net: PN) -> SPS {
-    let ps = PS(ps: nil, net: net)
     var res = self.eval(net: net)
-    var resTemp: SPS = []
+    var resTemp: SPS
     repeat {
       resTemp = res
-      res = ps.union(
-        sps1: res,
-        sps2: ps.intersection(
-          sps1: ps.revert(sps: res),
-          sps2: ps.revertTilde(sps: res)
-        )
-      )
-    } while !ps.isIncluded(sps1: res, sps2: resTemp)
+      res = res.union(res.revert().intersection(res.revertTilde()))
+//      res = ps.union(
+//        sps1: res,
+//        sps2: ps.intersection(
+//          sps1: ps.revert(sps: res),
+//          sps2: ps.revertTilde(sps: res)
+//        )
+//      )
+    } while !res.isIncluded(resTemp)
     return res
   }
   
   func evalEG(net: PN) -> SPS {
-    let ps = PS(ps: nil, net: net)
     var res = self.eval(net: net)
-    var resTemp: SPS = []
+    var resTemp: SPS
     repeat {
       resTemp = res
-      res = ps.intersection(
-        sps1: res,
-        sps2: ps.union(
-          sps1: ps.revert(sps: res),
-          sps2: ps.revertTilde(sps: res)
-        )
-      )
-    } while !ps.isIncluded(sps1: resTemp, sps2: res)
+      res = res.intersection(res.revert().union(res.revertTilde()))
+//      res = ps.intersection(
+//        sps1: res,
+//        sps2: ps.union(
+//          sps1: ps.revert(sps: res),
+//          sps2: ps.revertTilde(sps: res)
+//        )
+//      )
+    } while !resTemp.isIncluded(res)
     return res
   }
   
   func evalAG(net: PN) -> SPS {
-    let ps = PS(ps: nil, net: net)
     var res = self.eval(net: net)
-    var resTemp: SPS = []
+    var resTemp: SPS
     repeat {
       resTemp = res
-      res = ps.intersection(sps1: res, sps2: ps.revertTilde(sps: res))
-    } while !ps.isIncluded(sps1: resTemp, sps2: res)
+      res = res.intersection(res.revertTilde())
+//      res = ps.intersection(sps1: res, sps2: ps.revertTilde(sps: res))
+    } while !resTemp.isIncluded(res)
     return res
   }
   
   func evalEU(ctl: CTL, net: PN) -> SPS {
-    let ps = PS(ps: nil, net: net)
     let phi = self.eval(net: net)
     var res = ctl.eval(net: net)
-    var resTemp: SPS = []
+    var resTemp: SPS
     repeat {
       resTemp = res
-      res = ps.union(
-        sps1: res,
-        sps2: ps.intersection(
-          sps1: phi,
-          sps2: ps.revert(sps: res)
-        )
-      )
-    } while !ps.isIncluded(sps1: res, sps2: resTemp)
+      res = res.union(phi.intersection(res.revert()))
+//      res = ps.union(
+//        sps1: res,
+//        sps2: ps.intersection(
+//          sps1: phi,
+//          sps2: ps.revert(sps: res)
+//        )
+//      )
+    } while !res.isIncluded(resTemp)
     return res
   }
   
   func evalAU(ctl: CTL, net: PN) -> SPS {
-    let ps = PS(ps: nil, net: net)
     let phi = self.eval(net: net)
     var res = ctl.eval(net: net)
-    var resTemp: SPS = []
+    var resTemp: SPS
     repeat {
       resTemp = res
-      res = ps.union(
-        sps1: res,
-        sps2: ps.intersection(
-          sps1: phi,
-          sps2: ps.intersection(
-            sps1: ps.revert(sps: res),
-            sps2: ps.revertTilde(sps: res))
-        )
-      )
-    } while !ps.isIncluded(sps1: res, sps2: resTemp)
+      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde())))
+//      res = ps.union(
+//        sps1: res,
+//        sps2: ps.intersection(
+//          sps1: phi,
+//          sps2: ps.intersection(
+//            sps1: ps.revert(sps: res),
+//            sps2: ps.revertTilde(sps: res))
+//        )
+//      )
+    } while !res.isIncluded(resTemp)
     return res
   }
 

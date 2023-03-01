@@ -30,13 +30,14 @@ final class CTLTests: XCTestCase {
     let ps4 = PS(ps: ([Marking(["p0": 0, "p1": 2, "p2": 1], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
     let ps5 = PS(ps: ([Marking(["p0": 1, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
     
-    let expectedSPS: Set<PS> = [ps1, ps2, ps3, ps4, ps5]
+    let expectedSPS: SPS = [ps1, ps2, ps3, ps4, ps5]
     
     let ctlFormula: CTL = .AX(.ap("t2"))
     let sps = ctlFormula.eval(net: net)
-    let simpliedSPS = ps1.simplified(sps: sps)
+    let simpliedSPS = sps.simplified()
 
-    XCTAssertTrue(ps1.isEquiv(sps1: simpliedSPS, sps2: expectedSPS))
+    XCTAssertTrue(simpliedSPS.isEquiv(expectedSPS))
+    
   }
 
   
@@ -66,13 +67,13 @@ final class CTLTests: XCTestCase {
     let ps4 = PS(ps: ([Marking(["p1": 1, "p2": 1, "p3": 2, "p4": 0, "p5": 0], net: net)], []), net: net)
     let ps5 = PS(ps: ([Marking(["p1": 0, "p2": 1, "p3": 0, "p4": 2, "p5": 0], net: net)], []), net: net)
     let ps6 = PS(ps: ([Marking(["p1": 1, "p2": 0, "p3": 0, "p4": 0, "p5": 2], net: net)], []), net: net)
-    let expectedSPS: Set<PS> = [ps1, ps2, ps3, ps4, ps5, ps6]
+    let expectedSPS: SPS = [ps1, ps2, ps3, ps4, ps5, ps6]
 
     // Compute all markings that breaks the mutual exclusion
     let ctlFormula: CTL = .EF(.and(.ap("t4"), .ap("t5")))
     let sps = ctlFormula.eval(net: net)
 
-    XCTAssertEqual(expectedSPS, ps1.simplified(sps: sps))
+    XCTAssertEqual(expectedSPS, sps.simplified())
   }
 
   // No answers for EG/AG
@@ -103,11 +104,11 @@ final class CTLTests: XCTestCase {
     let sps3 = ctlFormula3.eval(net: net)
 
     let ps = PS(ps: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
-    let expectedRes: Set<PS> = [ps]
+    let expectedRes: SPS = [ps]
     
-    let simpliedSPS1 = ps.simplified(sps: sps1)
-    let simpliedSPS2 = ps.simplified(sps: sps2)
-    let simpliedSPS3 = ps.simplified(sps: sps3)
+    let simpliedSPS1 = sps1.simplified()
+    let simpliedSPS2 = sps2.simplified()
+    let simpliedSPS3 = sps3.simplified()
 
     XCTAssertEqual(simpliedSPS1, expectedRes)
     XCTAssertEqual(simpliedSPS2, [])
@@ -141,11 +142,11 @@ final class CTLTests: XCTestCase {
     let sps3 = ctlFormula3.eval(net: net)
 
     let ps: PS = PS(ps: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
-    let expectedRes: Set<PS> = [ps]
+    let expectedRes: SPS = [ps]
 
-    let simpliedSPS1 = ps.simplified(sps: sps1)
-    let simpliedSPS2 = ps.simplified(sps: sps2)
-    let simpliedSPS3 = ps.simplified(sps: sps3)
+    let simpliedSPS1 = sps1.simplified()
+    let simpliedSPS2 = sps2.simplified()
+    let simpliedSPS3 = sps3.simplified()
     XCTAssertEqual(simpliedSPS1, expectedRes)
     XCTAssertEqual(simpliedSPS2, expectedRes)
     XCTAssertEqual(simpliedSPS3, expectedRes)
@@ -184,9 +185,9 @@ final class CTLTests: XCTestCase {
     let ps2 = PS(ps: ([Marking(["p0": 2, "p1": 0, "p2": 0], net: net)], [Marking(["p0": 4, "p1": 0, "p2": 0], net: net)]), net: net)
     let ps3 = PS(ps: ([], [Marking(["p0": 2, "p1": 0, "p2": 0], net: net)]), net: net)
 
-    let simpliedSPS1 = ps1.simplified(sps: sps1)
-    let simpliedSPS2 = ps1.simplified(sps: sps2)
-    let simpliedSPS3 = ps1.simplified(sps: sps3)
+    let simpliedSPS1 = sps1.simplified()
+    let simpliedSPS2 = sps2.simplified()
+    let simpliedSPS3 = sps3.simplified()
     
     XCTAssertEqual(simpliedSPS1, [ps2,ps3])
     XCTAssertEqual(simpliedSPS2, [ps1])
