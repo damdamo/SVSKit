@@ -371,7 +371,7 @@ extension PS: Hashable {
 extension PS: CustomStringConvertible {
   public var description: String {
     if let p = ps {
-      return "(\(p.inc), \(p.exc)) \n"
+      return "(\(p.inc), \(p.exc))"
     }
     return "∅"
   }

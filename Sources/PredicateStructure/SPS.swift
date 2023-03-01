@@ -257,3 +257,16 @@ extension SPS: ExpressibleByArrayLiteral {
     self.values = Set(elements)
   }
 }
+
+extension SPS: CustomStringConvertible {
+  var description: String {
+    var res: String = "{\n"
+    for ps in values {
+      res.append(" \(ps),\n")
+    }
+    res.removeLast(2)
+    res.append("\n}")
+    return res
+  }
+  
+}
