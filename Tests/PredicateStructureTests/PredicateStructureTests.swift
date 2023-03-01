@@ -267,6 +267,9 @@ final class PredicateStructureTests: XCTestCase {
     let ps6 = PS(value: ([marking5], [marking4]), net: net)
     let ps7 = PS(value: ([marking1], [marking4]), net: net)
     XCTAssertEqual(ps6.merge(ps1), [ps7])
+    
+    let ps8 = PS(value: ([marking3], [marking2]), net: net)
+    XCTAssertEqual(SPS(values: [ps8]).simplified(), [])
   }
   
 }

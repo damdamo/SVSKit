@@ -143,7 +143,10 @@ struct SPS {
     var psFirstTemp: PS
     
     for ps in self {
-      setTemp.insert(ps.canonised())
+      let can = ps.canonised()
+      if let _ = can.value {
+        setTemp.insert(can)
+      }
     }
     
     if setTemp == [] {
@@ -163,7 +166,6 @@ struct SPS {
             print("Merge result: \(spsTemp)")
             if spsTemp.count == 1 {
               psFirstTemp = spsTemp.first!
-//              mergedSet.insert(psFirstTemp)
               setTemp.remove(ps)
               setTemp.insert(psFirstTemp)
               break
