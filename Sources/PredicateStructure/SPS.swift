@@ -155,41 +155,25 @@ struct SPS {
       psFirstTemp = psFirst
       setTemp.remove(psFirst)
       if let p1 = psFirst.value {
-        let a = p1.inc
-        let b = p1.exc
-        if b.count <= 1 {
+        if p1.exc.count <= 1 {
           for ps in setTemp {
-            if let p2 = ps.value {
-              let c = p2.inc
-              let d = p2.exc
-              if d.count <= 1 {
-                if let am = a.first, let bm = b.first, let cm = c.first {
-                  if cm <= bm && am <= cm {
-                    spsTemp = psFirstTemp.merge(PS(value: (c, d), net: psFirst.net))
-                    if spsTemp.count == 1 {
-                      psFirstTemp = spsTemp.first!
-                      setTemp.remove(PS(value: (c, d), net: psFirst.net))
-                      setTemp.insert(psFirstTemp)
-                    }
-                  }
-                } else {
-                  if let am = a.first, let cm = c.first, let dm = d.first {
-                    if am <= dm && cm <= am {
-                      spsTemp = psFirstTemp.merge(PS(value: (c, d), net: psFirst.net))
-                      if spsTemp.count == 1 {
-                        psFirstTemp = spsTemp.first!
-                        setTemp.remove(PS(value: (c, d), net: psFirst.net))
-                        setTemp.insert(psFirstTemp)
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            spsTemp = psFirst.merge(ps)
+            print("psFirst: \(psFirst)")
+            print("ps: \(ps)")
+            print("Merge result: \(spsTemp)")
+            if spsTemp.count == 1 {
+              psFirstTemp = spsTemp.first!
+//              mergedSet.insert(psFirstTemp)
+              setTemp.remove(ps)
+              setTemp.insert(psFirstTemp)
+              break
+            } 
           }
         }
       }
-      mergedSet.insert(psFirstTemp)
+      if psFirst == psFirstTemp {
+        mergedSet.insert(psFirstTemp)
+      }
     }
     
     var reducedSPS: Set<PS> = []
@@ -260,6 +244,9 @@ extension SPS: ExpressibleByArrayLiteral {
 
 extension SPS: CustomStringConvertible {
   var description: String {
+    if values.isEmpty {
+      return "{}"
+    }
     var res: String = "{\n"
     for ps in values {
       res.append(" \(ps),\n")

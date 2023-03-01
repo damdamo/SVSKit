@@ -305,9 +305,17 @@ public struct PS {
           }
           return [PS(value: (a,d), net: net)]
         }
-      }
-      if am <= cm {
-        return [PS(value: (a,b), net: net)]
+      } else {
+        if am <= cm {
+          if let dm = d.first {
+            if am <= dm {
+              return [PS(value: (a,b), net: net)]
+            }
+            return [self, ps]
+          }
+          return [PS(value: (a,b), net: net)]
+        }
+        return [self, ps]
       }
     }
     

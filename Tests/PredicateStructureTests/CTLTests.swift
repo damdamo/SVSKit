@@ -24,11 +24,11 @@ final class CTLTests: XCTestCase {
       .pre(from: "p1", to: "t2", labeled: 1)
     )
     
-    let ps1 = PS(ps: ([Marking(["p0": 1, "p1": 2, "p2": 1], net: net)], []), net: net)
-    let ps2 = PS(ps: ([], [Marking(["p0": 1, "p1": 0, "p2": 0], net: net), Marking(["p0": 0, "p1": 1, "p2": 0], net: net), Marking(["p0": 0, "p1": 0, "p2": 1], net: net)]), net: net)
-    let ps3 = PS(ps: ([Marking(["p0": 0, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 0], net: net), Marking(["p0": 0, "p1": 2, "p2": 1], net: net)]), net: net)
-    let ps4 = PS(ps: ([Marking(["p0": 0, "p1": 2, "p2": 1], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
-    let ps5 = PS(ps: ([Marking(["p0": 1, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
+    let ps1 = PS(value: ([Marking(["p0": 1, "p1": 2, "p2": 1], net: net)], []), net: net)
+    let ps2 = PS(value: ([], [Marking(["p0": 1, "p1": 0, "p2": 0], net: net), Marking(["p0": 0, "p1": 1, "p2": 0], net: net), Marking(["p0": 0, "p1": 0, "p2": 1], net: net)]), net: net)
+    let ps3 = PS(value: ([Marking(["p0": 0, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 0], net: net), Marking(["p0": 0, "p1": 2, "p2": 1], net: net)]), net: net)
+    let ps4 = PS(value: ([Marking(["p0": 0, "p1": 2, "p2": 1], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
+    let ps5 = PS(value: ([Marking(["p0": 1, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
     
     let expectedSPS: SPS = [ps1, ps2, ps3, ps4, ps5]
     
@@ -61,12 +61,12 @@ final class CTLTests: XCTestCase {
       .post(from: "t5", to: "p3", labeled: 1)
     )
 
-    let ps1 = PS(ps: ([Marking(["p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 1], net: net)], []), net: net)
-    let ps2 = PS(ps: ([Marking(["p1": 0, "p2": 1, "p3": 1, "p4": 1, "p5": 0], net: net)], []), net: net)
-    let ps3 = PS(ps: ([Marking(["p1": 1, "p2": 0, "p3": 1, "p4": 0, "p5": 1], net: net)], []), net: net)
-    let ps4 = PS(ps: ([Marking(["p1": 1, "p2": 1, "p3": 2, "p4": 0, "p5": 0], net: net)], []), net: net)
-    let ps5 = PS(ps: ([Marking(["p1": 0, "p2": 1, "p3": 0, "p4": 2, "p5": 0], net: net)], []), net: net)
-    let ps6 = PS(ps: ([Marking(["p1": 1, "p2": 0, "p3": 0, "p4": 0, "p5": 2], net: net)], []), net: net)
+    let ps1 = PS(value: ([Marking(["p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 1], net: net)], []), net: net)
+    let ps2 = PS(value: ([Marking(["p1": 0, "p2": 1, "p3": 1, "p4": 1, "p5": 0], net: net)], []), net: net)
+    let ps3 = PS(value: ([Marking(["p1": 1, "p2": 0, "p3": 1, "p4": 0, "p5": 1], net: net)], []), net: net)
+    let ps4 = PS(value: ([Marking(["p1": 1, "p2": 1, "p3": 2, "p4": 0, "p5": 0], net: net)], []), net: net)
+    let ps5 = PS(value: ([Marking(["p1": 0, "p2": 1, "p3": 0, "p4": 2, "p5": 0], net: net)], []), net: net)
+    let ps6 = PS(value: ([Marking(["p1": 1, "p2": 0, "p3": 0, "p4": 0, "p5": 2], net: net)], []), net: net)
     let expectedSPS: SPS = [ps1, ps2, ps3, ps4, ps5, ps6]
 
     // Compute all markings that breaks the mutual exclusion
@@ -103,7 +103,7 @@ final class CTLTests: XCTestCase {
     let sps2 = ctlFormula2.eval(net: net)
     let sps3 = ctlFormula3.eval(net: net)
 
-    let ps = PS(ps: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
+    let ps = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
     let expectedRes: SPS = [ps]
     
     let simpliedSPS1 = sps1.simplified()
@@ -141,7 +141,7 @@ final class CTLTests: XCTestCase {
     let sps2 = ctlFormula2.eval(net: net)
     let sps3 = ctlFormula3.eval(net: net)
 
-    let ps: PS = PS(ps: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
+    let ps: PS = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
     let expectedRes: SPS = [ps]
 
     let simpliedSPS1 = sps1.simplified()
@@ -181,9 +181,9 @@ final class CTLTests: XCTestCase {
     let sps2 = ctlFormula2.eval(net: net)
     let sps3 = ctlFormula3.eval(net: net)
 
-    let ps1 = PS(ps: ([Marking(["p0": 2, "p1": 0, "p2": 0], net: net)], []), net: net)
-    let ps2 = PS(ps: ([Marking(["p0": 2, "p1": 0, "p2": 0], net: net)], [Marking(["p0": 4, "p1": 0, "p2": 0], net: net)]), net: net)
-    let ps3 = PS(ps: ([], [Marking(["p0": 2, "p1": 0, "p2": 0], net: net)]), net: net)
+    let ps1 = PS(value: ([Marking(["p0": 2, "p1": 0, "p2": 0], net: net)], []), net: net)
+    let ps2 = PS(value: ([Marking(["p0": 2, "p1": 0, "p2": 0], net: net)], [Marking(["p0": 4, "p1": 0, "p2": 0], net: net)]), net: net)
+    let ps3 = PS(value: ([], [Marking(["p0": 2, "p1": 0, "p2": 0], net: net)]), net: net)
 
     let simpliedSPS1 = sps1.simplified()
     let simpliedSPS2 = sps2.simplified()
