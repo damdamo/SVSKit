@@ -157,7 +157,6 @@ public struct PS {
   }
   
   /// Compute all the markings represented by the symbolic representation of a predicate structure.
-  /// - Parameter net: The model to use
   /// - Returns: The set of all possible markings, also known as the state space.
   func underlyingMarkings() -> Set<Marking> {
     let canonizedPS = self.canonised()
@@ -250,6 +249,76 @@ public struct PS {
     }
     return simplified(sps: sps)
   }
+  
+  /// Product between a predicate structure and a set of predicate structures: ps * {ps1, ..., psn} = (ps ∩ ps1) ∪ ... ∪ (ps ∩ psn)
+  /// - Parameters:
+  ///   - sps: The set of predicate structures
+  /// - Returns: The product between both parameters
+  func distribute(sps: SPS) -> SPS {
+    if let first = sps.first {
+      if let p = ps {
+        let ps1 = PS(ps: p, net: net)
+        var rest = sps
+        rest.remove(first)
+        if rest == [] {
+          return intersection(sps1: [ps1], sps2: [first])
+        }
+        return intersection(sps1: [ps1], sps2: [first]).union(ps1.distribute(sps: rest))
+      }
+      return []
+    }
+    return [self]
+  }
+  
+  
+  /// Try to merge two predicate structures if there are comparable.
+  /// The principle is similar to intervals, where the goal is to reunified intervals if they can be merged.
+  /// Otherwise, nothing is changed.
+  /// - Parameters:
+  ///   - ps: The second predicate structure
+  /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
+  func merge(_ ps: PS) -> SPS {
+    var ps1Temp = self
+    var ps2Temp = ps
+    
+    if let p1 = self.ps, let p2 = ps.ps {
+      if let am = p1.inc.first, let cm = p2.inc.first  {
+        if !(am <= cm) {
+          ps1Temp = ps
+          ps2Temp = self
+        }
+      }
+    } else {
+      if self.ps == nil {
+        return [ps]
+      }
+      return [self]
+    }
+    
+    let a = ps1Temp.ps!.inc
+    let b = ps1Temp.ps!.exc
+    let c = ps2Temp.ps!.inc
+    let d = ps2Temp.ps!.exc
+    
+    if let am = a.first, let cm = c.first {
+      if let bm = b.first {
+        if cm <= bm && am <= cm {
+          if let dm = d.first {
+            if bm <= dm {
+              return [PS(ps: (a,d), net: net)]
+            }
+            return [PS(ps: (a,b), net: net)]
+          }
+          return [PS(ps: (a,d), net: net)]
+        }
+      }
+      if am <= cm {
+        return [PS(ps: (a,b), net: net)]
+      }
+    }
+    
+    return [self, ps]
+  }
 
 }
 
@@ -328,34 +397,12 @@ extension PS {
     }
     return res
   }
-    
-  
-  /// Product between a predicate structure and a set of predicate structures: ps * {ps1, ..., psn} = (ps ∩ ps1) ∪ ... ∪ (ps ∩ psn)
-  /// - Parameters:
-  ///   - ps: The predicate structure
-  ///   - sps: The set of predicate structures
-  /// - Returns: The product between both parameters
-  func distribute(sps: SPS) -> SPS {
-    if let first = sps.first {
-      if let p = ps {
-        let ps1 = PS(ps: p, net: net)
-        var rest = sps
-        rest.remove(first)
-        if rest == [] {
-          return intersection(sps1: [ps1], sps2: [first])
-        }
-        return intersection(sps1: [ps1], sps2: [first]).union(ps1.distribute(sps: rest))
-      }
-      return []
-    }
-    return [self]
-  }
   
   
   /// Is the left set of predicate structures included in the right one ?
   /// - Parameters:
-  ///   - s1: The left set of predicate structures
-  ///   - s2: The right set of predicate structures
+  ///   - sps1: The left set of predicate structures
+  ///   - sps2: The right set of predicate structures
   /// - Returns: True if it is included, false otherwise
   func isIncluded(sps1: SPS, sps2: SPS) -> Bool {
     if sps2 == [] {
@@ -369,13 +416,19 @@ extension PS {
   
   /// Are two sets of predicate structures equivalent ?
   /// - Parameters:
-  ///   - s1: First set of predicate structures
-  ///   - s2: Second set of predicate structures
+  ///   - sps1: First set of predicate structures
+  ///   - sps2: Second set of predicate structures
   /// - Returns: True is they are equivalentm false otherwise
   func isEquiv(sps1: SPS, sps2: SPS) -> Bool {
     return isIncluded(sps1: sps1, sps2: sps2) && isIncluded(sps1: sps2, sps2: sps1)
   }
   
+  
+  /// Is a predicate structutre included in a sps ?
+  /// - Parameters:
+  ///   - ps: The predicate structure
+  ///   - sps: The set of predicate structures
+  /// - Returns: A boolean that returns true if ps is included, false otherwise
   func isIn(ps: PS, sps: SPS) -> Bool {
     return isIncluded(sps1: [ps], sps2: sps)
   }
@@ -432,58 +485,6 @@ extension PS {
   func revertTilde(sps: SPS) -> SPS {
     return not(sps: revert(sps: not(sps: sps)))
   }
-  
-  
-  /// Try to merge two predicate structures if there are comparable.
-  /// The principle is similar to intervals, where the goal is to reunified intervals if they can be merged.
-  /// Otherwise, nothing is changed.
-  /// - Parameters:
-  ///   - ps1: The first predicate structure
-  ///   - ps2: The second predicate structure
-  /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
-  func merge(_ ps: PS) -> SPS {
-    var ps1Temp = self
-    var ps2Temp = ps
-    
-    if let p1 = self.ps, let p2 = ps.ps {
-      if let am = p1.inc.first, let cm = p2.inc.first  {
-        if !(am <= cm) {
-          ps1Temp = ps
-          ps2Temp = self
-        }
-      }
-    } else {
-      if self.ps == nil {
-        return [ps]
-      }
-      return [self]
-    }
-    
-    let a = ps1Temp.ps!.inc
-    let b = ps1Temp.ps!.exc
-    let c = ps2Temp.ps!.inc
-    let d = ps2Temp.ps!.exc
-    
-    if let am = a.first, let cm = c.first {
-      if let bm = b.first {
-        if cm <= bm && am <= cm {
-          if let dm = d.first {
-            if bm <= dm {
-              return [PS(ps: (a,d), net: net)]
-            }
-            return [PS(ps: (a,b), net: net)]
-          }
-          return [PS(ps: (a,d), net: net)]
-        }
-      }
-      if am <= cm {
-        return [PS(ps: (a,b), net: net)]
-      }
-    }
-    
-    return [self, ps]
-  }
-  
   
   
   /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:

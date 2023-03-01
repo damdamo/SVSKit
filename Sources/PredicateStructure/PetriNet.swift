@@ -99,14 +99,14 @@ public class PetriNet
 
   }
 
+  /// Places of the net
   public let places: Set<PlaceType>
+  /// Transitions of the net
   public let transitions: Set<TransitionType>
   /// This net's input matrix.
   public let input: [TransitionType: [PlaceType: ArcLabel]]
-
   /// This net's output matrix.
   public let output: [TransitionType: [PlaceType: ArcLabel]]
-  
   /// The maximum number of tokens inside a place
   public let capacity: [PlaceType: Int]
 
@@ -275,6 +275,7 @@ extension PetriNet {
     return res
   }
   
+  /// Return a marking that contains the minimum amount of tokens in each required place to allow a transition to be fired.
   func inputMarkingForATransition(transition: TransitionType) -> Marking {
     var dicMarking: [PlaceType: Int] = [:]
     for place in places {
@@ -287,6 +288,7 @@ extension PetriNet {
     return Marking(dicMarking, net: self)
   }
   
+  /// Return a marking that contains the exact amount of tokens after a firing of a transition
   func outputMarkingForATransition(transition: TransitionType) -> Marking {
     var dicMarking: [PlaceType: Int] = [:]
     for place in places {
@@ -300,13 +302,3 @@ extension PetriNet {
   }
   
 }
-
-///// A place in a Petri net.
-//public protocol Place: CaseIterable, Hashable {
-//
-//  associatedtype Content: Hashable
-//
-//}
-//
-///// A transition in a Petri net.
-//public protocol Transition: CaseIterable, Hashable {}
