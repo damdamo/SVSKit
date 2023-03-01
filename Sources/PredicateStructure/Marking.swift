@@ -1,96 +1,69 @@
-/// A marking of a Hero net.
+/// A marking of a Petri net.
 ///
-/// A marking is a mapping that associates the places of a Hero net to the tokens they contain.
+/// A marking is a mapping that associates the places of a Petri net to the tokens they contain.
 ///
-/// An algebra is defined over markings if the type used to represent the tokens associated with
-/// each place (i.e. `PlaceType`) allows it. More specifically, markings are comparable if tokens
-/// are too, and even conform to `AdditiveArithmetic` if tokens do to.
+/// The following example illustrates how to define markings:
 ///
-/// The following example illustrates how to perform arithmetic operations of markings:
+///     let net = Petrinet(
+///       places: ["p0", "p1"],
+///       ...
+///     )
+///     let m0 = Marking(["p0": 1, "p1": 4], net: net)
 ///
-///     let m0: Marking<P> = [.p0: ["1", "2"], .p1: ["4"]]
-///     let m1: Marking<P> = [.p0: ["1", "3"], .p1: ["6"]]
-///     print(m0 + m1)
-///     // Prints "[.p0: ["1", "1", "2", "3"], .p1: ["4", "6"]]"
-///
-public struct Marking<PlaceType> where PlaceType: Place {
-
+public struct Marking {
+  
   /// The total map that backs this marking.
-  fileprivate var storage: TotalMap<PlaceType, PlaceType.Content>
+  var storage: [String: Int]
+  let net: PetriNet
 
-  /// Initializes a marking with a total map.
+  /// Initializes a marking.
   ///
   /// - Parameters:
-  ///   - mapping: A total map representing this marking.
-  public init(_ mapping: TotalMap<PlaceType, PlaceType.Content>) {
-    self.storage = mapping
-  }
-
-  /// Initializes a marking with a dictionary.
-  ///
-  /// - Parameters:
-  ///   - mapping: A dictionary representing this marking.
-  ///
-  /// The following example illustrates the use of this initializer:
-  ///
-  ///     let marking = Marking([.p0: 42, .p1: 1337])
-  ///
-  /// - Warning:
-  ///   The given dictionary must be defined for all places, otherwise an error will be triggered
-  ///   at runtime.
-  public init(_ mapping: [PlaceType: PlaceType.Content]) {
-    self.storage = TotalMap(mapping)
-  }
-
-  /// Initializes a marking with a function.
-  ///
-  /// - Parameters:
-  ///   - mapping: A function mapping places to the tokens they contain.
-  ///
-  /// The following example illustrates the use of this initializer:
-  ///
-  ///     let marking = Marking { place in
-  ///       switch place {
-  ///       case .p0: return 42
-  ///       case .p1: return 1337
-  ///       }
-  ///     }
-  ///
-  public init(_ mapping: (PlaceType) throws -> PlaceType.Content) rethrows {
-    self.storage = try TotalMap(mapping)
-  }
-
-  /// Accesses the tokens associated with the given place for reading and writing.
-  public subscript(place: PlaceType) -> PlaceType.Content {
-    get { return storage[place] }
-    set { storage[place] = newValue }
+  ///   - storage: A mapping representing this marking.
+  ///   - net: The related Petri net
+  public init(_ storage: [String: Int], net: PetriNet) {
+    var places: Set<String> = []
+    for (place, _) in storage {
+      places.insert(place)
+    }
+    precondition(places == net.places, "Places between the marking and the Petri net do not match.")
+    
+    self.storage = storage
+    self.net = net
   }
 
   /// A collection containing just the places of the marking.
-  public var places: PlaceType.AllCases {
-    return PlaceType.allCases
+  public var places: Set<String> {
+    return net.places
   }
+  
+  /// Allows to  get or set a value of a marking the same way as a dictionnary
+  /// e.g.: marking["p0"] / marking["p0"] = 2
+  public subscript(place: String) -> Int? {
+    get { return storage[place] }
+    set { storage[place] = newValue }
+  }
+  
 
 }
 
-extension Marking: ExpressibleByDictionaryLiteral {
-
-  public init(dictionaryLiteral elements: (PlaceType, PlaceType.Content)...) {
-    let mapping = Dictionary(uniqueKeysWithValues: elements)
-    self.storage = TotalMap(mapping)
+extension Marking: Equatable {
+  public static func == (lhs: Marking, rhs: Marking) -> Bool {
+    lhs.storage == rhs.storage
   }
-
 }
 
-extension Marking: Equatable where PlaceType.Content: Equatable {}
+extension Marking: Hashable {
+  public func hash(into hasher: inout Hasher) {
+      hasher.combine(storage)
+  }
+}
 
-extension Marking: Hashable where PlaceType.Content: Hashable {}
-
-extension Marking: Comparable where PlaceType.Content: Comparable {
+extension Marking: Comparable {
 
   public static func < (lhs: Marking, rhs: Marking) -> Bool {
-    for place in PlaceType.allCases {
-      guard lhs[place] < rhs[place] else {
+    for place in lhs.places {
+      guard lhs.storage[place]! < rhs.storage[place]! else {
         return false
       }
     }
@@ -98,8 +71,8 @@ extension Marking: Comparable where PlaceType.Content: Comparable {
   }
   
   public static func > (lhs: Marking, rhs: Marking) -> Bool {
-    for place in PlaceType.allCases {
-      guard lhs[place] > rhs[place] else {
+    for place in lhs.places {
+      guard lhs.storage[place]! > rhs.storage[place]! else {
         return false
       }
     }
@@ -107,8 +80,8 @@ extension Marking: Comparable where PlaceType.Content: Comparable {
   }
   
   public static func <= (lhs: Marking, rhs: Marking) -> Bool {
-    for place in PlaceType.allCases {
-      guard lhs[place] <= rhs[place] else {
+    for place in lhs.places {
+      guard lhs.storage[place]! <= rhs.storage[place]! else {
         return false
       }
     }
@@ -116,57 +89,14 @@ extension Marking: Comparable where PlaceType.Content: Comparable {
   }
   
   public static func >= (lhs: Marking, rhs: Marking) -> Bool {
-    for place in PlaceType.allCases {
-      guard lhs[place] >= rhs[place] else {
+    for place in lhs.places {
+      guard lhs.storage[place]! >= rhs.storage[place]! else {
         return false
       }
     }
     return true
   }
   
-}
-
-extension Marking: AdditiveArithmetic where PlaceType.Content: AdditiveArithmetic {
-
-  /// Initializes a marking with a dictionary, associating `PlaceType.Content.zero` for unassigned
-  /// places.
-  ///
-  /// - Parameters:
-  ///   - mapping: A dictionary representing this marking.
-  ///
-  /// The following example illustrates the use of this initializer:
-  ///
-  ///     let marking = Marking<P>([.p0: ["42", "1337"], .p1 ["12", "15"])
-  ///
-  public init(partial mapping: [PlaceType: PlaceType.Content]) {
-    self.storage = TotalMap(partial: mapping, defaultValue: .zero)
-  }
-
-  /// A marking in which all places are associated with `PlaceType.Content.zero`.
-  public static var zero: Marking {
-    return Marking { _ in PlaceType.Content.zero }
-  }
-
-  public static func + (lhs: Marking, rhs: Marking) -> Marking {
-    return Marking { key in lhs[key] + rhs[key] }
-  }
-
-  public static func += (lhs: inout Marking, rhs: Marking) {
-    for place in PlaceType.allCases {
-      lhs[place] += rhs[place]
-    }
-  }
-
-  public static func - (lhs: Marking, rhs: Marking) -> Marking {
-    return Marking { place in lhs[place] - rhs[place] }
-  }
-
-  public static func -= (lhs: inout Marking, rhs: Marking) {
-    for place in PlaceType.allCases {
-      lhs[place] -= rhs[place]
-    }
-  }
-
 }
 
 extension Marking: CustomStringConvertible {
