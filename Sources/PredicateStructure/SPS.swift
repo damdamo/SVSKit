@@ -16,8 +16,8 @@ struct SPS {
     }
     let ps = self.values.first!
     var union = self.values.union(sps.values)
-    if union.contains(PS(ps: nil, net: ps.net)) {
-      union.remove(PS(ps: nil, net: ps.net))
+    if union.contains(PS(value: nil, net: ps.net)) {
+      union.remove(PS(value: nil, net: ps.net))
     }
     return SPS(values: union)
   }
@@ -32,11 +32,11 @@ struct SPS {
     var temp: PS
     for ps1 in self {
       for ps2 in sps {
-        if let p1 = ps1.ps, let p2 = ps2.ps {
-          let intersectRaw = PS(ps: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: ps1.net)
+        if let p1 = ps1.value, let p2 = ps2.value {
+          let intersectRaw = PS(value: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: ps1.net)
           if isCanonical {
             temp = intersectRaw.canonised()
-            if let _ = temp.ps {
+            if let _ = temp.value {
               res.insert(temp)
             }
           } else {
@@ -136,50 +136,50 @@ struct SPS {
       return self
     }
     
-    var mergedSPS: Set<PS> = []
-    var mergedTemp: SPS = []
-    var spsTemp: Set<PS> = []
+    var mergedSet: Set<PS> = []
+    var setTemp: Set<PS> = []
+    var spsTemp: SPS = []
     var psFirst: PS
     var psFirstTemp: PS
     
     for ps in self {
-      spsTemp.insert(ps.canonised())
+      setTemp.insert(ps.canonised())
     }
     
-    if spsTemp == [] {
+    if setTemp == [] {
       return []
     }
         
-    while !spsTemp.isEmpty {
-      psFirst = spsTemp.first!
+    while !setTemp.isEmpty {
+      psFirst = setTemp.first!
       psFirstTemp = psFirst
-      spsTemp.remove(psFirst)
-      if let p1 = psFirst.ps {
+      setTemp.remove(psFirst)
+      if let p1 = psFirst.value {
         let a = p1.inc
         let b = p1.exc
         if b.count <= 1 {
-          for ps in spsTemp {
-            if let p2 = ps.ps {
+          for ps in setTemp {
+            if let p2 = ps.value {
               let c = p2.inc
               let d = p2.exc
               if d.count <= 1 {
                 if let am = a.first, let bm = b.first, let cm = c.first {
                   if cm <= bm && am <= cm {
-                    mergedTemp = psFirstTemp.merge(PS(ps: (c, d), net: psFirst.net))
-                    if mergedTemp.count == 1 {
-                      psFirstTemp = psFirstTemp.merge(PS(ps: (c, d), net: psFirst.net)).first!
-                      spsTemp.remove(PS(ps: (c, d), net: psFirst.net))
-                      spsTemp.insert(psFirstTemp)
+                    spsTemp = psFirstTemp.merge(PS(value: (c, d), net: psFirst.net))
+                    if spsTemp.count == 1 {
+                      psFirstTemp = spsTemp.first!
+                      setTemp.remove(PS(value: (c, d), net: psFirst.net))
+                      setTemp.insert(psFirstTemp)
                     }
                   }
                 } else {
                   if let am = a.first, let cm = c.first, let dm = d.first {
                     if am <= dm && cm <= am {
-                      mergedTemp = psFirstTemp.merge(PS(ps: (c, d), net: psFirst.net))
-                      if mergedTemp.count == 1 {
-                        psFirstTemp = psFirstTemp.merge(PS(ps: (c, d), net: psFirst.net)).first!
-                        spsTemp.remove(PS(ps: (c, d), net: psFirst.net))
-                        spsTemp.insert(psFirstTemp)
+                      spsTemp = psFirstTemp.merge(PS(value: (c, d), net: psFirst.net))
+                      if spsTemp.count == 1 {
+                        psFirstTemp = spsTemp.first!
+                        setTemp.remove(PS(value: (c, d), net: psFirst.net))
+                        setTemp.insert(psFirstTemp)
                       }
                     }
                   }
@@ -189,13 +189,13 @@ struct SPS {
           }
         }
       }
-      mergedSPS.insert(psFirstTemp)
+      mergedSet.insert(psFirstTemp)
     }
     
     var reducedSPS: Set<PS> = []
     
-    for ps in mergedSPS {
-      if !SPS(values: [ps]).isIncluded(SPS(values: mergedSPS.filter({!($0 == ps)}))) {
+    for ps in mergedSet {
+      if !SPS(values: [ps]).isIncluded(SPS(values: mergedSet.filter({!($0 == ps)}))) {
         reducedSPS.insert(ps)
       }
     }

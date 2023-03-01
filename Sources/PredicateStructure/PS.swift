@@ -11,20 +11,20 @@ public struct PS {
   public typealias PlaceType = String
   public typealias TransitionType = String
   
-  let ps: (inc: Set<Marking>, exc: Set<Marking>)?
+  let value: (inc: Set<Marking>, exc: Set<Marking>)?
   let net: PetriNet
   
   /// Compute the negation of a predicate structure, which is a set of predicate structures
   /// - Returns: Returns the negation of the predicate structure
   func not() -> SPS {
-    if let p = ps {
+    if let p = value {
       var sps: Set<PS> = []
       for el in p.inc {
         // .ps([], [el])
-        sps.insert(PS(ps: ([], [el]) , net: net))
+        sps.insert(PS(value: ([], [el]) , net: net))
       }
       for el in p.exc {
-        sps.insert(PS(ps: ([el], []) , net: net))
+        sps.insert(PS(value: ([el], []) , net: net))
       }
       return SPS(values: sps)
     }
@@ -33,7 +33,7 @@ public struct PS {
     for place in net.places {
       dicMarking[place] = 0
     }
-    return [PS(ps: ([Marking(dicMarking, net: net)], []), net: net)]
+    return [PS(value: ([Marking(dicMarking, net: net)], []), net: net)]
   }
   
   /// convMax, for convergence maximal, is a function to compute a singleton containing a marking where each value is the maximum of all places for a given place.
@@ -115,7 +115,7 @@ public struct PS {
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
   /// - Returns: The canonical form of the predicate structure.
   func canonised() -> PS {
-    if let p = ps {
+    if let p = value {
       let canInclude = convMax(markings: p.inc)
       let preCanExclude = minSet(markings: p.exc)
             
@@ -123,7 +123,7 @@ public struct PS {
         // In (a,b) ∈ PS, if a marking in b is included in a, it returns empty
         for marking in preCanExclude {
           if marking <= markingInclude {
-            return PS(ps: nil, net: net)
+            return PS(value: nil, net: net)
           }
         }
         
@@ -140,14 +140,14 @@ public struct PS {
           canExclude.insert(markingTemp)
         }
         if canInclude.isEmpty && canExclude.isEmpty {
-          return PS(ps: nil, net: net)
+          return PS(value: nil, net: net)
         }
-        return PS(ps: (canInclude, canExclude), net: net)
+        return PS(value: (canInclude, canExclude), net: net)
       }
-      return PS(ps: ([], preCanExclude), net: net)
+      return PS(value: ([], preCanExclude), net: net)
     }
     
-    return PS(ps: nil, net: net)
+    return PS(value: nil, net: net)
   }
   
   /// Compute all the markings represented by the symbolic representation of a predicate structure.
@@ -161,7 +161,7 @@ public struct PS {
     var upperBound: Int
     
     // Create a dictionnary where the key is the place and whose values is a set of all possibles integers that can be taken
-    if let can = canonizedPS.ps {
+    if let can = canonizedPS.value {
       if let am = can.inc.first {
         for place in net.places {
           lowerBound = am[place]!
@@ -206,7 +206,7 @@ public struct PS {
       Marking(el, net: net)
     }))
     
-    for mb in canonizedPS.ps!.exc {
+    for mb in canonizedPS.value!.exc {
       for marking in markingSet {
         if mb <= marking {
           markingSet.remove(marking)
@@ -230,7 +230,7 @@ public struct PS {
       markingTemp = marking
     }
     
-    return PS(ps: ([marking], bMarkings), net: net)
+    return PS(value: ([marking], bMarkings), net: net)
   }
   
   /// Encode a set of markings into a set of predicate structures.
@@ -250,8 +250,8 @@ public struct PS {
   /// - Returns: The product between both parameters
   func distribute(sps: SPS) -> SPS {
     if let first = sps.first {
-      if let p = ps {
-        let ps1 = PS(ps: p, net: net)
+      if let p = value {
+        let ps1 = PS(value: p, net: net)
         var rest = sps.values
         rest.remove(first)
         if rest == [] {
@@ -275,7 +275,7 @@ public struct PS {
     var ps1Temp = self
     var ps2Temp = ps
     
-    if let p1 = self.ps, let p2 = ps.ps {
+    if let p1 = self.value, let p2 = ps.value {
       if let am = p1.inc.first, let cm = p2.inc.first  {
         if !(am <= cm) {
           ps1Temp = ps
@@ -283,31 +283,31 @@ public struct PS {
         }
       }
     } else {
-      if self.ps == nil {
+      if self.value == nil {
         return [ps]
       }
       return [self]
     }
     
-    let a = ps1Temp.ps!.inc
-    let b = ps1Temp.ps!.exc
-    let c = ps2Temp.ps!.inc
-    let d = ps2Temp.ps!.exc
+    let a = ps1Temp.value!.inc
+    let b = ps1Temp.value!.exc
+    let c = ps2Temp.value!.inc
+    let d = ps2Temp.value!.exc
     
     if let am = a.first, let cm = c.first {
       if let bm = b.first {
         if cm <= bm && am <= cm {
           if let dm = d.first {
             if bm <= dm {
-              return [PS(ps: (a,d), net: net)]
+              return [PS(value: (a,d), net: net)]
             }
-            return [PS(ps: (a,b), net: net)]
+            return [PS(value: (a,b), net: net)]
           }
-          return [PS(ps: (a,d), net: net)]
+          return [PS(value: (a,d), net: net)]
         }
       }
       if am <= cm {
-        return [PS(ps: (a,b), net: net)]
+        return [PS(value: (a,b), net: net)]
       }
     }
     
@@ -315,7 +315,7 @@ public struct PS {
   }
   
   func revert(transition: String) -> PS? {
-    if let p = ps {
+    if let p = value {
       var aTemp: Set<Marking> = []
       var bTemp: Set<Marking> = []
       
@@ -339,10 +339,10 @@ public struct PS {
           }
         }
       }
-      return PS(ps: (aTemp, bTemp), net: net)
+      return PS(value: (aTemp, bTemp), net: net)
     }
     
-    return PS(ps: nil, net: net)
+    return PS(value: nil, net: net)
   }
   
   func revert() -> SPS {
@@ -359,18 +359,18 @@ public struct PS {
 
 extension PS: Hashable {
   public static func == (lhs: PS, rhs: PS) -> Bool {
-    return lhs.ps?.inc == rhs.ps?.inc && lhs.ps?.exc == rhs.ps?.exc
+    return lhs.value?.inc == rhs.value?.inc && lhs.value?.exc == rhs.value?.exc
   }
 
   public func hash(into hasher: inout Hasher) {
-    hasher.combine(ps?.inc)
-    hasher.combine(ps?.exc)
+    hasher.combine(value?.inc)
+    hasher.combine(value?.exc)
   }
 }
 
 extension PS: CustomStringConvertible {
   public var description: String {
-    if let p = ps {
+    if let p = value {
       return "(\(p.inc), \(p.exc))"
     }
     return "∅"

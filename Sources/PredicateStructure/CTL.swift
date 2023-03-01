@@ -29,11 +29,11 @@ indirect enum CTL {
     switch self {
     case .ap(let t):
       return [
-        PS(ps: ([net.inputMarkingForATransition(transition: t)], []), net: net)
+        PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)
       ]
     case .after(let t):
       return [
-        PS(ps:  ([], [net.outputMarkingForATransition(transition: t)]), net: net)
+        PS(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net)
       ]
     case .true:
       var dicEmptyMarking: [PlaceType: Int] = [:]
@@ -41,7 +41,7 @@ indirect enum CTL {
         dicEmptyMarking[place] = 0
       }
       return [
-        PS(ps: ([Marking(dicEmptyMarking, net: net)], []), net: net)
+        PS(value: ([Marking(dicEmptyMarking, net: net)], []), net: net)
       ]
     case .and(let ctl1, let ctl2):
       return ctl1.eval(net: net).intersection(ctl2.eval(net: net))
