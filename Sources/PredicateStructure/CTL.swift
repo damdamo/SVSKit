@@ -4,7 +4,6 @@
 ///   TODO: Replace all 'let ps = PredicateStructure(ps: .empty, net: net)' by a true structure for SPS to avoid this horrible trick
 indirect enum CTL {
   
-  typealias PN = PetriNet
   typealias PlaceType = String
   typealias TransitionType = String
   
@@ -25,7 +24,7 @@ indirect enum CTL {
   case AG(CTL)
   case AU(CTL, CTL)
   
-  func eval(net: PN) -> SPS {
+  func eval(net: PetriNet) -> SPS {
     switch self {
     case .ap(let t):
       return [
@@ -67,7 +66,7 @@ indirect enum CTL {
     
   }
 
-  func evalEF(net: PN) -> SPS {
+  func evalEF(net: PetriNet) -> SPS {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
@@ -77,7 +76,7 @@ indirect enum CTL {
     return res
   }
   
-  func evalAF(net: PN) -> SPS {
+  func evalAF(net: PetriNet) -> SPS {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
@@ -87,7 +86,7 @@ indirect enum CTL {
     return res
   }
   
-  func evalEG(net: PN) -> SPS {
+  func evalEG(net: PetriNet) -> SPS {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
@@ -97,7 +96,7 @@ indirect enum CTL {
     return res
   }
   
-  func evalAG(net: PN) -> SPS {
+  func evalAG(net: PetriNet) -> SPS {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
@@ -107,7 +106,7 @@ indirect enum CTL {
     return res
   }
   
-  func evalEU(ctl: CTL, net: PN) -> SPS {
+  func evalEU(ctl: CTL, net: PetriNet) -> SPS {
     let phi = self.eval(net: net)
     var res = ctl.eval(net: net)
     var resTemp: SPS
@@ -118,7 +117,7 @@ indirect enum CTL {
     return res
   }
   
-  func evalAU(ctl: CTL, net: PN) -> SPS {
+  func evalAU(ctl: CTL, net: PetriNet) -> SPS {
     let phi = self.eval(net: net)
     var res = ctl.eval(net: net)
     var resTemp: SPS
