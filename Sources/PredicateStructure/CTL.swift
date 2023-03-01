@@ -83,13 +83,6 @@ indirect enum CTL {
     repeat {
       resTemp = res
       res = res.union(res.revert().intersection(res.revertTilde()))
-//      res = ps.union(
-//        sps1: res,
-//        sps2: ps.intersection(
-//          sps1: ps.revert(sps: res),
-//          sps2: ps.revertTilde(sps: res)
-//        )
-//      )
     } while !res.isIncluded(resTemp)
     return res
   }
@@ -100,13 +93,6 @@ indirect enum CTL {
     repeat {
       resTemp = res
       res = res.intersection(res.revert().union(res.revertTilde()))
-//      res = ps.intersection(
-//        sps1: res,
-//        sps2: ps.union(
-//          sps1: ps.revert(sps: res),
-//          sps2: ps.revertTilde(sps: res)
-//        )
-//      )
     } while !resTemp.isIncluded(res)
     return res
   }
@@ -117,7 +103,6 @@ indirect enum CTL {
     repeat {
       resTemp = res
       res = res.intersection(res.revertTilde())
-//      res = ps.intersection(sps1: res, sps2: ps.revertTilde(sps: res))
     } while !resTemp.isIncluded(res)
     return res
   }
@@ -129,13 +114,6 @@ indirect enum CTL {
     repeat {
       resTemp = res
       res = res.union(phi.intersection(res.revert()))
-//      res = ps.union(
-//        sps1: res,
-//        sps2: ps.intersection(
-//          sps1: phi,
-//          sps2: ps.revert(sps: res)
-//        )
-//      )
     } while !res.isIncluded(resTemp)
     return res
   }
@@ -147,15 +125,6 @@ indirect enum CTL {
     repeat {
       resTemp = res
       res = res.union(phi.intersection(res.revert().intersection(res.revertTilde())))
-//      res = ps.union(
-//        sps1: res,
-//        sps2: ps.intersection(
-//          sps1: phi,
-//          sps2: ps.intersection(
-//            sps1: ps.revert(sps: res),
-//            sps2: ps.revertTilde(sps: res))
-//        )
-//      )
     } while !res.isIncluded(resTemp)
     return res
   }

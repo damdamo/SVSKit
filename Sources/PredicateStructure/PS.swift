@@ -8,14 +8,8 @@
 /// However, for the sake of finite representations and to compute them, we use the Petri net capacity on places to bound them.
 public struct PS {
 
-//  public typealias SPS = Set<PS>
   public typealias PlaceType = String
   public typealias TransitionType = String
-  
-//  public enum PS: Hashable {
-//    case empty
-//    case ps(Set<Marking>, Set<Marking>)
-//  }
   
   let ps: (inc: Set<Marking>, exc: Set<Marking>)?
   let net: PetriNet
