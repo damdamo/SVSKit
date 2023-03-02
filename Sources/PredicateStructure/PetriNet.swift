@@ -114,7 +114,7 @@ public class PetriNet
   ///
   /// - Parameters:
   ///   - arcs: A sequence containing the descriptions of the Petri net's arcs.
-  public init<Arcs>(places: Set<PlaceType>, transitions: Set<TransitionType>, arcs: Arcs, capacity: [PlaceType: Int]) where Arcs: Sequence, Arcs.Element == ArcDescription {
+  public init(places: Set<PlaceType>, transitions: Set<TransitionType>, arcs: [ArcDescription], capacity: [PlaceType: Int] = [:]) {
     
     self.places = places
     self.transitions = transitions
@@ -155,12 +155,14 @@ public class PetriNet
   /// - Parameters:
   ///   - arcs: A variadic argument representing the descriptions of the Petri net's arcs.
   public convenience init(places: Set<PlaceType>, transitions: Set<TransitionType>, arcs: ArcDescription..., capacity: [PlaceType: Int] = [:]) {
+    let newArcs: [ArcDescription] = arcs
     self.init(
       places: places,
       transitions: transitions,
-      arcs: arcs,
+      arcs: newArcs,
       capacity: capacity)
   }
+  
 
   /// Computes the marking resulting from the firing of the given transition, from the given
   /// marking, assuming the former is fireable.

@@ -56,4 +56,21 @@ final class PetriNetTests: XCTestCase {
     XCTAssertNil(pn.fire(transition: "t0", from: marking2))
   }
   
+  func testLoadPN() {
+//    let p = PnmlParser()
+//    let (net1, marking1) = p.loadPN(filePath: "NQueens-PT-05.xml")
+//    print(net1.places)
+//    print(net1.transitions)
+//    print("--------------")
+//    print(net1.input)
+//    print("--------------")
+//    print(net1.output)
+    
+//    print(marking1)
+//    if let url = URL(string: "https://www.pnml.org/version-2009/examples/philo.pnml") {
+//      let (net2, marking2) = p.loadPN(url: url)
+//      print(marking2)
+//    }
+  }
+  
 }
