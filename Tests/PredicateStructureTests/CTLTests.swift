@@ -192,10 +192,6 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(simpliedSPS1, [ps2,ps3])
     XCTAssertEqual(simpliedSPS2, [ps1])
     XCTAssertEqual(simpliedSPS3, [ps1])
-    
-    print("---------------------")
-    print(simpliedSPS3)
-    print(ps1)
   }
   
 }

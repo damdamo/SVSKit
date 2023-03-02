@@ -58,7 +58,7 @@ struct SPS {
     }
     var res = SPS(values: [])
     if let first = self.first {
-      let negSPS = first.not()
+      let negSPS = first.not().simplified()
       var spsWithoutFirst = self.values
       spsWithoutFirst.remove(first)
       let rTemp = SPS(values: spsWithoutFirst).not()
@@ -161,9 +161,6 @@ struct SPS {
         if p1.exc.count <= 1 {
           for ps in setTemp {
             spsTemp = psFirst.merge(ps)
-            print("psFirst: \(psFirst)")
-            print("ps: \(ps)")
-            print("Merge result: \(spsTemp)")
             if spsTemp.count == 1 {
               psFirstTemp = spsTemp.first!
               setTemp.remove(ps)

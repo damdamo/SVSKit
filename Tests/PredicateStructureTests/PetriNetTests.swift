@@ -57,8 +57,8 @@ final class PetriNetTests: XCTestCase {
   }
   
   func testLoadPN() {
-//    let p = PnmlParser()
-//    let (net1, marking1) = p.loadPN(filePath: "NQueens-PT-05.xml")
+    let p = PnmlParser()
+    let (net1, marking1) = p.loadPN(filePath: "NQueens-PT-05.xml")
 //    print(net1.places)
 //    print(net1.transitions)
 //    print("--------------")
@@ -71,6 +71,11 @@ final class PetriNetTests: XCTestCase {
 //      let (net2, marking2) = p.loadPN(url: url)
 //      print(marking2)
 //    }
+    
+//    let ctlFormula1: CTL = .AX(.ap("T_1_6_1_4"))
+//    
+//    print(ctlFormula1.eval(net: net1))
+    
   }
   
 }
