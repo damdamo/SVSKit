@@ -27,13 +27,21 @@ indirect enum CTL {
   func eval(net: PetriNet) -> SPS {
     switch self {
     case .ap(let t):
-      return [
-        PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)
-      ]
+      if net.transitions.contains(t) {
+        return [
+          PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)
+        ]
+      } else {
+        fatalError("Unknown transition")
+      }
     case .after(let t):
-      return [
-        PS(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net)
-      ]
+      if net.transitions.contains(t) {
+        return [
+          PS(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net)
+        ]
+      } else {
+        fatalError("Unknown transition")
+      }
     case .true:
       var dicEmptyMarking: [PlaceType: Int] = [:]
       for place in net.places {
