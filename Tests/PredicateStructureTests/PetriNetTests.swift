@@ -58,31 +58,31 @@ final class PetriNetTests: XCTestCase {
   }
   
   func testLoadPN() {
-    let p = PnmlParser()
-//    let (net1, marking1) = p.loadPN(filePath: "NQueens-PT-05.xml")
-    let (net1, marking1) = p.loadPN(filePath: "SwimmingPool-1.pnml")
-    print(net1.places)
-    print(net1.transitions)
-//    print("--------------")
-//    print(net1.input)
-//    print("--------------")
-//    print(net1.output)
+    let p1 = PnmlParser()
+    let (net1, _) = p1.loadPN(filePath: "SwimmingPool-1.pnml")
+    var countArcs = 0
+    for (_, arcs) in net1.input {
+      countArcs += arcs.count
+    }
+    for (_, arcs) in net1.output {
+      countArcs += arcs.count
+    }
+    XCTAssertEqual(net1.places.count, 9)
+    XCTAssertEqual(net1.transitions.count, 7)
+    XCTAssertEqual(countArcs, 20)
     
-//    print(marking1)
-//    if let url = URL(string: "https://www.pnml.org/version-2009/examples/philo.pnml") {
-//      let (net2, marking2) = p.loadPN(url: url)
-//      print(marking2)
-//    }
-    
-    let ctlFormula1: CTL = .EF(.ap("GetK"))
-
-    let c = ctlFormula1.eval(net: net1)
-//    let cS = c.simplified()
-//    print(c)
-    print(c.count)
-    print("--------------------------------------------------------------------------------")
-    print(c)
-//    print(cS.count)
+    let p2 = PnmlParser()
+    let (net2, _) = p2.loadPN(filePath: "NQueens-PT-05.xml")
+    countArcs = 0
+    for (_, arcs) in net2.input {
+      countArcs += arcs.count
+    }
+    for (_, arcs) in net2.output {
+      countArcs += arcs.count
+    }
+    XCTAssertEqual(net2.places.count, 55)
+    XCTAssertEqual(net2.transitions.count, 25)
+    XCTAssertEqual(countArcs, 125)
     
   }
   
