@@ -256,7 +256,7 @@ extension PetriNet {
   /// Apply the revert function for all transitions
   /// - Parameter marking: The marking
   /// - Returns: A set of markings that contains each new marking for each transition
-  func revert(marking: Marking) -> Set<Marking> {
+  public func revert(marking: Marking) -> Set<Marking> {
     var res: Set<Marking> = []
     for transition in transitions {
       if let rev = revert(marking: marking, transition: transition) {
@@ -269,7 +269,7 @@ extension PetriNet {
   /// Apply the revert on a set of markings.
   /// - Parameter markings: The set of markings
   /// - Returns: The new sets of markings, which is a union of all revert firing for each marking.
-  func revert(markings: Set<Marking>) -> Set<Marking> {
+  public func revert(markings: Set<Marking>) -> Set<Marking> {
     var res: Set<Marking> = []
     for marking in markings {
       res = res.union(revert(marking: marking))

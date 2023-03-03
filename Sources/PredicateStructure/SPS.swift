@@ -1,14 +1,18 @@
 /// Set of predicate structures (SPS) are a set of PS that contains specific functions
 /// Some of them are different from the usual set operations, such as intersection.
-struct SPS {
+public struct SPS {
   
-  let values: Set<PS>
+  public let values: Set<PS>
+  
+  public init(values: Set<PS>) {
+    self.values = values
+  }
   
   /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the union is applied
   /// - Returns: The result of the union.
-  func union(_ sps: SPS) -> SPS {
+  public func union(_ sps: SPS) -> SPS {
     if self.isEmpty {
       return sps
     } else if sps.isEmpty{
@@ -27,7 +31,7 @@ struct SPS {
   ///   - sps: The set of predicate structures on which the intersection is applied
   ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
   /// - Returns: The result of the intersection.
-  func intersection(_ sps: SPS, isCanonical: Bool = true) -> SPS {
+  public func intersection(_ sps: SPS, isCanonical: Bool = true) -> SPS {
     var res: Set<PS> = []
     var temp: PS
     for ps1 in self {
@@ -52,13 +56,13 @@ struct SPS {
   
   /// Compute the negation of a set of predicate structures. This is the result of a combination of all elements inside a predicate structure with each element of the other predicate structures. E.g.: notSPS({([q1], [q2]), ([q3], [q4]), ([q5], [q6])}) = {([],[q1,q3,q5]), ([q6],[q1,q3]), ([q4],[q1,q5]), ([q4,q6],[q1]), ([q2],[q3,q5]), ([q2, q6],[q3]), ([q2, q4],[q5]), ([q2, q4,q6],[])}
   /// - Returns: The negation of a set of predicate structures
-  func not() -> SPS {
+  public func not() -> SPS {
     if self.isEmpty {
       return self
     }
     var res = SPS(values: [])
     if let first = self.first {
-      let negSPS = first.not().simplified()
+      let negSPS = first.not()
       var spsWithoutFirst = self.values
       spsWithoutFirst.remove(first)
       let rTemp = SPS(values: spsWithoutFirst).not()
@@ -74,7 +78,7 @@ struct SPS {
   /// - Parameters:
   ///   - sps: The right set of predicate structures
   /// - Returns: True if it is included, false otherwise
-  func isIncluded(_ sps: SPS) -> Bool {
+  public func isIncluded(_ sps: SPS) -> Bool {
     if sps == [] {
       if self == [] {
         return true
@@ -88,7 +92,7 @@ struct SPS {
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the equivalence is checked
   /// - Returns: True is they are equivalentm false otherwise
-  func isEquiv(_ sps: SPS) -> Bool {
+  public func isEquiv(_ sps: SPS) -> Bool {
     return self.isIncluded(sps) && sps.isIncluded(self)
   }
   
@@ -97,14 +101,14 @@ struct SPS {
   /// - Parameters:
   ///   - ps: The predicate structure to check
   /// - Returns: A boolean that returns true if the predicate structure is included, false otherwise
-  func contains(ps: PS) -> Bool {
+  public func contains(ps: PS) -> Bool {
     return SPS(values: [ps]).isIncluded(self)
   }
   
   
   /// Compute the revert function on all markings of each predicate structures
   /// - Returns: A new set of predicate structures after the revert application
-  func revert() -> SPS {
+  public func revert() -> SPS {
     var res: SPS = []
     for ps in self {
       res = res.union(ps.revert())
@@ -114,7 +118,7 @@ struct SPS {
   
   /// An extension of the revert function that represents AX in CTL logic.
   /// - Returns: A new set of predicate structures
-  func revertTilde() -> SPS {
+  public func revertTilde() -> SPS {
     return (self.not()).revert().not()
   }
   
@@ -130,7 +134,7 @@ struct SPS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-  func simplified() -> SPS {
+  public func simplified() -> SPS {
     
     if self.isEmpty {
       return self
@@ -200,34 +204,34 @@ extension SPS: Hashable {
 
 /// Allow to use for .. in .. .
 extension SPS: Sequence {
-  func makeIterator() -> Set<PS>.Iterator {
+  public func makeIterator() -> Set<PS>.Iterator {
       return values.makeIterator()
   }
 }
 
 /// Allow to get the first element of a collection.
 extension SPS: Collection {
-  var startIndex: Set<PS>.Index {
+  public var startIndex: Set<PS>.Index {
     return values.startIndex
   }
   
-  var endIndex: Set<PS>.Index {
+  public var endIndex: Set<PS>.Index {
     return values.endIndex
   }
   
-  subscript(position: Set<PS>.Index) -> PS {
+  public subscript(position: Set<PS>.Index) -> PS {
     return values[position]
   }
   
-  func index(after i: Set<PS>.Index) -> Set<PS>.Index {
+  public func index(after i: Set<PS>.Index) -> Set<PS>.Index {
     return values.index(after: i)
   }
   
-  var isEmpty: Bool {
+  public var isEmpty: Bool {
     return values.isEmpty
   }
   
-  var count: Int {
+  public var count: Int {
     return values.count
   }
 
@@ -235,14 +239,14 @@ extension SPS: Collection {
 
 /// Allow to express a set of PS as an array which is converted into a set.
 extension SPS: ExpressibleByArrayLiteral {
-  typealias ArrayLiteralElement = PS
-  init(arrayLiteral elements: PS...) {
+  public typealias ArrayLiteralElement = PS
+  public init(arrayLiteral elements: PS...) {
     self.values = Set(elements)
   }
 }
 
 extension SPS: CustomStringConvertible {
-  var description: String {
+  public var description: String {
     if values.isEmpty {
       return "{}"
     }

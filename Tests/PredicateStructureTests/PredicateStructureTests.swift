@@ -1,5 +1,6 @@
 import XCTest
-@testable import PredicateStructure
+//@testable import PredicateStructure
+import PredicateStructure
 
 final class PredicateStructureTests: XCTestCase {
   

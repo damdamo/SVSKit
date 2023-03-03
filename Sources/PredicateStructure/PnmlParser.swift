@@ -1,6 +1,6 @@
 import Foundation
 
-class PnmlParser: NSObject, XMLParserDelegate {
+public class PnmlParser: NSObject, XMLParserDelegate {
   
   var net: [String: String] = [:]
   var places: [String: [String: String]] = [:]
@@ -16,7 +16,7 @@ class PnmlParser: NSObject, XMLParserDelegate {
   /// Load a Petri net from a local pnml file.
   /// - Parameter filePath: The path name in the Resource folder
   /// - Returns: The corresponding Petri net and its  initial marking
-  func loadPN(filePath: String) -> (PetriNet, Marking) {
+  public func loadPN(filePath: String) -> (PetriNet, Marking) {
     if let url = Bundle.module.url(forResource: filePath, withExtension: nil) {
       let parser = XMLParser(contentsOf: url)!
       parser.delegate = self
@@ -30,7 +30,7 @@ class PnmlParser: NSObject, XMLParserDelegate {
   /// Load a Petri net in a pnml format from an url.
   /// - Parameter filePath: The url of the pnml file
   /// - Returns: The corresponding Petri net and its  initial marking
-  func loadPN(url: URL) -> (PetriNet, Marking) {
+  public func loadPN(url: URL) -> (PetriNet, Marking) {
     let parser = XMLParser(contentsOf: url)!
     parser.delegate = self
     parser.parse()
@@ -38,7 +38,7 @@ class PnmlParser: NSObject, XMLParserDelegate {
   }
   
   /// Parse  the tags
-  func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+  public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
     switch elementName.lowercased() {
       case "net":
       if let id = attributeDict["id"] {
@@ -84,7 +84,7 @@ class PnmlParser: NSObject, XMLParserDelegate {
   }
 
   /// Parse the content of tags
-  func parser(_ parser: XMLParser, foundCharacters string: String) {
+  public func parser(_ parser: XMLParser, foundCharacters string: String) {
     if !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
       switch currentType {
       case "place":
@@ -108,14 +108,14 @@ class PnmlParser: NSObject, XMLParserDelegate {
     }
   }
 
-  func parserDidEndDocument(_ parser: XMLParser) {
+  public func parserDidEndDocument(_ parser: XMLParser) {
     print("Parsing complete")
   }
   
   
   /// Create the petri net corresponding to the parsing pnml file and the initial marking
   /// - Returns: A couple where the first element is a Petri net and the second a marking
-  private func createPN() -> (PetriNet, Marking) {
+  func createPN() -> (PetriNet, Marking) {
     var p: Set<String> = []
     var t: Set<String> = []
     var a: [PetriNet.ArcDescription] = []

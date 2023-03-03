@@ -11,12 +11,17 @@ public struct PS {
   public typealias PlaceType = String
   public typealias TransitionType = String
   
-  let value: (inc: Set<Marking>, exc: Set<Marking>)?
-  let net: PetriNet
+  public let value: (inc: Set<Marking>, exc: Set<Marking>)?
+  public let net: PetriNet
+  
+  public init(value: (inc: Set<Marking>, exc: Set<Marking>)?, net: PetriNet) {
+    self.value = value
+    self.net = net
+  }
   
   /// Compute the negation of a predicate structure, which is a set of predicate structures
   /// - Returns: Returns the negation of the predicate structure
-  func not() -> SPS {
+  public func not() -> SPS {
     if let p = value {
       var sps: Set<PS> = []
       for el in p.inc {
@@ -40,7 +45,7 @@ public struct PS {
   /// This is the convergent point such as all marking of markings are included in this convergent marking.
   /// - Parameter markings: The marking set
   /// - Returns: The singleton that contains one marking where each place takes the maximum between all markings.
-  func convMax(markings: Set<Marking>) -> Set<Marking> {
+  public func convMax(markings: Set<Marking>) -> Set<Marking> {
     if markings.isEmpty {
       return []
     }
@@ -64,7 +69,7 @@ public struct PS {
   /// This is the convergent point such as the convergent marking is included in all the other markings.
   /// - Parameter markings: The marking set
   /// - Returns: The singleton that contains one marking where each place takes the minimum between all markings.
-  func convMin(markings: Set<Marking>) -> Set<Marking> {
+  public func convMin(markings: Set<Marking>) -> Set<Marking> {
     if markings.isEmpty {
       return []
     }
@@ -88,7 +93,7 @@ public struct PS {
   /// It would mean that the greater marking is already contained in lower one. Thus, we keep only the lowest marking when some of them are included in each other.
   /// - Parameter markings: The marking set
   /// - Returns: The minimal set of markings with no inclusion between all of them.
-  func minSet(markings: Set<Marking>) -> Set<Marking> {
+  public func minSet(markings: Set<Marking>) -> Set<Marking> {
     if markings.isEmpty {
       return []
     }
@@ -114,7 +119,7 @@ public struct PS {
   /// By canonical form, we mean reducing a in a singleton, removing all possible inclusions in b, and no marking in b included in a.
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
   /// - Returns: The canonical form of the predicate structure.
-  func canonised() -> PS {
+  public func canonised() -> PS {
     if let p = value {
       let canInclude = convMax(markings: p.inc)
       let preCanExclude = minSet(markings: p.exc)
@@ -152,7 +157,7 @@ public struct PS {
   
   /// Compute all the markings represented by the symbolic representation of a predicate structure.
   /// - Returns: The set of all possible markings, also known as the state space.
-  func underlyingMarkings() -> Set<Marking> {
+  public func underlyingMarkings() -> Set<Marking> {
     let canonizedPS = self.canonised()
     var placeSetValues: [PlaceType: Set<Int>] = [:]
     var res: Set<[PlaceType: Int]> = []
@@ -221,7 +226,7 @@ public struct PS {
   /// Encode a marking into a predicate structure. This predicate structure encodes a singe marking.
   /// - Parameter marking: The marking to encode
   /// - Returns: The predicate structure that represents the marking
-  func encodeMarking(_ marking: Marking) -> PS {
+  public func encodeMarking(_ marking: Marking) -> PS {
     var bMarkings: Set<Marking> = []
     var markingTemp = marking
     for place in net.places {
@@ -236,7 +241,7 @@ public struct PS {
   /// Encode a set of markings into a set of predicate structures.
   /// - Parameter markingSet: The marking set to encode
   /// - Returns: A set of predicate structures that encodes the set of markings
-  func encodeMarkingSet(_ markingSet: Set<Marking>) -> SPS {
+  public func encodeMarkingSet(_ markingSet: Set<Marking>) -> SPS {
     var sps: Set<PS> = []
     for marking in markingSet {
       sps.insert(encodeMarking(marking))
@@ -271,7 +276,7 @@ public struct PS {
   /// - Parameters:
   ///   - ps: The second predicate structure
   /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
-  func merge(_ ps: PS) -> SPS {
+  public func merge(_ ps: PS) -> SPS {
     var ps1Temp = self
     var ps2Temp = ps
     
@@ -322,7 +327,7 @@ public struct PS {
     return [self, ps]
   }
   
-  func revert(transition: String) -> PS? {
+  public func revert(transition: String) -> PS? {
     if let p = value {
       var aTemp: Set<Marking> = []
       var bTemp: Set<Marking> = []
@@ -353,7 +358,7 @@ public struct PS {
     return PS(value: nil, net: net)
   }
   
-  func revert() -> SPS {
+  public func revert() -> SPS {
     var res: Set<PS> = []
     for transition in net.transitions {
       if let rev = self.revert(transition: transition) {

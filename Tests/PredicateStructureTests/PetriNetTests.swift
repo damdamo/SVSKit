@@ -1,5 +1,6 @@
 import XCTest
-@testable import PredicateStructure
+//@testable import PredicateStructure
+import PredicateStructure
 
 final class PetriNetTests: XCTestCase {
   
@@ -58,9 +59,10 @@ final class PetriNetTests: XCTestCase {
   
   func testLoadPN() {
     let p = PnmlParser()
-    let (net1, marking1) = p.loadPN(filePath: "NQueens-PT-05.xml")
-//    print(net1.places)
-//    print(net1.transitions)
+//    let (net1, marking1) = p.loadPN(filePath: "NQueens-PT-05.xml")
+    let (net1, marking1) = p.loadPN(filePath: "SwimmingPool-1.pnml")
+    print(net1.places)
+    print(net1.transitions)
 //    print("--------------")
 //    print(net1.input)
 //    print("--------------")
@@ -72,9 +74,15 @@ final class PetriNetTests: XCTestCase {
 //      print(marking2)
 //    }
     
-//    let ctlFormula1: CTL = .AX(.ap("T_1_6_1_4"))
-//    
-//    print(ctlFormula1.eval(net: net1))
+    let ctlFormula1: CTL = .EF(.ap("GetK"))
+
+    let c = ctlFormula1.eval(net: net1)
+//    let cS = c.simplified()
+//    print(c)
+    print(c.count)
+    print("--------------------------------------------------------------------------------")
+    print(c)
+//    print(cS.count)
     
   }
   

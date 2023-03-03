@@ -13,8 +13,8 @@
 public struct Marking {
   
   /// The total map that backs this marking.
-  var storage: [String: Int]
-  let net: PetriNet
+  public var storage: [String: Int]
+  public let net: PetriNet
 
   /// Initializes a marking.
   ///

@@ -2,14 +2,11 @@
 ///  Semantics are often based on Kripke structures. However, the computation here is made on the fly and does not know the whole state space beforehand.
 ///   The strategy is to use the fixpoint to construct this state space, and thanks to monotonicity properties, the computation always finishes.
 ///   TODO: Replace all 'let ps = PredicateStructure(ps: .empty, net: net)' by a true structure for SPS to avoid this horrible trick
-indirect enum CTL {
-  
-  typealias PlaceType = String
-  typealias TransitionType = String
-  
+public indirect enum CTL {
+    
   // Basic case
-  case ap(TransitionType)
-  case after(TransitionType)
+  case ap(String)
+  case after(String)
   // Boolean logic
   case `true`
   case and(CTL, CTL)
@@ -24,7 +21,7 @@ indirect enum CTL {
   case AG(CTL)
   case AU(CTL, CTL)
   
-  func eval(net: PetriNet) -> SPS {
+  public func eval(net: PetriNet) -> SPS {
     switch self {
     case .ap(let t):
       if net.transitions.contains(t) {
@@ -43,7 +40,7 @@ indirect enum CTL {
         fatalError("Unknown transition")
       }
     case .true:
-      var dicEmptyMarking: [PlaceType: Int] = [:]
+      var dicEmptyMarking: [String: Int] = [:]
       for place in net.places {
         dicEmptyMarking[place] = 0
       }
@@ -78,8 +75,10 @@ indirect enum CTL {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
+      print(res.count)
+//      print("Count simplified: \(res.simplified().count)")
       resTemp = res
-      res = res.union(res.revert())
+      res = res.union(res.revert()).simplified()
     } while !res.isIncluded(resTemp)
     return res
   }
