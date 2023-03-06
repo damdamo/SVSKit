@@ -84,6 +84,11 @@ final class PetriNetTests: XCTestCase {
     XCTAssertEqual(net2.transitions.count, 25)
     XCTAssertEqual(countArcs, 125)
     
+    // This is how to upload a pnml from an url
+//    let p3 = PnmlParser()
+//    if let url = URL(string: "https://www.pnml.org/version-2009/examples/philo.pnml") {
+//      let (net3, marking3) = p3.loadPN(url: url)
+//    }
   }
   
 }

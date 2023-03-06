@@ -5,11 +5,13 @@
 public indirect enum CTL {
     
   // Basic case
+  case deadlock
   case ap(String)
   case after(String)
   // Boolean logic
   case `true`
   case and(CTL, CTL)
+  case or(CTL, CTL)
   case not(CTL)
   // CTL operators
   case EX(CTL)
@@ -49,8 +51,20 @@ public indirect enum CTL {
       ]
     case .and(let ctl1, let ctl2):
       return ctl1.eval(net: net).intersection(ctl2.eval(net: net))
+    case .or(let ctl1, let ctl2):
+      return ctl1.eval(net: net).union(ctl2.eval(net: net))
     case .not(let ctl1):
       return ctl1.eval(net: net).not()
+    case .deadlock:
+      if let tFirst = net.transitions.first {
+        var translated : CTL = .ap(tFirst)
+        for transition in net.transitions.subtracting([tFirst]) {
+          translated = .or(translated, .ap(transition))
+        }
+        translated = .not(translated)
+        return translated.eval(net: net)
+      }
+      return []
     case .EX(let ctl1):
       return ctl1.eval(net: net).revert()
     case .AX(let ctl1):
@@ -76,7 +90,7 @@ public indirect enum CTL {
     var resTemp: SPS
     repeat {
       print(res.count)
-//      print("Count simplified: \(res.simplified().count)")
+      print(res)
       resTemp = res
       res = res.union(res.revert()).simplified()
     } while !res.isIncluded(resTemp)

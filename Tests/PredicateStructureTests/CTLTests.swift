@@ -77,7 +77,6 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(expectedSPS, sps.simplified())
   }
 
-  // No answers for EG/AG
   func testCTLEval1() {
     // Following Petri net:
     //          t0
@@ -114,6 +113,14 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(simpliedSPS1, expectedRes)
     XCTAssertEqual(simpliedSPS2, [])
     XCTAssertEqual(simpliedSPS3, [])
+    
+//    let ctlFormula4: CTL = .EX(.ap("t2"))
+//    let ctlFormula5: CTL = .AX(.ap("t2"))
+//    let sps4 = ctlFormula4.eval(net: net).simplified()
+//    let sps5 = ctlFormula5.eval(net: net).simplified()
+//
+//    print(sps4)
+//    print(sps5)
   }
 
   func testCTLEval2() {
@@ -156,11 +163,11 @@ final class CTLTests: XCTestCase {
   func testCTLEval3() {
     // Following Petri net:
     // p1
-    //       2 t1
+    //       5 t1
     //      <--
     // p0 o     ▭ --> o p1
     //    | -->
-    //    |  5
+    //    |  2
     //    |
     //    |
     //     -->  ▭ --> o p2
@@ -193,6 +200,64 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(simpliedSPS1, [ps2,ps3])
     XCTAssertEqual(simpliedSPS2, [ps1])
     XCTAssertEqual(simpliedSPS3, [ps1])
+    
+    let ctlFormula4: CTL = .deadlock
+    XCTAssertEqual(ctlFormula4.eval(net: net), [ps3])
+  }
+  
+  func testFromMCC() {
+    let p = PnmlParser()
+    let (net1, marking1) = p.loadPN(filePath: "SwimmingPool-1.pnml")
+
+    print(marking1)
+
+//    let ctlFormula1: CTL = .EF(.ap("GetK"))
+//    let eval1 = ctlFormula1.eval(net: net1)
+//    print(eval1.count)
+//    print(eval1)
+//
+//    print("---------------")
+//
+//    let ctlFormula2: CTL = .AX(.ap("GetK"))
+//    let eval2 = ctlFormula2.eval(net: net1)
+//    print(eval2.count)
+//
+//    print("---------------")
+//
+//    let ctlFormula3: CTL = .AG(.ap("GetK"))
+//    let eval3 = ctlFormula3.eval(net: net1)
+//    print(eval3.count)
+    
+    let ctlFormula4: CTL = .EF(.deadlock)
+    let eval4 = ctlFormula4.eval(net: net1)
+    print(eval4.count)
+    print(eval4)
+
+    
+  }
+  
+  func testAXDiff() {
+//    let net = PetriNet(
+//      places: ["p0"],
+//      transitions: ["t0", "t1"],
+//      arcs: .pre(from: "p0", to: "t0", labeled: 5),
+//      .pre(from: "p0", to: "t1", labeled: 3)
+//    )
+  
+    let net = PetriNet(
+      places: ["p0"],
+      transitions: ["t0", "t1"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 2),
+      .post(from: "t0", to: "p0", labeled: 5),
+      .pre(from: "p0", to: "t1", labeled: 5)
+    )
+    
+    let ctlFormula1: CTL = .EX(.ap("t1"))
+    let ctlFormula2: CTL = .AX(.ap("t1"))
+    
+    print(ctlFormula1.eval(net: net).simplified())
+    print(ctlFormula2.eval(net: net).simplified())
+
   }
   
 }
