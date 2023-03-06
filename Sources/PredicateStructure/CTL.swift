@@ -150,3 +150,141 @@ public indirect enum CTL {
   }
 
 }
+
+// Specific case of CTL where a marking is given
+extension CTL {
+  public func eval(marking: Marking, net: PetriNet) -> Bool {
+    switch self {
+    case .ap(let t):
+      if net.transitions.contains(t) {
+        return
+          PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net).contains(marking: marking)
+      } else {
+        fatalError("Unknown transition")
+      }
+    case .after(let t):
+      if net.transitions.contains(t) {
+        return PS(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net).contains(marking: marking)
+      } else {
+        fatalError("Unknown transition")
+      }
+    case .true:
+      return true
+    case .and(let ctl1, let ctl2):
+      return ctl1.eval(marking: marking, net: net) && (ctl2.eval(marking: marking, net: net))
+    case .or(let ctl1, let ctl2):
+      return ctl1.eval(marking: marking, net: net) || (ctl2.eval(marking: marking, net: net))
+    case .not(let ctl1):
+      return ctl1.eval(net: net).not().contains(marking: marking)
+    case .deadlock:
+      if let tFirst = net.transitions.first {
+        var translated : CTL = .ap(tFirst)
+        for transition in net.transitions.subtracting([tFirst]) {
+          translated = .or(translated, .ap(transition))
+        }
+        translated = .not(translated)
+        return translated.eval(net: net).contains(marking: marking)
+      }
+      return true
+    case .EX(let ctl1):
+      return ctl1.eval(net: net).revert().contains(marking: marking)
+    case .AX(let ctl1):
+      return ctl1.eval(net: net).revertTilde().contains(marking: marking)
+    case .EF(let ctl1):
+      return ctl1.evalEF(marking: marking, net: net)
+    case .AF(let ctl1):
+      return ctl1.evalAF(marking: marking, net: net)
+    case .EG(let ctl1):
+      return ctl1.evalEG(marking: marking, net: net)
+    case .AG(let ctl1):
+      return ctl1.evalAG(marking: marking, net: net)
+    case .EU(let ctl1, let ctl2):
+      return ctl1.evalEU(ctl: ctl2, marking: marking, net: net)
+    case .AU(let ctl1, let ctl2):
+      return ctl1.evalAU(ctl: ctl2, marking: marking, net: net)
+    }
+    
+  }
+
+  func evalEF(marking: Marking, net: PetriNet) -> Bool {
+    var res = self.eval(net: net)
+    var resTemp: SPS
+    repeat {
+      if res.contains(marking: marking) {
+        return true
+      }
+      print(res.count)
+      print(res)
+      resTemp = res
+      res = res.union(res.revert()).simplified()
+    } while !res.isIncluded(resTemp)
+    return res.contains(marking: marking)
+  }
+  
+  func evalAF(marking: Marking, net: PetriNet) -> Bool {
+    var res = self.eval(net: net)
+    var resTemp: SPS
+    repeat {
+      if res.contains(marking: marking) {
+        return true
+      }
+      resTemp = res
+      res = res.union(res.revert().intersection(res.revertTilde()))
+    } while !res.isIncluded(resTemp)
+    return res.contains(marking: marking)
+  }
+  
+  func evalEG(marking: Marking, net: PetriNet) -> Bool {
+    var res = self.eval(net: net)
+    var resTemp: SPS
+    repeat {
+      if !res.contains(marking: marking) {
+        return false
+      }
+      resTemp = res
+      res = res.intersection(res.revert().union(res.revertTilde()))
+    } while !resTemp.isIncluded(res)
+    return res.contains(marking: marking)
+  }
+  
+  func evalAG(marking: Marking, net: PetriNet) -> Bool {
+    var res = self.eval(net: net)
+    var resTemp: SPS
+    repeat {
+      if !res.contains(marking: marking) {
+        return false
+      }
+      resTemp = res
+      res = res.intersection(res.revertTilde())
+    } while !resTemp.isIncluded(res)
+    return res.contains(marking: marking)
+  }
+  
+  func evalEU(ctl: CTL, marking: Marking, net: PetriNet) -> Bool {
+    let phi = self.eval(net: net)
+    var res = ctl.eval(net: net)
+    var resTemp: SPS
+    repeat {
+      if res.contains(marking: marking) {
+        return true
+      }
+      resTemp = res
+      res = res.union(phi.intersection(res.revert()))
+    } while !res.isIncluded(resTemp)
+    return res.contains(marking: marking)
+  }
+  
+  func evalAU(ctl: CTL, marking: Marking, net: PetriNet) -> Bool {
+    let phi = self.eval(net: net)
+    var res = ctl.eval(net: net)
+    var resTemp: SPS
+    repeat {
+      if res.contains(marking: marking) {
+        return true
+      }
+      resTemp = res
+      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde())))
+    } while !res.isIncluded(resTemp)
+    return res.contains(marking: marking)
+  }
+}

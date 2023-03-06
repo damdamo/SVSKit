@@ -105,6 +105,15 @@ public struct SPS {
     return SPS(values: [ps]).isIncluded(self)
   }
   
+  public func contains(marking: Marking) -> Bool {
+    for ps in values {
+      if ps.contains(marking: marking) {
+        return true
+      }
+    }
+    return false
+  }
+  
   
   /// Compute the revert function on all markings of each predicate structures
   /// - Returns: A new set of predicate structures after the revert application

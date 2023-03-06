@@ -367,6 +367,23 @@ public struct PS {
     }
     return SPS(values: res)
   }
+  
+  public func contains(marking: Marking) -> Bool {
+    if let value = self.value {
+      for m in value.inc {
+        if !(marking >= m) {
+          return false
+        }
+      }
+      for m in value.exc {
+        if marking >= m {
+          return false
+        }
+      }
+      return true
+    }
+    return false
+  }
 
 }
 
