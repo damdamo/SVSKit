@@ -303,4 +303,12 @@ extension PetriNet {
     return Marking(dicMarking, net: self)
   }
   
+  func zeroMarking() -> Marking {
+    var dicMarking: [PlaceType: Int] = [:]
+    for place in places {
+      dicMarking[place] = 0
+    }
+    return Marking(dicMarking, net: self)
+  }
+  
 }
