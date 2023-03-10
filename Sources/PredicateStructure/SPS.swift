@@ -131,6 +131,17 @@ public struct SPS {
     return (self.not()).revert().not()
   }
   
+  func revertTildeBis() -> SPS {
+    if self.values.isEmpty {
+      return []
+    }
+
+    var res: SPS = []
+    for ps in self {
+      res = res.union(ps.revertTildeBis())
+    }
+    return res
+  }
   
   /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:
   /// ps1 = ([(p0: 0, p1: 2, p2: 1)], [(p0: 1, p1: 2, p2: 1)])

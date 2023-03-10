@@ -271,6 +271,12 @@ final class PredicateStructureTests: XCTestCase {
     
     let ps8 = PS(value: ([marking3], [marking2]), net: net)
     XCTAssertEqual(SPS(values: [ps8]).simplified(), [])
+    
+//    var c = CacheSPS(simplified: [:])
+//    let e = EmbedSPS(sps: sps1, cache: c)
+//    
+//    print(e.simplified())
+//    print(e.simplified())
   }
   
 }

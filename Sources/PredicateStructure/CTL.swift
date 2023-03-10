@@ -19,6 +19,7 @@ public indirect enum CTL {
   case EG(CTL)
   case EU(CTL, CTL)
   case AX(CTL)
+  case AXBis(CTL)
   case AF(CTL)
   case AG(CTL)
   case AU(CTL, CTL)
@@ -69,6 +70,8 @@ public indirect enum CTL {
       return ctl1.eval(net: net).revert()
     case .AX(let ctl1):
       return ctl1.eval(net: net).revertTilde()
+    case .AXBis(let ctl1):
+      return ctl1.evalAXBis(net: net)
     case .EF(let ctl1):
       return ctl1.evalEF(net: net)
     case .AF(let ctl1):
@@ -85,6 +88,11 @@ public indirect enum CTL {
     
   }
 
+  func evalAXBis(net: PetriNet) -> SPS {
+    let eval = self.eval(net: net)
+    return eval.revertTildeBis()
+  }
+  
   func evalEF(net: PetriNet) -> SPS {
     var res = self.eval(net: net)
     var resTemp: SPS
@@ -102,7 +110,9 @@ public indirect enum CTL {
     var resTemp: SPS
     repeat {
       resTemp = res
-      res = res.union(res.revert().intersection(res.revertTilde()))
+      print("Without \(res.intersection(res.revertTilde()).simplified())")
+      print("Bis: \(res.intersection(res.revertTildeBis()).simplified())")
+      res = res.union(res.revert().intersection(res.revertTildeBis())).simplified()
     } while !res.isIncluded(resTemp)
     return res
   }
@@ -122,7 +132,7 @@ public indirect enum CTL {
     var resTemp: SPS
     repeat {
       resTemp = res
-      res = res.intersection(res.revertTilde())
+      res = res.intersection(res.revertTildeBis())
     } while !resTemp.isIncluded(res)
     return res
   }
@@ -190,6 +200,8 @@ extension CTL {
       return ctl1.eval(net: net).revert().contains(marking: marking)
     case .AX(let ctl1):
       return ctl1.eval(net: net).revertTilde().contains(marking: marking)
+    case .AXBis(_):
+      return false
     case .EF(let ctl1):
       return ctl1.evalEF(marking: marking, net: net)
     case .AF(let ctl1):
@@ -286,5 +298,46 @@ extension CTL {
       res = res.union(phi.intersection(res.revert().intersection(res.revertTilde())))
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
+  }
+}
+
+extension CTL: CustomStringConvertible {
+  public var description: String {
+    var res: String = ""
+    switch self {
+    case .true:
+      res = "true"
+    case .ap(let s):
+      res = s
+    case .after(let s):
+      res = "after(\(s))"
+    case .deadlock:
+      res = "deadlock"
+    case .not(let ctl):
+      res = "not(\(ctl))"
+    case .and(let ctl1, let ctl2):
+      res = "and(\(ctl1), \(ctl2))"
+    case .or(let ctl1, let ctl2):
+      res = "or(\(ctl1), \(ctl2))"
+    case .EX(let ctl):
+      res = "EX(\(ctl))"
+    case .AX(let ctl):
+      res = "AX(\(ctl))"
+    case .AXBis(let ctl):
+      res = "AXBis(\(ctl))"
+    case .EF(let ctl):
+      res = "EF(\(ctl))"
+    case .AF(let ctl):
+      res = "AF(\(ctl))"
+    case .EG(let ctl):
+      res = "EG(\(ctl))"
+    case .AG(let ctl):
+      res = "AG(\(ctl))"
+    case .EU(let ctl1, let ctl2):
+      res = "E(\(ctl1) U \(ctl2))"
+    case .AU(let ctl1, let ctl2):
+      res = "E(\(ctl1) U \(ctl2))"
+    }
+    return res
   }
 }

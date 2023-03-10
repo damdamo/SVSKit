@@ -406,3 +406,52 @@ extension PS: CustomStringConvertible {
     return "∅"
   }
 }
+
+extension PS {
+  
+  func revertTildeBis() -> SPS {
+    if let _ = self.value {
+      var res: SPS = []
+      var resTemp: SPS = []
+      var setMarking: Set<Marking> = []
+      var revDic: [String: PS] = [:]
+      
+      for t in net.transitions {
+        if let rev = self.revert(transition: t) {
+          if let _ = rev.value {
+            revDic[t] = rev
+          }
+        }
+      }
+      
+      for t1 in revDic.keys {
+        if let rev = revDic[t1] {
+          let convRev1 = self.convMax(markings: revDic[t1]!.value!.inc).first!
+          setMarking.insert(convRev1)
+          resTemp = [rev]
+          for t2 in revDic.keys {
+            if t1 != t2 {
+              let convRev2 = self.convMax(markings: revDic[t2]!.value!.inc).first!
+//              let inputT2 = net.inputMarkingForATransition(transition: t2)
+              if !(convRev2 <= convRev1) {
+                let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: t2)], []), net: net)
+                resTemp = resTemp.intersection(psToIntersect.not())
+              }
+            }
+          }
+          res = res.union(resTemp)
+        }
+      }
+      
+      let singleton = self.convMax(markings: setMarking)
+      if singleton.first!.storage.allSatisfy({$0.value <= net.capacity[$0.key]!}) {
+        let spsMax = SPS(values: [PS(value: (singleton, []), net: net)])
+        res = res.union(spsMax)
+      }
+      return res
+    }
+
+    return []
+  }
+  
+}

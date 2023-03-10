@@ -106,13 +106,13 @@ final class CTLTests: XCTestCase {
     let ps = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
     let expectedRes: SPS = [ps]
     
-    let simpliedSPS1 = sps1.simplified()
-    let simpliedSPS2 = sps2.simplified()
-    let simpliedSPS3 = sps3.simplified()
+    let simplifiedSPS1 = sps1.simplified()
+    let simplifiedSPS2 = sps2.simplified()
+    let simplifiedSPS3 = sps3.simplified()
 
-    XCTAssertEqual(simpliedSPS1, expectedRes)
-    XCTAssertEqual(simpliedSPS2, [])
-    XCTAssertEqual(simpliedSPS3, [])
+    XCTAssertEqual(simplifiedSPS1, expectedRes)
+    XCTAssertEqual(simplifiedSPS2, [])
+    XCTAssertEqual(simplifiedSPS3, [])
     
 //    let ctlFormula4: CTL = .EX(.ap("t2"))
 //    let ctlFormula5: CTL = .AX(.ap("t2"))
@@ -205,59 +205,81 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(ctlFormula4.eval(net: net), [ps3])
   }
   
-  func testFromMCC() {
-    let p = PnmlParser()
-    let (net1, marking1) = p.loadPN(filePath: "SwimmingPool-1.pnml")
-
-    print(marking1)
-
-//    let ctlFormula1: CTL = .EF(.ap("GetK"))
-//    let eval1 = ctlFormula1.eval(net: net1)
-//    print(eval1.count)
-//    print(eval1)
-//
-//    print("---------------")
-//
-//    let ctlFormula2: CTL = .AX(.ap("GetK"))
-//    let eval2 = ctlFormula2.eval(net: net1)
-//    print(eval2.count)
-//
-//    print("---------------")
-//
-//    let ctlFormula3: CTL = .AG(.ap("GetK"))
-//    let eval3 = ctlFormula3.eval(net: net1)
-//    print(eval3.count)
-    
-    let ctlFormula4: CTL = .EF(.deadlock)
-    let eval4 = ctlFormula4.eval(net: net1)
-    print(eval4.count)
-    print(eval4)
-
-    
-  }
-  
   func testAXDiff() {
 //    let net = PetriNet(
 //      places: ["p0"],
 //      transitions: ["t0", "t1"],
-//      arcs: .pre(from: "p0", to: "t0", labeled: 5),
-//      .pre(from: "p0", to: "t1", labeled: 3)
+//      arcs: .pre(from: "p0", to: "t0", labeled: 2),
+//      .post(from: "t0", to: "p0", labeled: 4),
+//      .pre(from: "p0", to: "t1", labeled: 5)
 //    )
   
+//    let net = PetriNet(
+//      places: ["p0"],
+//      transitions: ["t0", "t1", "t2"],
+//      arcs: .pre(from: "p0", to: "t0", labeled: 2),
+//      .post(from: "t0", to: "p0", labeled: 4),
+//      .pre(from: "p0", to: "t1", labeled: 5),
+//      .pre(from: "p0", to: "t2", labeled: 7)
+//    )
+    
     let net = PetriNet(
-      places: ["p0"],
-      transitions: ["t0", "t1"],
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0", "t1", "t2"],
       arcs: .pre(from: "p0", to: "t0", labeled: 2),
-      .post(from: "t0", to: "p0", labeled: 5),
-      .pre(from: "p0", to: "t1", labeled: 5)
+      .post(from: "t0", to: "p0", labeled: 1),
+      .pre(from: "p0", to: "t1", labeled: 4),
+      .pre(from: "p1", to: "t1", labeled: 6),
+      .post(from: "t1", to: "p1", labeled: 3),
+      .pre(from: "p1", to: "t2", labeled: 5),
+      .pre(from: "p2", to: "t2", labeled: 1)
     )
     
     let ctlFormula1: CTL = .EX(.ap("t1"))
     let ctlFormula2: CTL = .AX(.ap("t1"))
     
-    print(ctlFormula1.eval(net: net).simplified())
+//    print(ctlFormula1.eval(net: net))
+//    print(ctlFormula2.eval(net: net))
+//    print(ctlFormula1.eval(net: net).simplified())
     print(ctlFormula2.eval(net: net).simplified())
+    let ctlFormula3: CTL = .AXBis(.ap("t1"))
+    print(ctlFormula3.eval(net: net))
+    
 
+  }
+  
+  func testCTLEvalX() {
+      // Following Petri net:
+    //          t0
+    //       -> ▭
+    // p0  /   /
+    // o -  <-
+    //     \
+    //       -> ▭ -> o -> ▭
+    //          t1   p1   t2
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p0", labeled: 1),
+      .pre(from: "p0", to: "t1", labeled: 1),
+      .post(from: "t1", to: "p1", labeled: 1),
+      .pre(from: "p1", to: "t2", labeled: 1),
+      capacity: ["p0": 4, "p1": 4]
+    )
+
+//    let ctlFormula1: CTL = .AF(.ap("t2"))
+//    let sps1 = ctlFormula1.eval(net: net)
+//    let ps = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
+//    let expectedRes: SPS = [ps]
+//
+//    let simplifiedSPS1 = sps1.simplified()
+//    print(simplifiedSPS1)
+    let ctlFormula2: CTL = .AX(.ap("t2"))
+    let ctlFormula3: CTL = .AXBis(.ap("t2"))
+    
+    print(ctlFormula2.eval(net: net).simplified())
+    print(ctlFormula3.eval(net: net).simplified())
   }
   
 }
