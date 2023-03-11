@@ -468,14 +468,23 @@ extension PS {
           }
         }
       }
+      
+//      print("revPS t0: \(revPS["t0"]!)")
+//      print("revPS t1: \(revPS["t1"]!)")
+//      print("revPS t2: \(revPS["t2"]!)")
+//      print("t0 <= t1: \(revPS["t0"]!.isIncluded(revPS["t1"]!))")
             
       for transitions in powersetT {
+//        print("Transitions: \(transitions)")
         if let rev = revSPS[transitions] {
           resTemp = rev
           for transition in validTransitions.subtracting(transitions) {
-            if !(SPS(values: [revPS[transition]!]).isIncluded(revSPS[transitions]!)) {
+//            if !(SPS(values: [revPS[transition]!]).isIncluded(revSPS[transitions]!)) {
+            if !(revSPS[transitions]!.isIncluded(SPS(values: [revPS[transition]!]))) {
+//              print("Current trans: \(transition)")
               let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: transition)], []), net: net)
               resTemp = resTemp.intersection(psToIntersect.not())
+//              print(resTemp)
             }
           }
           res = res.union(resTemp)
