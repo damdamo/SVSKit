@@ -1,7 +1,6 @@
 /// The Computation tree logic (CTL), is a language to express temporal properties that must hold a model.
 ///  Semantics are often based on Kripke structures. However, the computation here is made on the fly and does not know the whole state space beforehand.
 ///   The strategy is to use the fixpoint to construct this state space, and thanks to monotonicity properties, the computation always finishes.
-///   TODO: Replace all 'let ps = PredicateStructure(ps: .empty, net: net)' by a true structure for SPS to avoid this horrible trick
 public indirect enum CTL {
     
   // Basic case
@@ -19,12 +18,11 @@ public indirect enum CTL {
   case EG(CTL)
   case EU(CTL, CTL)
   case AX(CTL)
-  case AXBis(CTL)
   case AF(CTL)
   case AG(CTL)
   case AU(CTL, CTL)
   
-  public func eval(net: PetriNet) -> SPS {
+  public func eval(net: PetriNet, rewrited: Bool = false) -> SPS {
     switch self {
     case .ap(let t):
       if net.transitions.contains(t) {
@@ -57,40 +55,25 @@ public indirect enum CTL {
     case .not(let ctl1):
       return ctl1.eval(net: net).not()
     case .deadlock:
-      if let tFirst = net.transitions.first {
-        var translated : CTL = .ap(tFirst)
-        for transition in net.transitions.subtracting([tFirst]) {
-          translated = .or(translated, .ap(transition))
-        }
-        translated = .not(translated)
-        return translated.eval(net: net)
-      }
-      return []
+      return SPS.deadlock(net: net)
     case .EX(let ctl1):
       return ctl1.eval(net: net).revert()
     case .AX(let ctl1):
-      return ctl1.eval(net: net).revertTilde()
-    case .AXBis(let ctl1):
-      return ctl1.evalAXBis(net: net)
+      return ctl1.eval(net: net).revertTilde(rewrited: rewrited)
     case .EF(let ctl1):
       return ctl1.evalEF(net: net)
     case .AF(let ctl1):
-      return ctl1.evalAF(net: net)
+      return ctl1.evalAF(net: net, rewrited: rewrited)
     case .EG(let ctl1):
-      return ctl1.evalEG(net: net)
+      return ctl1.evalEG(net: net, rewrited: rewrited)
     case .AG(let ctl1):
-      return ctl1.evalAG(net: net)
+      return ctl1.evalAG(net: net, rewrited: rewrited)
     case .EU(let ctl1, let ctl2):
       return ctl1.evalEU(ctl: ctl2, net: net)
     case .AU(let ctl1, let ctl2):
-      return ctl1.evalAU(ctl: ctl2, net: net)
+      return ctl1.evalAU(ctl: ctl2, net: net, rewrited: rewrited)
     }
     
-  }
-
-  func evalAXBis(net: PetriNet) -> SPS {
-    let eval = self.eval(net: net)
-    return eval.revertTildeBis()
   }
   
   func evalEF(net: PetriNet) -> SPS {
@@ -105,34 +88,32 @@ public indirect enum CTL {
     return res
   }
   
-  func evalAF(net: PetriNet) -> SPS {
+  func evalAF(net: PetriNet, rewrited: Bool = false) -> SPS {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
       resTemp = res
-//      print("Without \(res.intersection(res.revertTilde()).simplified())")
-//      print("Bis: \(res.intersection(res.revertTildeBis()).simplified())")
-      res = res.union(res.revert().intersection(res.revertTildeBis())).simplified()
+      res = res.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
     } while !res.isIncluded(resTemp)
     return res
   }
   
-  func evalEG(net: PetriNet) -> SPS {
+  func evalEG(net: PetriNet, rewrited: Bool = false) -> SPS {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
       resTemp = res
-      res = res.intersection(res.revert().union(res.revertTilde()))
+      res = res.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
     } while !resTemp.isIncluded(res)
     return res
   }
   
-  func evalAG(net: PetriNet) -> SPS {
+  func evalAG(net: PetriNet, rewrited: Bool = false) -> SPS {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
       resTemp = res
-      res = res.intersection(res.revertTildeBis())
+      res = res.intersection(res.revertTilde(rewrited: rewrited))
     } while !resTemp.isIncluded(res)
     return res
   }
@@ -148,13 +129,13 @@ public indirect enum CTL {
     return res
   }
   
-  func evalAU(ctl: CTL, net: PetriNet) -> SPS {
+  func evalAU(ctl: CTL, net: PetriNet, rewrited: Bool = false) -> SPS {
     let phi = self.eval(net: net)
     var res = ctl.eval(net: net)
     var resTemp: SPS
     repeat {
       resTemp = res
-      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde())))
+      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
     } while !res.isIncluded(resTemp)
     return res
   }
@@ -163,7 +144,7 @@ public indirect enum CTL {
 
 // Specific case of CTL where a marking is given
 extension CTL {
-  public func eval(marking: Marking, net: PetriNet) -> Bool {
+  public func eval(marking: Marking, net: PetriNet, rewrited: Bool = false) -> Bool {
     switch self {
     case .ap(let t):
       if net.transitions.contains(t) {
@@ -199,9 +180,7 @@ extension CTL {
     case .EX(let ctl1):
       return ctl1.eval(net: net).revert().contains(marking: marking)
     case .AX(let ctl1):
-      return ctl1.eval(net: net).revertTilde().contains(marking: marking)
-    case .AXBis(_):
-      return false
+      return ctl1.eval(net: net).revertTilde(rewrited: rewrited).contains(marking: marking)
     case .EF(let ctl1):
       return ctl1.evalEF(marking: marking, net: net)
     case .AF(let ctl1):
@@ -233,7 +212,7 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  func evalAF(marking: Marking, net: PetriNet) -> Bool {
+  func evalAF(marking: Marking, net: PetriNet, rewrited: Bool = false) -> Bool {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
@@ -241,12 +220,12 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = res.union(res.revert().intersection(res.revertTildeBis()))
+      res = res.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
   }
   
-  func evalEG(marking: Marking, net: PetriNet) -> Bool {
+  func evalEG(marking: Marking, net: PetriNet, rewrited: Bool = false) -> Bool {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
@@ -254,12 +233,12 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = res.intersection(res.revert().union(res.revertTildeBis()))
+      res = res.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
     } while !resTemp.isIncluded(res)
     return res.contains(marking: marking)
   }
   
-  func evalAG(marking: Marking, net: PetriNet) -> Bool {
+  func evalAG(marking: Marking, net: PetriNet, rewrited: Bool = false) -> Bool {
     var res = self.eval(net: net)
     var resTemp: SPS
     repeat {
@@ -267,7 +246,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = res.intersection(res.revertTildeBis())
+      res = res.intersection(res.revertTilde(rewrited: rewrited))
     } while !resTemp.isIncluded(res)
     return res.contains(marking: marking)
   }
@@ -286,7 +265,7 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  func evalAU(ctl: CTL, marking: Marking, net: PetriNet) -> Bool {
+  func evalAU(ctl: CTL, marking: Marking, net: PetriNet, rewrited: Bool = false) -> Bool {
     let phi = self.eval(net: net)
     var res = ctl.eval(net: net)
     var resTemp: SPS
@@ -295,7 +274,7 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = res.union(phi.intersection(res.revert().intersection(res.revertTildeBis())))
+      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
   }
@@ -323,8 +302,6 @@ extension CTL: CustomStringConvertible {
       res = "EX(\(ctl))"
     case .AX(let ctl):
       res = "AX(\(ctl))"
-    case .AXBis(let ctl):
-      res = "AXBis(\(ctl))"
     case .EF(let ctl):
       res = "EF(\(ctl))"
     case .AF(let ctl):

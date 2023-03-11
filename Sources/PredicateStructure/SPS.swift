@@ -127,20 +127,20 @@ public struct SPS {
   
   /// An extension of the revert function that represents AX in CTL logic.
   /// - Returns: A new set of predicate structures
-  public func revertTilde() -> SPS {
-    return (self.not()).revert().not()
-  }
-  
-  public func revertTildeBis() -> SPS {
+  public func revertTilde(rewrited: Bool) -> SPS {
+    if rewrited {
+      return (self.not()).revert().not()
+    }
     if self.values.isEmpty {
       return []
     }
 
     var res: SPS = []
     for ps in self {
-      res = res.union(ps.revertTildeBis())
+      res = res.union(ps.revertTilde())
     }
-    return res
+//    return res
+    return res.union(SPS.deadlock(net: self.first!.net))
   }
   
   /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:
@@ -207,6 +207,14 @@ public struct SPS {
       }
     }
     return SPS(values: reducedSPS)
+  }
+  
+  public static func deadlock(net: PetriNet) -> SPS {
+    var markings: Set<Marking> = []
+    for transition in net.transitions {
+      markings.insert(net.inputMarkingForATransition(transition: transition))
+    }
+    return SPS(values: [PS(value: ([], markings), net: net)])
   }
   
 }
