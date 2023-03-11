@@ -110,8 +110,8 @@ public indirect enum CTL {
     var resTemp: SPS
     repeat {
       resTemp = res
-      print("Without \(res.intersection(res.revertTilde()).simplified())")
-      print("Bis: \(res.intersection(res.revertTildeBis()).simplified())")
+//      print("Without \(res.intersection(res.revertTilde()).simplified())")
+//      print("Bis: \(res.intersection(res.revertTildeBis()).simplified())")
       res = res.union(res.revert().intersection(res.revertTildeBis())).simplified()
     } while !res.isIncluded(resTemp)
     return res
@@ -225,8 +225,8 @@ extension CTL {
       if res.contains(marking: marking) {
         return true
       }
-      print(res.count)
-      print(res)
+//      print(res.count)
+//      print(res)
       resTemp = res
       res = res.union(res.revert()).simplified()
     } while !res.isIncluded(resTemp)
@@ -241,7 +241,7 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = res.union(res.revert().intersection(res.revertTilde()))
+      res = res.union(res.revert().intersection(res.revertTildeBis()))
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
   }
@@ -254,7 +254,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = res.intersection(res.revert().union(res.revertTilde()))
+      res = res.intersection(res.revert().union(res.revertTildeBis()))
     } while !resTemp.isIncluded(res)
     return res.contains(marking: marking)
   }
@@ -267,7 +267,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = res.intersection(res.revertTilde())
+      res = res.intersection(res.revertTildeBis())
     } while !resTemp.isIncluded(res)
     return res.contains(marking: marking)
   }
@@ -295,7 +295,7 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde())))
+      res = res.union(phi.intersection(res.revert().intersection(res.revertTildeBis())))
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
   }

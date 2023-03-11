@@ -131,7 +131,7 @@ public struct SPS {
     return (self.not()).revert().not()
   }
   
-  func revertTildeBis() -> SPS {
+  public func revertTildeBis() -> SPS {
     if self.values.isEmpty {
       return []
     }

@@ -141,7 +141,7 @@ public class PetriNet
     if capacity == [:] {
       var newCap: [PlaceType: Int] = [:]
       for place in places {
-        newCap[place] = 10
+        newCap[place] = 20
       }
       self.capacity = newCap
     } else {

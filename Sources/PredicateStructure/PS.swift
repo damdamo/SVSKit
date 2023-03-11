@@ -409,49 +409,126 @@ extension PS: CustomStringConvertible {
 
 extension PS {
   
+  public func isIncluded (_ ps: PS) -> Bool {
+    
+    if self == ps {
+      return true
+    }
+    
+    if let p1 = self.value, let p2 = ps.value {
+      for m1 in p1.inc {
+        for m2 in p2.inc {
+          if !(m2 <= m1) {
+            return false
+          }
+        }
+      }
+      for m1 in p1.exc {
+        for m2 in p2.exc {
+          if !(m1 <= m2) {
+            return false
+          }
+        }
+      }
+      return true
+    }
+    return false
+  }
+  
+}
+
+extension PS {
+  
   func revertTildeBis() -> SPS {
     if let _ = self.value {
       var res: SPS = []
       var resTemp: SPS = []
-      var setMarking: Set<Marking> = []
-      var revDic: [String: PS] = [:]
+      var revPS: [String: PS] = [:]
+      var revSPS: [Set<String>: SPS] = [:]
       
       for t in net.transitions {
         if let rev = self.revert(transition: t) {
           if let _ = rev.value {
-            revDic[t] = rev
+            revPS[t] = rev
           }
         }
       }
       
-      for t1 in revDic.keys {
-        if let rev = revDic[t1] {
-          let convRev1 = self.convMax(markings: revDic[t1]!.value!.inc).first!
-          setMarking.insert(convRev1)
-          resTemp = [rev]
-          for t2 in revDic.keys {
-            if t1 != t2 {
-              let convRev2 = self.convMax(markings: revDic[t2]!.value!.inc).first!
-//              let inputT2 = net.inputMarkingForATransition(transition: t2)
-              if !(convRev2 <= convRev1) {
-                let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: t2)], []), net: net)
-                resTemp = resTemp.intersection(psToIntersect.not())
-              }
+      let validTransitions = Set(revPS.keys)
+      let powersetT = validTransitions.powerset.filter({$0 != []})
+      
+      for transitions in powersetT {
+        for transition in transitions {
+          if let rev = revPS[transition] {
+            if let sps = revSPS[transitions] {
+              revSPS[transitions] = sps.intersection(SPS(values: [rev]))
+            } else {
+              revSPS[transitions] = SPS(values: [rev])
+            }
+          }
+        }
+      }
+            
+      for transitions in powersetT {
+        if let rev = revSPS[transitions] {
+          resTemp = rev
+          for transition in validTransitions.subtracting(transitions) {
+            if !(SPS(values: [revPS[transition]!]).isIncluded(revSPS[transitions]!)) {
+              let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: transition)], []), net: net)
+              resTemp = resTemp.intersection(psToIntersect.not())
             }
           }
           res = res.union(resTemp)
         }
       }
       
-      let singleton = self.convMax(markings: setMarking)
-      if singleton.first!.storage.allSatisfy({$0.value <= net.capacity[$0.key]!}) {
-        let spsMax = SPS(values: [PS(value: (singleton, []), net: net)])
-        res = res.union(spsMax)
-      }
       return res
     }
 
     return []
   }
+  
+//  func revertTildeBis() -> SPS {
+//    if let _ = self.value {
+//      var res: SPS = []
+//      var resTemp: SPS = []
+//      var setMarking: Set<Marking> = []
+//      var revDic: [String: PS] = [:]
+//
+//      for t in net.transitions {
+//        if let rev = self.revert(transition: t) {
+//          if let _ = rev.value {
+//            revDic[t] = rev
+//          }
+//        }
+//      }
+//
+//      for t1 in revDic.keys {
+//        if let rev = revDic[t1] {
+//          let convRev1 = self.convMax(markings: revDic[t1]!.value!.inc).first!
+//          setMarking.insert(convRev1)
+//          resTemp = [rev]
+//          for t2 in revDic.keys {
+//            if t1 != t2 {
+//              if !(revDic[t1]!.isIncluded(revDic[t2]!)) {
+//                let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: t2)], []), net: net)
+//                resTemp = resTemp.intersection(psToIntersect.not())
+//              }
+//            }
+//          }
+//          res = res.union(resTemp)
+//        }
+//      }
+//
+//      let singleton = self.convMax(markings: setMarking)
+//      if singleton.first!.storage.allSatisfy({$0.value <= net.capacity[$0.key]!}) {
+//        let spsMax = SPS(values: [PS(value: (singleton, []), net: net)])
+//        res = res.union(spsMax)
+//      }
+//      return res
+//    }
+//
+//    return []
+//  }
   
 }

@@ -203,6 +203,11 @@ final class CTLTests: XCTestCase {
     
     let ctlFormula4: CTL = .deadlock
     XCTAssertEqual(ctlFormula4.eval(net: net), [ps3])
+    
+    let ctlFormula5: CTL = .AXBis(.and(.ap("t1"), .not(.ap("t0"))))
+    print(simpliedSPS1)
+    print("-----------------")
+    print(ctlFormula5.eval(net: net))
   }
   
   func testAXDiff() {
@@ -280,6 +285,26 @@ final class CTLTests: XCTestCase {
     
     print(ctlFormula2.eval(net: net).simplified())
     print(ctlFormula3.eval(net: net).simplified())
+  }
+  
+  func testTricky() {
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .pre(from: "p1", to: "t1", labeled: 1),
+      .pre(from: "p2", to: "t2", labeled: 1),
+      .pre(from: "p0", to: "t1", labeled: 1),
+      .pre(from: "p2", to: "t1", labeled: 1)
+    )
+
+    let ctl1: CTL = .AX(.ap("t0"))
+    let ctl2: CTL = .AXBis(.ap("t0"))
+
+    print(ctl1.eval(net: net).simplified())
+    print("----------")
+    print(ctl2.eval(net: net).simplified())
+    
   }
   
 }
