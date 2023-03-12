@@ -35,7 +35,7 @@ public struct SPS {
     var res: Set<PS> = []
     for ps1 in self {
       for ps2 in sps {
-        let intersect = ps1.intersection(ps: ps2, isCanonical: isCanonical)
+        let intersect = ps1.intersection(ps2, isCanonical: isCanonical)
         if let _ = intersect.value {
           res.insert(intersect)
         }

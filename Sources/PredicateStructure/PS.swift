@@ -368,7 +368,7 @@ public struct PS {
     return SPS(values: res)
   }
   
-  public func intersection(ps: PS, isCanonical: Bool = true) -> PS {
+  public func intersection(_ ps: PS, isCanonical: Bool = true) -> PS {
     if let p1 = self.value, let p2 = ps.value {
       if isCanonical {
         return PS(value: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: self.net).canonised()
@@ -400,7 +400,7 @@ public struct PS {
       var res: SPS = []
       var resTemp: SPS = []
       var revPS: [String: PS] = [:]
-      var revSPS: [Set<String>: SPS] = [:]
+      var revTransitionsPS: [Set<String>: PS] = [:]
       
       for t in net.transitions {
         if let rev = self.revert(transition: t) {
@@ -416,20 +416,20 @@ public struct PS {
       for transitions in powersetT {
         for transition in transitions {
           if let rev = revPS[transition] {
-            if let sps = revSPS[transitions] {
-              revSPS[transitions] = sps.intersection(SPS(values: [rev]))
+            if let ps = revTransitionsPS[transitions] {
+              revTransitionsPS[transitions] = ps.intersection(rev)
             } else {
-              revSPS[transitions] = SPS(values: [rev])
+              revTransitionsPS[transitions] = rev
             }
           }
         }
       }
             
       for transitions in powersetT {
-        if let rev = revSPS[transitions] {
-          resTemp = rev
+        if let rev = revTransitionsPS[transitions] {
+          resTemp = SPS(values: [rev])
           for transition in validTransitions.subtracting(transitions) {
-            if !(revSPS[transitions]!.isIncluded(SPS(values: [revPS[transition]!]))) {
+            if !(revTransitionsPS[transitions]!.isIncluded(revPS[transition]!)) {
               let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: transition)], []), net: net)
               resTemp = resTemp.intersection(psToIntersect.not())
             }
