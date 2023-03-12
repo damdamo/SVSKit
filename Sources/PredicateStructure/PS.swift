@@ -368,6 +368,16 @@ public struct PS {
     return SPS(values: res)
   }
   
+  public func intersection(ps: PS, isCanonical: Bool = true) -> PS {
+    if let p1 = self.value, let p2 = ps.value {
+      if isCanonical {
+        return PS(value: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: self.net).canonised()
+      }
+      return PS(value: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: self.net)
+    }
+    return PS(value: nil, net: self.net)
+  }
+  
   public func contains(marking: Marking) -> Bool {
     if let value = self.value {
       for m in value.inc {

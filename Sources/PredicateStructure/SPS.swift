@@ -33,19 +33,11 @@ public struct SPS {
   /// - Returns: The result of the intersection.
   public func intersection(_ sps: SPS, isCanonical: Bool = true) -> SPS {
     var res: Set<PS> = []
-    var temp: PS
     for ps1 in self {
       for ps2 in sps {
-        if let p1 = ps1.value, let p2 = ps2.value {
-          let intersectRaw = PS(value: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: ps1.net)
-          if isCanonical {
-            temp = intersectRaw.canonised()
-            if let _ = temp.value {
-              res.insert(temp)
-            }
-          } else {
-            res.insert(intersectRaw)
-          }
+        let intersect = ps1.intersection(ps: ps2, isCanonical: isCanonical)
+        if let _ = intersect.value {
+          res.insert(intersect)
         }
       }
     }
