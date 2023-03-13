@@ -5,7 +5,7 @@ public indirect enum CTL {
     
   // Basic case
   case deadlock
-  case ap(String)
+  case isFireable(String)
   case after(String)
   // Boolean logic
   case `true`
@@ -31,7 +31,7 @@ public indirect enum CTL {
   public func eval(net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> SPS {
     var res: SPS
     switch self {
-    case .ap(let t):
+    case .isFireable(let t):
       if net.transitions.contains(t) {
         res = [
           PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)
@@ -180,7 +180,7 @@ extension CTL {
   /// - Returns: True if the marking holds the CTL formula
   public func eval(marking: Marking, net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> Bool {
     switch self {
-    case .ap(let t):
+    case .isFireable(let t):
       if net.transitions.contains(t) {
         return
           PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net).contains(marking: marking)
@@ -373,7 +373,7 @@ extension CTL: CustomStringConvertible {
     switch self {
     case .true:
       res = "true"
-    case .ap(let s):
+    case .isFireable(let s):
       res = s
     case .after(let s):
       res = "after(\(s))"
