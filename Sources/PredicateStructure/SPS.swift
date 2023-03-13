@@ -241,29 +241,25 @@ public struct SPS {
         setTemp2.insert(firstPS)
       }
     }
-    
+        
     while !setTemp2.isEmpty {
       psFirst = setTemp2.first!
       psFirstTemp = psFirst
       setTemp2.remove(psFirst)
-      if let p1 = psFirst.value {
-        if p1.exc.count <= 1 {
-          for ps in setTemp2 {
-            spsTemp = psFirst.merge(ps)
-            if spsTemp.count == 1 {
-              psFirstTemp = spsTemp.first!
-              setTemp2.remove(ps)
-              setTemp2.insert(psFirstTemp)
-              break
-            }
-          }
+      for ps in setTemp2 {
+        spsTemp = psFirst.merge(ps)
+        if spsTemp.count == 1 {
+          psFirstTemp = spsTemp.first!
+          setTemp2.remove(ps)
+          setTemp2.insert(psFirstTemp)
+          break
         }
       }
       if psFirst == psFirstTemp {
         mergedSet.insert(psFirstTemp)
       }
     }
-    
+        
     if complete {
       var reducedSPS: Set<PS> = []
       

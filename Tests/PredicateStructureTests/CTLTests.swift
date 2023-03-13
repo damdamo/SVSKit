@@ -35,7 +35,7 @@ final class CTLTests: XCTestCase {
     
     let ctlFormula: CTL = .AX(.ap("t2"))
     let sps = ctlFormula.eval(net: net, rewrited: true)
-    let simpliedSPS = sps.simplified()
+    let simpliedSPS = sps.simplified(complete: true)
 
     XCTAssertTrue(simpliedSPS.isEquiv(expectedSPS))
     
@@ -115,12 +115,13 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(simplifiedSPS3, [])
     
 //    let ctlFormula4: CTL = .EX(.ap("t2"))
-//    let ctlFormula5: CTL = .AX(.ap("t2"))
+    let ctlFormula4: CTL = .AX(.ap("t2"))
 //    let sps4 = ctlFormula4.eval(net: net).simplified()
 //    let sps5 = ctlFormula5.eval(net: net).simplified()
 //
 //    print(sps4)
 //    print(sps5)
+    XCTAssertTrue(ctlFormula4.eval(net: net).isEquiv(ctlFormula4.eval(net: net, rewrited: true)))
   }
 
   func testCTLEval2() {
@@ -157,6 +158,8 @@ final class CTLTests: XCTestCase {
     let simpliedSPS3 = sps3.simplified()
     XCTAssertEqual(simpliedSPS1, expectedRes)
     XCTAssertEqual(simpliedSPS2, expectedRes)
+    print(sps3)
+    print(simpliedSPS3)
     XCTAssertEqual(simpliedSPS3, expectedRes)
   }
 
@@ -238,32 +241,15 @@ final class CTLTests: XCTestCase {
       .pre(from: "p2", to: "t2", labeled: 1)
     )
     
-//    let ctlFormula1: CTL = .AX(.ap("t1"))
-//    XCTAssertTrue(ctlFormula1.eval(net: net).isIncluded(ctlFormula1.eval(net: net, rewrited: true)))
-    
     let ctlFormula1: CTL = .AF(.and(.ap("t1"), .ap("t2")))
     let ctlFormula2: CTL = .AF(.and(.ap("t1"), .not(.ap("t2"))))
     let ctlFormula3: CTL = .AG(.not(.ap("t0")))
     let ctlFormula4: CTL = .AG(.not(.ap("t2")))
 
-    let c: CTL = .not(.ap("t0"))
-    let c1: CTL = .AX(.not(.ap("t0")))
-    print(c.eval(net: net))
-    print(c1.eval(net: net, rewrited: true).simplified())
-    print(c1.eval(net: net).simplified())
-    print(c1.eval(net: net).isEquiv(c1.eval(net: net, rewrited: true)))
-    
-//    print(ctlFormula3.eval(net: net, rewrited: true).simplified())
-//    print(ctlFormula3.eval(net: net, rewrited: false).simplified())
-    print(ctlFormula3.eval(net: net, rewrited: true).isEquiv(ctlFormula3.eval(net: net, rewrited: false).simplified()))
-    
-//    XCTAssertEqual(ctlFormula1.eval(net: net), ctlFormula1.eval(net: net, rewrited: true))
-//    XCTAssertEqual(ctlFormula2.eval(net: net), ctlFormula2.eval(net: net, rewrited: true))
-//    XCTAssertEqual(ctlFormula3.eval(net: net), ctlFormula3.eval(net: net, rewrited: true))
-//    XCTAssertEqual(ctlFormula4.eval(net: net), ctlFormula4.eval(net: net, rewrited: true))
-//    print(ctlFormula3.eval(net: net))
-    
-
+    XCTAssertEqual(ctlFormula1.eval(net: net), ctlFormula1.eval(net: net, rewrited: true))
+    XCTAssertEqual(ctlFormula2.eval(net: net), ctlFormula2.eval(net: net, rewrited: true))
+    XCTAssertTrue(ctlFormula3.eval(net: net).isEquiv(ctlFormula3.eval(net: net, rewrited: true)))
+    XCTAssertTrue(ctlFormula4.eval(net: net).isEquiv(ctlFormula4.eval(net: net, rewrited: true)))
   }
   
   func testCTLEvalX() {
@@ -298,26 +284,6 @@ final class CTLTests: XCTestCase {
     
     print(ctlFormula2.eval(net: net).simplified())
     print(ctlFormula3.eval(net: net).simplified())
-  }
-  
-  func testTricky() {
-    let net = PetriNet(
-      places: ["p0", "p1", "p2"],
-      transitions: ["t0", "t1", "t2"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .pre(from: "p1", to: "t1", labeled: 1),
-      .pre(from: "p2", to: "t2", labeled: 1),
-      .pre(from: "p0", to: "t1", labeled: 1),
-      .pre(from: "p2", to: "t1", labeled: 1)
-    )
-
-    let ctl1: CTL = .AX(.ap("t0"))
-    let ctl2: CTL = .AX(.ap("t0"))
-
-    print(ctl1.eval(net: net, rewrited: true).simplified())
-    print("----------")
-    print(ctl2.eval(net: net).simplified())
-    
   }
   
 }

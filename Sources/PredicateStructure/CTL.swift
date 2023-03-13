@@ -230,7 +230,6 @@ extension CTL {
       if res.contains(marking: marking) {
         return true
       }
-      print(res.count)
       resTemp = res
       res = res.union(res.revert())
       if simplified {

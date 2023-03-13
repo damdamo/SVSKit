@@ -282,6 +282,9 @@ public struct PS {
     
     if let p1 = self.value, let p2 = ps.value {
       if let am = p1.inc.first, let cm = p2.inc.first  {
+        if p1.inc.count > 1 || p1.exc.count > 1 || p2.inc.count > 1 || p2.exc.count > 1 {
+          return [self, ps]
+        }
         if !(am <= cm) {
           ps1Temp = ps
           ps2Temp = self

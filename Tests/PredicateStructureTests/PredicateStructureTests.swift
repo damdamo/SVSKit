@@ -199,7 +199,6 @@ final class PredicateStructureTests: XCTestCase {
     let revertT0 = Marking(["p0": 2, "p1": 0], net: net)
     let revertT1 = Marking(["p0": 1, "p1": 2], net: net)
     let revertT2 = Marking(["p0": 2, "p1": 2], net: net)
-//    print(model.fire(transition: .t1, from: marking1))
 
     let ps1 = PS(value: ([marking1], []), net: net)
     let ps2 = PS(value: ([revertT0], []), net: net)
@@ -210,7 +209,6 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(ps1.revert(transition: "t0"), ps2)
     XCTAssertEqual(ps1.revert(transition: "t1"), ps3)
     XCTAssertEqual(ps4.revert(transition: "t1"), ps5)
-    print(net.revert(marking: marking2))
   }
 
   func testUnderlyingMarking() {
@@ -271,12 +269,6 @@ final class PredicateStructureTests: XCTestCase {
     
     let ps8 = PS(value: ([marking3], [marking2]), net: net)
     XCTAssertEqual(SPS(values: [ps8]).simplified(), [])
-    
-//    var c = CacheSPS(simplified: [:])
-//    let e = EmbedSPS(sps: sps1, cache: c)
-//    
-//    print(e.simplified())
-//    print(e.simplified())
   }
   
   func testInclude() {
