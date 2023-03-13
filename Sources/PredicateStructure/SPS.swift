@@ -131,7 +131,6 @@ public struct SPS {
     for ps in self {
       res = res.union(ps.revertTilde())
     }
-//    return res
     return res.union(SPS.deadlock(net: self.first!.net))
   }
   
@@ -146,43 +145,117 @@ public struct SPS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-  public func simplified() -> SPS {
+//  public func simplified(complete: Bool = false) -> SPS {
+//    
+//    if self.isEmpty {
+//      return self
+//    }
+//    
+//    var mergedSet: Set<PS> = []
+//    var setTemp: Set<PS> = []
+//    var spsTemp: SPS = []
+//    var psFirst: PS
+//    var psFirstTemp: PS
+//    
+//    for ps in self {
+//      let can = ps.canonised()
+//      if let _ = can.value {
+//        setTemp.insert(can)
+//      }
+//    }
+//    
+//    if setTemp == [] {
+//      return []
+//    }
+//        
+//    while !setTemp.isEmpty {
+//      psFirst = setTemp.first!
+//      psFirstTemp = psFirst
+//      setTemp.remove(psFirst)
+//      if let p1 = psFirst.value {
+//        if p1.exc.count <= 1 {
+//          for ps in setTemp {
+//            spsTemp = psFirst.merge(ps)
+//            if spsTemp.count == 1 {
+//              psFirstTemp = spsTemp.first!
+//              setTemp.remove(ps)
+//              setTemp.insert(psFirstTemp)
+//              break
+//            } 
+//          }
+//        }
+//      }
+//      if psFirst == psFirstTemp {
+//        mergedSet.insert(psFirstTemp)
+//      }
+//    }
+//    
+//    var reducedSPS: Set<PS> = []
+//    
+//    for ps in mergedSet {
+//      if !SPS(values: [ps]).isIncluded(SPS(values: mergedSet.filter({!($0 == ps)}))) {
+//        reducedSPS.insert(ps)
+//      }
+//    }
+//    return SPS(values: reducedSPS)
+//  }
+  
+  public func simplified(complete: Bool = false) -> SPS {
     
     if self.isEmpty {
       return self
     }
     
     var mergedSet: Set<PS> = []
-    var setTemp: Set<PS> = []
+    var setTemp1: Set<PS> = []
+    var setTemp2: Set<PS> = []
     var spsTemp: SPS = []
     var psFirst: PS
     var psFirstTemp: PS
+    var b: Bool
     
     for ps in self {
       let can = ps.canonised()
       if let _ = can.value {
-        setTemp.insert(can)
+        setTemp1.insert(can)
       }
     }
     
-    if setTemp == [] {
+    if setTemp1 == [] {
       return []
     }
-        
-    while !setTemp.isEmpty {
-      psFirst = setTemp.first!
+    
+    while !setTemp1.isEmpty {
+      b = true
+      let firstPS = setTemp1.first!
+      setTemp1.remove(firstPS)
+      for ps in setTemp1 {
+        if ps.isIncluded(firstPS) {
+          setTemp1.remove(ps)
+        } else if firstPS.isIncluded(ps) {
+          b = false
+          break
+        }
+      }
+      if b {
+        setTemp2.insert(firstPS)
+      }
+    }
+    
+    while !setTemp2.isEmpty {
+      psFirst = setTemp2.first!
       psFirstTemp = psFirst
-      setTemp.remove(psFirst)
+      setTemp2.remove(psFirst)
       if let p1 = psFirst.value {
         if p1.exc.count <= 1 {
-          for ps in setTemp {
+          for ps in setTemp2 {
             spsTemp = psFirst.merge(ps)
             if spsTemp.count == 1 {
               psFirstTemp = spsTemp.first!
-              setTemp.remove(ps)
-              setTemp.insert(psFirstTemp)
+              setTemp2.remove(ps)
+              setTemp2.insert(psFirstTemp)
               break
-            } 
+            }
           }
         }
       }
@@ -191,14 +264,18 @@ public struct SPS {
       }
     }
     
-    var reducedSPS: Set<PS> = []
-    
-    for ps in mergedSet {
-      if !SPS(values: [ps]).isIncluded(SPS(values: mergedSet.filter({!($0 == ps)}))) {
-        reducedSPS.insert(ps)
+    if complete {
+      var reducedSPS: Set<PS> = []
+      
+      for ps in mergedSet {
+        if !SPS(values: [ps]).isIncluded(SPS(values: mergedSet.filter({!($0 == ps)}))) {
+          reducedSPS.insert(ps)
+        }
       }
+      return SPS(values: reducedSPS)
     }
-    return SPS(values: reducedSPS)
+    
+    return SPS(values: mergedSet)
   }
   
   public static func deadlock(net: PetriNet) -> SPS {

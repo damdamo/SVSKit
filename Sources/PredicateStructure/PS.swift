@@ -429,6 +429,7 @@ public struct PS {
         if let rev = revTransitionsPS[transitions] {
           resTemp = SPS(values: [rev])
           for transition in validTransitions.subtracting(transitions) {
+//            if !(SPS(values: [revTransitionsPS[transitions]!])).isIncluded(SPS(values: [revPS[transition]!])) {
             if !(revTransitionsPS[transitions]!.isIncluded(revPS[transition]!)) {
               let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: transition)], []), net: net)
               resTemp = resTemp.intersection(psToIntersect.not())
@@ -473,17 +474,35 @@ extension PS {
     }
     
     if let p1 = self.value, let p2 = ps.value {
-      for m1 in p1.inc {
-        for m2 in p2.inc {
-          if !(m2 <= m1) {
-            return false
+      // (Ø, _) ⊆ (_, _)
+      if p1.inc.isEmpty {
+        // (Ø, _) ⊆ ({}, _)
+        if !p2.inc.isEmpty {
+          return false
+        }
+      }
+      else {
+        for m1 in p1.inc {
+          for m2 in p2.inc {
+            if !(m2 <= m1) {
+              return false
+            }
           }
         }
       }
-      for m1 in p1.exc {
-        for m2 in p2.exc {
-          if !(m1 <= m2) {
-            return false
+      
+      // (Ø, _) ⊆ (_, _)
+      if p1.exc.isEmpty {
+        // // (Ø, _) ⊆ (_, {_})
+        if !p2.exc.isEmpty {
+          return false
+        }
+      } else {
+        for m1 in p1.exc {
+          for m2 in p2.exc {
+            if !(m1 <= m2) {
+              return false
+            }
           }
         }
       }

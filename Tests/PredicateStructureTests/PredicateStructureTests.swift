@@ -279,4 +279,37 @@ final class PredicateStructureTests: XCTestCase {
 //    print(e.simplified())
   }
   
+  func testInclude() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let marking1 = Marking(["p0": 1, "p1": 1], net: net)
+    let marking2 = Marking(["p0": 0, "p1": 1], net: net)
+    let ps1 = PS(value: ([marking2], [marking1]), net: net)
+    let ps2 = PS(value: ([marking1], []), net: net)
+    
+    XCTAssertFalse(ps1.isIncluded(ps2))
+    XCTAssertFalse(ps2.isIncluded(ps1))
+    
+    let ps3 = PS(value: ([marking2], []), net: net)
+    
+    XCTAssertTrue(ps1.isIncluded(ps3))
+    XCTAssertFalse(ps3.isIncluded(ps1))
+ 
+    let ps4 = PS(value: ([],[]), net: net)
+    
+    XCTAssertTrue(ps1.isIncluded(ps4))
+    XCTAssertTrue(ps2.isIncluded(ps4))
+    XCTAssertFalse(ps4.isIncluded(ps1))
+    XCTAssertFalse(ps4.isIncluded(ps2))
+    
+    let ps5 = PS(value: ([],[marking1]), net: net)
+    XCTAssertTrue(ps1.isIncluded(ps5))
+    XCTAssertFalse(ps5.isIncluded(ps1))
+  }
+  
 }
