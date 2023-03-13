@@ -320,6 +320,51 @@ extension CTL {
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
   }
+  
+  /// Reduce a query using some rewriting on CTL formulas.
+  /// - Returns: The reduced query
+  public func queryReduction() -> CTL {
+    switch self {
+    case .not(_):
+      return self.notReduction()
+    case .and(let ctl1, let ctl2):
+      return .and(ctl1.queryReduction(), ctl2.queryReduction())
+    case .or(let ctl1, let ctl2):
+      return .or(ctl1.queryReduction(), ctl2.queryReduction())
+    case .EX(let ctl):
+      return .EX(ctl.queryReduction())
+    case .AX(let ctl):
+      return .AX(ctl.queryReduction())
+    case .EF(let ctl):
+      return .EF(ctl.queryReduction())
+    case .AF(let ctl):
+      return .AF(ctl.queryReduction())
+    case .EG(let ctl):
+      return .EG(ctl.queryReduction())
+    case .AG(let ctl):
+      return .AG(ctl.queryReduction())
+    case .EU(let ctl1, let ctl2):
+      return .EU(ctl1.queryReduction(), ctl2.queryReduction())
+    case .AU(let ctl1, let ctl2):
+      return .AU(ctl1.queryReduction(), ctl2.queryReduction())
+    default:
+      return self
+    }
+  }
+  
+  public func notReduction() -> CTL {
+    switch self {
+    case .not(.AX(let ctl)):
+      return .EX(.not(ctl)).queryReduction()
+    case .not(.not(let ctl)):
+      return ctl.queryReduction()
+    case .not(let ctl):
+      return .not(ctl.queryReduction())
+    default:
+      return self
+    }
+  }
+  
 }
 
 extension CTL: CustomStringConvertible {
