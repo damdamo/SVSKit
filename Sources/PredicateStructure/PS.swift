@@ -398,7 +398,7 @@ public struct PS {
     return false
   }
   
-  func revertTilde() -> SPS {
+  public func revertTilde() -> SPS {
     if let _ = self.value {
       var res: SPS = []
       var resTemp: SPS = []
