@@ -6,8 +6,8 @@ final class ListExampleTests: XCTestCase {
   
   
   func testSwimmingPool() {
-    let p1 = PnmlParser()
-    let (net1, marking1) = p1.loadPN(filePath: "SwimmingPool-1.pnml")
+    let parser = PnmlParser()
+    let (net1, marking1) = parser.loadPN(filePath: "SwimmingPool-1.pnml")
     
     //     Example to observe that we do not need to compute EF fully to return true.
     //     Thanks to the lowest fixpoint, at each step, the state space can only grow.

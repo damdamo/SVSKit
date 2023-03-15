@@ -17,6 +17,7 @@ public class PnmlParser: NSObject, XMLParserDelegate {
   /// - Parameter filePath: The path name in the Resource folder
   /// - Returns: The corresponding Petri net and its  initial marking
   public func loadPN(filePath: String) -> (PetriNet, Marking) {
+    reset()
     if let url = Bundle.module.url(forResource: filePath, withExtension: nil) {
       let parser = XMLParser(contentsOf: url)!
       parser.delegate = self
@@ -31,10 +32,22 @@ public class PnmlParser: NSObject, XMLParserDelegate {
   /// - Parameter filePath: The url of the pnml file
   /// - Returns: The corresponding Petri net and its  initial marking
   public func loadPN(url: URL) -> (PetriNet, Marking) {
+    reset()
     let parser = XMLParser(contentsOf: url)!
     parser.delegate = self
     parser.parse()
     return createPN()
+  }
+  
+  func reset() {
+    self.net = [:]
+    self.places = [:]
+    self.transitions = [:]
+    self.arcs = [:]
+    self.currentID = ""
+    self.currentType = ""
+    self.currentTag = ""
+    self.currentDic = [String: String]()
   }
   
   /// Parse  the tags
