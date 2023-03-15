@@ -1,42 +1,41 @@
 /// A Petri net.
 ///
-/// `PetriNet` is a generic type, accepting two types representing the set of places and the set
-/// of transitions that structurally compose the model. Both should conform to `CaseIterable`,
-/// which guarantees that the set of places (resp. transitions) is bounded, and known statically.
-/// The following example illustrates how to declare the places and transition of a simple Petri
-/// net representing an on/off switch:
+/// `PetriNet` is a class where places and transitions are represented by String.
+/// Petri net instances are created by providing:
+/// - Set of places (set of strings)
+/// - Set of transitions (set of strings)
+/// - List of arcs
+/// - (Optional) A capacity dictionnary, to denote the maximum number of tokens for each place
 ///
-///     enum P: Place {
-///       typealias Content = Int
-///       case on, off
-///     }
+/// Example of a Petri net: (Visual and code representation)
+///          t0
+///        -> ▭
+///  p0  /
+///  o -
+///      \
+///        -> ▭ -> o <-> ▭
+///           t1   p1   t2
 ///
-///     enum T: Transition {
-///       case switchOn, switchOff
-///     }
-///
-/// Petri net instances are created by providing the list of the preconditions and postconditions
-/// that compose them. These should be provided in the form of arc descriptions (i.e. instances of
-/// `ArcDescription`) and fed directly to the Petri net's initializer. The following example shows
-/// how to create an instance of the on/off switch:
-///
-///
-///     let model = PetriNet<P, T>(
-///       .pre(from: .on, to: .switchOff),
-///       .post(from: .switchOff, to: .off),
-///       .pre(from: .off, to: .switchOn),
-///       .post(from: .switchOn, to: .on),
-///     )
+///  ```let net = PetriNet(
+///       places: ["p0", "p1"],
+///       transitions: ["t0", "t1", "t2"],
+///       arcs: .pre(from: "p0", to: "t0", labeled: 1),
+///       .pre(from: "p0", to: "t1", labeled: 1),
+///       .post(from: "t1", to: "p1", labeled: 1),
+///       .pre(from: "p1", to: "t2", labeled: 1),
+///       .post(from: "t2", to: "p1", labeled: 1),
+///       capacity: ["p0": 10, "p1": 10]
+///      )```
 ///
 /// Petri net instances only represent the structual part of the corresponding model, meaning that
 /// markings should be stored externally. They can however be used to compute the marking resulting
 /// from the firing of a particular transition, using the method `fire(transition:from:)`. The
 /// following example illustrates this method's usage:
 ///
-///     if let marking = model.fire(.switchOn, from: [.on: 0, .off: 1]) {
+///     if let marking = net.fire(transition: "t1", from: Marking(["p0": 1, "p1": 0], net: net)) {
 ///       print(marking)
 ///     }
-///     // Prints "[.on: 1, .off: 0]"
+///     // Prints: ["p0": 0, "p1": 1]
 ///
 public class PetriNet
 {
@@ -303,7 +302,9 @@ extension PetriNet {
     return Marking(dicMarking, net: self)
   }
   
-  func zeroMarking() -> Marking {
+  /// Create the marking containing 0 token in each place
+  /// - Returns: A marking where each place is associated to 0.
+  public func zeroMarking() -> Marking {
     var dicMarking: [PlaceType: Int] = [:]
     for place in places {
       dicMarking[place] = 0

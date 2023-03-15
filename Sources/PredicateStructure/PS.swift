@@ -11,7 +11,9 @@ public struct PS {
   public typealias PlaceType = String
   public typealias TransitionType = String
   
+  /// The couple that represents the predicate structure
   public let value: (inc: Set<Marking>, exc: Set<Marking>)?
+  /// The related Petri net
   public let net: PetriNet
   
   public init(value: (inc: Set<Marking>, exc: Set<Marking>)?, net: PetriNet) {
@@ -415,10 +417,12 @@ public struct PS {
   /// The idea behind AX is to give marking such as the next step, we get a specific predicate structure.
   /// For instance, if we think in term of transitions, it would mean to be sure that at the next step, a given transition may be always fireable.
   /// However, it does not mean that this transition will be always fired !
-  /// To compute it, the revert function is also computed, but for each transition, we have to ensure that the other transitions cannot be fired.
+  /// To compute it, the revert function is also computed, but for each set of transitions in the power set of transitions, we have to ensure that the other transitions cannot be fired.
   /// The goal is to take the same path to have the potential to fire the same transition afterwards.
-  ///
-  /// - Returns: <#description#>
+  /// For instance, let assume Transition = {t0, t1, t2}, powerset(Transition) = {{t0}, {t1}, {t2}, {t0, t1}, {t0, t2}, {t1, t2}, {t0, t1, t2}} (We remove the empty solution {})
+  /// For each set in the powerset, we apply the intersection between the transition. For {t0,t1}, we get: rev(t0).intersection(rev(t1))
+  /// Finally, on the rest of the transitions (here Transition \ {t0,t1} = {t2}), we use the intersection with the negation of the other transitions.
+  /// - Returns: A set of predicate structures that contains the result of the revertTilde.
   public func revertTilde() -> SPS {
     if let _ = self.value {
       var res: SPS = []

@@ -14,6 +14,7 @@ public struct Marking {
   
   /// The total map that backs this marking.
   public var storage: [String: Int]
+  /// The net related to the marking
   public let net: PetriNet
 
   /// Initializes a marking.

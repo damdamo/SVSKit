@@ -45,6 +45,7 @@ public struct Stopwatch {
       Double(ns) / 1_000_000_000
     }
 
+    /// Transform the time into an easier readable version
     public var humanFormat: String {
       guard ns >= 1000 else { return "\(ns)ns" }
       guard ns >= 1_000_000 else { return "\((μs * 100).rounded() / 100)μs" }
@@ -65,17 +66,18 @@ public struct Stopwatch {
     }
   }
 
+  /// The elapsed time from the moment the Stopwatch is created or reset
   public var elapsed: TimeInterval {
     let nano = DispatchTime.now().uptimeNanoseconds - startTime.uptimeNanoseconds
     return TimeInterval(ns: nano)
   }
 
+  /// Reset the timer
   public mutating func reset() {
     startTime = DispatchTime.now()
   }
 
   // Private
-
   private var startTime: DispatchTime
 }
 

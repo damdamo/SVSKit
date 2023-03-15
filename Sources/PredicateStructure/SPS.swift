@@ -2,6 +2,7 @@
 /// Some of them are different from the usual set operations, such as intersection.
 public struct SPS {
   
+  /// The set of predicate structures
   public let values: Set<PS>
   
   public init(values: Set<PS>) {
@@ -145,61 +146,6 @@ public struct SPS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-//  public func simplified(complete: Bool = false) -> SPS {
-//    
-//    if self.isEmpty {
-//      return self
-//    }
-//    
-//    var mergedSet: Set<PS> = []
-//    var setTemp: Set<PS> = []
-//    var spsTemp: SPS = []
-//    var psFirst: PS
-//    var psFirstTemp: PS
-//    
-//    for ps in self {
-//      let can = ps.canonised()
-//      if let _ = can.value {
-//        setTemp.insert(can)
-//      }
-//    }
-//    
-//    if setTemp == [] {
-//      return []
-//    }
-//        
-//    while !setTemp.isEmpty {
-//      psFirst = setTemp.first!
-//      psFirstTemp = psFirst
-//      setTemp.remove(psFirst)
-//      if let p1 = psFirst.value {
-//        if p1.exc.count <= 1 {
-//          for ps in setTemp {
-//            spsTemp = psFirst.merge(ps)
-//            if spsTemp.count == 1 {
-//              psFirstTemp = spsTemp.first!
-//              setTemp.remove(ps)
-//              setTemp.insert(psFirstTemp)
-//              break
-//            } 
-//          }
-//        }
-//      }
-//      if psFirst == psFirstTemp {
-//        mergedSet.insert(psFirstTemp)
-//      }
-//    }
-//    
-//    var reducedSPS: Set<PS> = []
-//    
-//    for ps in mergedSet {
-//      if !SPS(values: [ps]).isIncluded(SPS(values: mergedSet.filter({!($0 == ps)}))) {
-//        reducedSPS.insert(ps)
-//      }
-//    }
-//    return SPS(values: reducedSPS)
-//  }
-  
   public func simplified(complete: Bool = false) -> SPS {
     
     if self.isEmpty {
@@ -274,6 +220,9 @@ public struct SPS {
     return SPS(values: mergedSet)
   }
   
+  /// Create a set of predicate structures to represent all markings such as no transition are fireable.
+  /// - Parameter net: The Petri net
+  /// - Returns: The corresponding set of predicate structures
   public static func deadlock(net: PetriNet) -> SPS {
     var markings: Set<Marking> = []
     for transition in net.transitions {

@@ -3,30 +3,8 @@ import XCTest
 import PredicateStructure
 
 final class PredicateStructureTests: XCTestCase {
-  
-//  func testReminderPN() {
-//    enum P: Place {
-//      typealias Content = Int
-//
-//      case p1,p2,p3
-//    }
-//
-//    enum T: Transition {
-//      case t1//, t2
-//    }
-//
-//    let model = HeroNet<P, T>(
-//      .pre(from: .p1, to: .t1, labeled: 1),
-//      .pre(from: .p2, to: .t1, labeled: 2),
-//      .post(from: .t1, to: .p3, labeled: 3)
-//    )
-//    let marking1 = Marking<P>([.p1: 4, .p2: 5, .p3: 6])
-//
-//    print(model.fire(transition: .t1, from: marking1))
-//  }
-  
+   
   func testPS() {
-    
     typealias SPS = Set<PS>
     
     let net = PetriNet(
@@ -67,7 +45,6 @@ final class PredicateStructureTests: XCTestCase {
   }
   
   func testSPS1() {
-    
     let net = PetriNet(
       places: ["p1", "p2", "p3"],
       transitions: ["t1"],
@@ -96,7 +73,6 @@ final class PredicateStructureTests: XCTestCase {
   }
 
   func testSPS2() {
-
     let net = PetriNet(
       places: ["p1", "p2"],
       transitions: ["t1"],
@@ -114,7 +90,6 @@ final class PredicateStructureTests: XCTestCase {
   }
 
   func testSPSObservator() {
-
     let net = PetriNet(
       places: ["p1", "p2"],
       transitions: ["t1"],
@@ -183,7 +158,6 @@ final class PredicateStructureTests: XCTestCase {
   }
 
   func testRevertPS() {
-
     let net = PetriNet(
       places: ["p0", "p1"],
       transitions: ["t0", "t1"],
@@ -212,7 +186,6 @@ final class PredicateStructureTests: XCTestCase {
   }
 
   func testUnderlyingMarking() {
-
     let net = PetriNet(
       places: ["p0", "p1", "p2"],
       transitions: ["t0"],

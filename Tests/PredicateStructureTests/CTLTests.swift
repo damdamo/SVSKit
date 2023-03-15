@@ -33,7 +33,7 @@ final class CTLTests: XCTestCase {
     
     let expectedSPS: SPS = [ps1, ps2, ps3, ps4, ps5]
     
-    let ctlFormula: CTL = .AX(.ap("t2"))
+    let ctlFormula: CTL = .AX(.isFireable("t2"))
     let sps = ctlFormula.eval(net: net, rewrited: true)
     let simpliedSPS = sps.simplified(complete: true)
 
@@ -71,7 +71,7 @@ final class CTLTests: XCTestCase {
     let expectedSPS: SPS = [ps1, ps2, ps3, ps4, ps5, ps6]
 
     // Compute all markings that breaks the mutual exclusion
-    let ctlFormula: CTL = .EF(.and(.ap("t4"), .ap("t5")))
+    let ctlFormula: CTL = .EF(.and(.isFireable("t4"), .isFireable("t5")))
     let sps = ctlFormula.eval(net: net)
 
     XCTAssertEqual(expectedSPS, sps.simplified())
@@ -96,9 +96,9 @@ final class CTLTests: XCTestCase {
       capacity: ["p0": 4, "p1": 4]
     )
 
-    let ctlFormula1: CTL = .AF(.ap("t2"))
-    let ctlFormula2: CTL = .EG(.ap("t2"))
-    let ctlFormula3: CTL = .AG(.ap("t2"))
+    let ctlFormula1: CTL = .AF(.isFireable("t2"))
+    let ctlFormula2: CTL = .EG(.isFireable("t2"))
+    let ctlFormula3: CTL = .AG(.isFireable("t2"))
     let sps1 = ctlFormula1.eval(net: net)
     let sps2 = ctlFormula2.eval(net: net)
     let sps3 = ctlFormula3.eval(net: net)
@@ -114,13 +114,7 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(simplifiedSPS2, [])
     XCTAssertEqual(simplifiedSPS3, [])
     
-//    let ctlFormula4: CTL = .EX(.ap("t2"))
-    let ctlFormula4: CTL = .AX(.ap("t2"))
-//    let sps4 = ctlFormula4.eval(net: net).simplified()
-//    let sps5 = ctlFormula5.eval(net: net).simplified()
-//
-//    print(sps4)
-//    print(sps5)
+    let ctlFormula4: CTL = .AX(.isFireable("t2"))
     XCTAssertTrue(ctlFormula4.eval(net: net).isEquiv(ctlFormula4.eval(net: net, rewrited: true)))
   }
 
@@ -142,10 +136,10 @@ final class CTLTests: XCTestCase {
       .pre(from: "p1", to: "t2", labeled: 1),
       .post(from: "t2", to: "p1", labeled: 1)
     )
-
-    let ctlFormula1: CTL = .AF(.ap("t2"))
-    let ctlFormula2: CTL = .EG(.ap("t2"))
-    let ctlFormula3: CTL = .AG(.ap("t2"))
+    
+    let ctlFormula1: CTL = .AF(.isFireable("t2"))
+    let ctlFormula2: CTL = .EG(.isFireable("t2"))
+    let ctlFormula3: CTL = .AG(.isFireable("t2"))
     let sps1 = ctlFormula1.eval(net: net)
     let sps2 = ctlFormula2.eval(net: net)
     let sps3 = ctlFormula3.eval(net: net)
@@ -185,9 +179,9 @@ final class CTLTests: XCTestCase {
       .post(from: "t1", to: "p1", labeled: 1)
     )
 
-    let ctlFormula1: CTL = .AX(.and(.ap("t1"), .not(.ap("t0"))))
-    let ctlFormula2: CTL = .EU(.ap("t1"), .ap("t0"))
-    let ctlFormula3: CTL = .AU(.ap("t1"), .ap("t0"))
+    let ctlFormula1: CTL = .AX(.and(.isFireable("t1"), .not(.isFireable("t0"))))
+    let ctlFormula2: CTL = .EU(.isFireable("t1"), .isFireable("t0"))
+    let ctlFormula3: CTL = .AU(.isFireable("t1"), .isFireable("t0"))
     let sps1 = ctlFormula1.eval(net: net, rewrited: true)
     let sps2 = ctlFormula2.eval(net: net)
     let sps3 = ctlFormula3.eval(net: net)
@@ -209,7 +203,7 @@ final class CTLTests: XCTestCase {
     let ctlFormula4: CTL = .deadlock
     XCTAssertEqual(ctlFormula4.eval(net: net).simplified(), [ps3])
     
-    let ctlFormula5: CTL = .AX(.and(.ap("t1"), .not(.ap("t0"))))
+    let ctlFormula5: CTL = .AX(.and(.isFireable("t1"), .not(.isFireable("t0"))))
     XCTAssertTrue(ctlFormula5.eval(net: net).isIncluded(ctlFormula5.eval(net: net, rewrited: true)))
   }
   
@@ -241,49 +235,15 @@ final class CTLTests: XCTestCase {
       .pre(from: "p2", to: "t2", labeled: 1)
     )
     
-    let ctlFormula1: CTL = .AF(.and(.ap("t1"), .ap("t2")))
-    let ctlFormula2: CTL = .AF(.and(.ap("t1"), .not(.ap("t2"))))
-    let ctlFormula3: CTL = .AG(.not(.ap("t0")))
-    let ctlFormula4: CTL = .AG(.not(.ap("t2")))
+    let ctlFormula1: CTL = .AF(.and(.isFireable("t1"), .isFireable("t2")))
+    let ctlFormula2: CTL = .AF(.and(.isFireable("t1"), .not(.isFireable("t2"))))
+    let ctlFormula3: CTL = .AG(.not(.isFireable("t0")))
+    let ctlFormula4: CTL = .AG(.not(.isFireable("t2")))
 
     XCTAssertEqual(ctlFormula1.eval(net: net), ctlFormula1.eval(net: net, rewrited: true))
     XCTAssertEqual(ctlFormula2.eval(net: net), ctlFormula2.eval(net: net, rewrited: true))
     XCTAssertTrue(ctlFormula3.eval(net: net).isEquiv(ctlFormula3.eval(net: net, rewrited: true)))
     XCTAssertTrue(ctlFormula4.eval(net: net).isEquiv(ctlFormula4.eval(net: net, rewrited: true)))
   }
-  
-  func testCTLEvalX() {
-      // Following Petri net:
-    //          t0
-    //       -> ▭
-    // p0  /   /
-    // o -  <-
-    //     \
-    //       -> ▭ -> o -> ▭
-    //          t1   p1   t2
-    let net = PetriNet(
-      places: ["p0", "p1"],
-      transitions: ["t0", "t1", "t2"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p0", labeled: 1),
-      .pre(from: "p0", to: "t1", labeled: 1),
-      .post(from: "t1", to: "p1", labeled: 1),
-      .pre(from: "p1", to: "t2", labeled: 1),
-      capacity: ["p0": 4, "p1": 4]
-    )
-
-//    let ctlFormula1: CTL = .AF(.ap("t2"))
-//    let sps1 = ctlFormula1.eval(net: net)
-//    let ps = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
-//    let expectedRes: SPS = [ps]
-//
-//    let simplifiedSPS1 = sps1.simplified()
-//    print(simplifiedSPS1)
-    let ctlFormula2: CTL = .AX(.ap("t2"))
-    let ctlFormula3: CTL = .AX(.ap("t2"))
     
-    print(ctlFormula2.eval(net: net).simplified())
-    print(ctlFormula3.eval(net: net).simplified())
-  }
-  
 }
