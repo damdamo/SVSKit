@@ -17,7 +17,7 @@ Formally writing:
 m ∈ (a,b) ⟺ ∀ m_a ∈ a, ∀ m_b ∈ b, m_a ⊆ m, m_b ⊈ m
 
 
-Example of a Petri net:
+Example of a Petri net:  
  <img src="Images/petri_net.png"  width="30%" height="30%">
 
 For example, the predicate structure that represents all markings such as `t2` is fireable is `({(0,2)}, {})`.
