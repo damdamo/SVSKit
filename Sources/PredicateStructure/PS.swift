@@ -330,6 +330,9 @@ public struct PS {
     return [self, ps]
   }
   
+  /// Compute the inverse of the fire operation for a given transition. It takes into account the current predicate structure where it consumes tokens for post arcs and produces new ones for pre arcs.
+  /// - Parameter transition: The given transition
+  /// - Returns: A new predicate structure where the revert operation has been applied.
   public func revert(transition: String) -> PS? {
     if let p = value {
       var aTemp: Set<Marking> = []
@@ -361,6 +364,8 @@ public struct PS {
     return PS(value: nil, net: net)
   }
   
+  /// General revert operation where all transitions are applied
+  /// - Returns: A set of predicate structures resulting from the union of the revert operation on each transition on the current predicate structure.
   public func revert() -> SPS {
     var res: Set<PS> = []
     for transition in net.transitions {
@@ -371,6 +376,11 @@ public struct PS {
     return SPS(values: res)
   }
   
+  /// Apply the intersection between two predicate structures
+  /// - Parameters:
+  ///   - ps: The second predicate structure to intersect
+  ///   - isCanonical: A boolean to specifiy if each predicate structure is canonised during the process.
+  /// - Returns: The result of the intersection
   public func intersection(_ ps: PS, isCanonical: Bool = true) -> PS {
     if let p1 = self.value, let p2 = ps.value {
       if isCanonical {
@@ -381,6 +391,9 @@ public struct PS {
     return PS(value: nil, net: self.net)
   }
   
+  /// To know if a marking belongs to a predicate structure
+  /// - Parameter marking: The marking to check if it belongs to the ps
+  /// - Returns: True if the marking belongs, false otherwise
   public func contains(marking: Marking) -> Bool {
     if let value = self.value {
       for m in value.inc {
@@ -398,6 +411,14 @@ public struct PS {
     return false
   }
   
+  /// The evaluation of the CTL operation AX for a specific predicate structure, without using the rewriting into ¬EX¬
+  /// The idea behind AX is to give marking such as the next step, we get a specific predicate structure.
+  /// For instance, if we think in term of transitions, it would mean to be sure that at the next step, a given transition may be always fireable.
+  /// However, it does not mean that this transition will be always fired !
+  /// To compute it, the revert function is also computed, but for each transition, we have to ensure that the other transitions cannot be fired.
+  /// The goal is to take the same path to have the potential to fire the same transition afterwards.
+  ///
+  /// - Returns: <#description#>
   public func revertTilde() -> SPS {
     if let _ = self.value {
       var res: SPS = []
@@ -432,11 +453,8 @@ public struct PS {
         if let rev = revTransitionsPS[transitions] {
           resTemp = SPS(values: [rev])
           for transition in validTransitions.subtracting(transitions) {
-//            if !(SPS(values: [revTransitionsPS[transitions]!])).isIncluded(SPS(values: [revPS[transition]!])) {
-            if !(revTransitionsPS[transitions]!.isIncluded(revPS[transition]!)) {
-              let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: transition)], []), net: net)
-              resTemp = resTemp.intersection(psToIntersect.not())
-            }
+            let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: transition)], []), net: net)
+            resTemp = resTemp.intersection(psToIntersect.not())
           }
           res = res.union(resTemp)
         }
