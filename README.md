@@ -6,6 +6,8 @@ It can create the set of all markings that satisfy a CTL formula, using a symbol
 Furthermore, this structure allows to represent finite and infinite sets of markings.
 This means that the number of markings can be unbounded.
 
+The theory has been originally invented by Pascal Racloz & Didier Buchs [1].
+
 ## What are Predicate structures ?
 
 A predicate structure is a couple `(a,b)`:
@@ -189,3 +191,7 @@ let (net, marking) = parser.loadPN(filePath: "nameOfYourFile.pnml")
 ```
 
 For examples, look at the folder `Tests/PredicateStructureTests` and the file `ListExampleTests.swift`.
+
+## References
+
+[1] Racloz, P., & Buchs, D. (1994). Properties of Petri Nets Modellings: the temporal way. In 7th International Conference on Formal Description Techniques for Distributed Systems Communications Protocols. Services, Technologies.
