@@ -125,6 +125,18 @@ print(ctlFormula3.eval(net: net))
 
 For more examples, look at `Tests/PredicateStructureTests/CTLTests.swift` file.
 
+The signatures of the `eval` function are the following:
+
+If we want to check for a marking:
+`eval(marking: Marking, net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> Bool`
+
+If we want to obtain all markings:
+`eval(net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> SPS`
+
+Two parameters are optionals and can be changed if needed:
+- rewrited: false by default. In CTL computation, the extended syntax is often computed using the rewriting into basic components. For example, `AX Φ ≡ ¬EX¬Φ`. When it is set to false, the extended syntax is not rewritten. In the case of `AX`, a specific function is dedicated to compute it.
+- simplified: true by default. During a computation, the number of generated predicate structures may increase faster with redundant results. The simplification aims to reduce the set of predicate structures during the computation, using certain tricks. If it is set to true, no simplification is applied.
+
 ## How to import a pnml file ?
 
 From a pnml file, we can extract the initial marking and the Petri net.
