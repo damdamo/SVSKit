@@ -1,9 +1,9 @@
 # Predicate Structure: CTL Model Checking on Parametric Petri nets
 
-This package aims to check CTL formulas on Petri nets with weighted arcs and potential capacity on places.
-Compared to the usual technique where an initial marking is required, this is not the case here.
-It can create the set of all markings that satisfies a CTL formula, using a symbolic representation called **Predicate structure**.
-Furthermore, this structure allows the representation of finite and infinite set of markings.
+This package aims at verifying CTL formulas on Petri nets with weighted arcs and potential capacity on places.
+Unlike the usual technique where an initial marking is required, this is not the case here.
+It can create the set of all markings that satisfy a CTL formula, using a symbolic representation called **Predicate structure**.
+Furthermore, this structure allows to represent finite and infinite sets of markings.
 This means that the number of markings can be unbounded.
 
 ## What are Predicate structures ?
@@ -12,14 +12,15 @@ A predicate structure is a couple `(a,b)`:
 - `a` is a set of markings
 - `b` is a set of markings
 
-A marking `m` belongs to a predicate structure if every markings in `a` are included in `m` and every markings in `b` are not included in `m`.
+A marking `m` belongs to a predicate structure if all markings of `a` are included in `m` and all markings of `b` are not included in `m`.
 Formally writing:
 m ∈ (a,b) ⟺ ∀ m_a ∈ a, ∀ m_b ∈ b, m_a ⊆ m, m_b ⊈ m
 
 
-Petri net: <img src="Images/petri_net.png"  width="30%" height="30%">
+Example of a Petri net:
+ <img src="Images/petri_net.png"  width="30%" height="30%">
 
-For example, the predicate structure that represents all markings such as t2 is fireable is `({(0,2)}, {})`.
+For example, the predicate structure that represents all markings such as `t2` is fireable is `({(0,2)}, {})`.
 Thus, accepting markings are of the form `(0,x), x ∈ [2,∞)`.
 If we want all markings such as `t2` is fireable but not `t0`, we get the following predicate structure: `({(0,2)}, {(1,0)})`.
 It means that if there is at least one token in `p0`, the marking is not accepted.
@@ -31,7 +32,7 @@ For a set of predicate structures `sps`, a marking `m` belongs to it if there is
 - Create a Petri net / fire a transition
 - Create a set of predicate structures containing all markings that satisfy a CTL formula.
 - Check if a marking satisfies a CTL formula.
-- PNML parser, to import Petri nets from `pnml` file from a local source or an url.
+- PNML parser, to import Petri nets from `pnml` file from a local source or a url.
 
 ## CTL syntax
 
