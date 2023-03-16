@@ -31,8 +31,8 @@ For a set of predicate structures `sps`, a marking `m` belongs to it if there is
 
 ## What functionalities are available ?
 
-- Create a Petri net / fire a transition
-- Create a set of predicate structures containing all markings that satisfy a CTL formula.
+- Create a Petri net / fire a transition.
+- Create a set of predicate structures containing all markings that satisfy a CTL formula / return a set of predicate structures as a set of markings.
 - Check if a marking satisfies a CTL formula.
 - PNML parser, to import Petri nets from `pnml` file from a local source or a url.
 
@@ -105,12 +105,15 @@ print(ctlFormula2.eval(marking: marking, net: net))
 print(ctlFormula3.eval(marking: marking, net: net))
 
 // To obtain the sets of predicate structures that represent all markings:
+let eval1 = ctlFormula1.eval(net: net)
 // Return:
 // {
 //   ([], [[p1: 2, p0: 0], [p0: 1, p1: 0]]),
 //   ([[p0: 0, p1: 4]], [])
 // }
-print(ctlFormula1.eval(net: net))
+print(eval1)
+// Return: [[p0: 0, p1: 0], [p0: 0, p1: 1], [p0: 0, p1: 4], [p0: 1, p1: 4], [p0: 2, p1: 4], [p0: 3, p1: 4], [p0: 4, p1: 4]]
+print(eval1.underlyingMarkings())
 // Return:
 // {
 //   ([[p1: 2, p0: 0]], []),
@@ -138,6 +141,10 @@ If we want to obtain all markings:
 Two parameters are optionals and can be changed if needed:
 - rewrited: false by default. In CTL computation, the extended syntax is often computed using the rewriting into basic components. For example, `AX Φ ≡ ¬EX¬Φ`. When it is set to false, the extended syntax is not rewritten. In the case of `AX`, a specific function is dedicated to compute it.
 - simplified: true by default. During a computation, the number of generated predicate structures may increase faster with redundant results. The simplification aims to reduce the set of predicate structures during the computation, using certain tricks. If it is set to true, no simplification is applied.
+
+To get all the underlying markings of a set of predicate structures, you should use the function `underlyingMarkings`, which works on predicate structure and set of predicate structures.
+Because a predicate structure can represent an infinite number of markings, the place capacity is used to bound the number of solutions.
+The capacity is set by default to 20 for each place, but may be adapted as in the previous example with `capacity: ["p0": 4, "p1": 4]`.
 
 ## How to import a pnml file ?
 
