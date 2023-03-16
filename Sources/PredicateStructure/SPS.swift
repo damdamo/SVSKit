@@ -66,6 +66,16 @@ public struct SPS {
     return res
   }
   
+  /// Compute all of the underlying markings for a set of predicate structures.
+  /// - Returns: All the markings encoded by a set of predicate structures
+  public func underlyingMarkings() -> Set<Marking> {
+    var markings: Set<Marking> = []
+    for ps in self.values {
+      markings = markings.union(ps.underlyingMarkings())
+    }
+    return markings
+  }
+  
   
   /// Is the current set of predicate structures is included in another one ?
   /// - Parameters:

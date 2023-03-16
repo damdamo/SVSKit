@@ -207,6 +207,9 @@ final class PredicateStructureTests: XCTestCase {
 
     ps = PS(value: ([Marking(["p0": 0, "p1": 0, "p2": 2], net: net)], [Marking(["p0": 0, "p1": 0, "p2": 1], net: net)]), net: net)
     XCTAssertEqual(ps.underlyingMarkings().count, 0)
+    
+    let sps = SPS(values: [ps, PS(value: ([Marking(["p0": 0, "p1": 0, "p2": 0], net: net)], []), net: net)])
+    XCTAssertEqual(sps.underlyingMarkings().count, 64)
   }
   
   func testSimplified() {
