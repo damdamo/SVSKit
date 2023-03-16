@@ -166,19 +166,23 @@ public struct PS {
     var resTemp = res
     var lowerBound: Int
     var upperBound: Int
+    var am: Marking
     
     // Create a dictionnary where the key is the place and whose values is a set of all possibles integers that can be taken
     if let can = canonizedPS.value {
-      if let am = can.inc.first {
-        for place in net.places {
-          lowerBound = am[place]!
-          upperBound = net.capacity[place]!
-          for i in lowerBound ..< upperBound+1 {
-            if let _ = placeSetValues[place] {
-              placeSetValues[place]!.insert(i)
-            } else {
-              placeSetValues[place] = [i]
-            }
+      if let _ = can.inc.first {
+        am = can.inc.first!
+      } else {
+        am = net.zeroMarking()
+      }
+      for place in net.places {
+        lowerBound = am[place]!
+        upperBound = net.capacity[place]!
+        for i in lowerBound ..< upperBound+1 {
+          if let _ = placeSetValues[place] {
+            placeSetValues[place]!.insert(i)
+          } else {
+            placeSetValues[place] = [i]
           }
         }
       }
