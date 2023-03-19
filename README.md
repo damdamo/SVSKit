@@ -35,6 +35,7 @@ For a set of predicate structures `sps`, a marking `m` belongs to it if there is
 - Create a set of predicate structures containing all markings that satisfy a CTL formula / return a set of predicate structures as a set of markings.
 - Check if a marking satisfies a CTL formula.
 - PNML parser, to import Petri nets from `pnml` file from a local source or a url.
+- Query reduction for a CTL formula: From the paper in [2].
 
 ## CTL syntax
 
@@ -70,9 +71,15 @@ Thanks to Swift inference, we do not need to write `CTL.EX(CTL.isFireable("t0"))
 We can reduce `CTL.isFireable` into `.isFireable`.
 The same logic is applicable for each operators, except for the first one of the list.
 
-## Use case example
+## Use case examples
 
-This is based on the previous example see above.
+### Example 1
+
+The below example, based on the previous Petri net, shows how to:
+- Create a petri net
+- Create CTL formulas
+- Evaluate CTL formulas from a marking or without it.
+- Get all the markings encoded by a set of predicate structures
 
 ```Swift
 import PredicateStructure
@@ -146,6 +153,23 @@ To get all the underlying markings of a set of predicate structures, you should 
 Because a predicate structure can represent an infinite number of markings, the place capacity is used to bound the number of solutions.
 The capacity is set by default to 20 for each place, but may be adapted as in the previous example with `capacity: ["p0": 4, "p1": 4]`.
 
+### Example 2
+
+The below example shows how to use the query reduction:
+
+```swift
+let ctl1 = CTL.not(.not(.true))
+
+// Return: .true
+print(ctl1.queryReduction())
+
+let ctl2 = CTL.EF(.EF(.true))
+// Return: .EF(.true)
+print(ctl2.queryReduction())
+```
+
+All the reduction rules can be found in [2].
+
 ## How to import a pnml file ?
 
 From a pnml file, we can extract the initial marking and the Petri net.
@@ -202,3 +226,5 @@ For examples, look at the folder `Tests/PredicateStructureTests` and the file `L
 ## References
 
 [1] Racloz, P., & Buchs, D. (1994). Properties of Petri Nets Modellings: the temporal way. In 7th International Conference on Formal Description Techniques for Distributed Systems Communications Protocols. Services, Technologies.
+
+[2] Bønneland, F., Dyhr, J., Jensen, P. G., Johannsen, M., & Srba, J. (2018). Simplification of CTL formulae for efficient model checking of Petri nets. In Application and Theory of Petri Nets and Concurrency: 39th International Conference, PETRI NETS 2018, Bratislava, Slovakia, June 24-29, 2018, Proceedings 39 (pp. 143-163). Springer International Publishing.
