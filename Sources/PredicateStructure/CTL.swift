@@ -320,6 +320,46 @@ public indirect enum CTL {
       fatalError("This is not possible")
     }
   }
+  
+  
+  /// Count the number of elements of a CTL formula
+  /// - Returns: The number of elements of the CTL formula
+  public func count() -> Int {
+    switch self {
+    case .deadlock:
+      return 1
+    case .isFireable(_):
+      return 1
+    case .true:
+      return 1
+    case .false:
+      return 1
+    case .after(_):
+      return 1
+    case .not(let ctl):
+      return 1 + ctl.count()
+    case .and(let ctl1, let ctl2):
+      return 2 + ctl1.count() + ctl2.count()
+    case .or(let ctl1, let ctl2):
+      return 2 + ctl1.count() + ctl2.count()
+    case .EX(let ctl):
+      return 1 + ctl.count()
+    case .AX(let ctl):
+      return 1 + ctl.count()
+    case .EF(let ctl):
+      return 1 + ctl.count()
+    case .AF(let ctl):
+      return 1 + ctl.count()
+    case .EG(let ctl):
+      return 1 + ctl.count()
+    case .AG(let ctl):
+      return 1 + ctl.count()
+    case .EU(let ctl1, let ctl2):
+      return 2 + ctl1.count() + ctl2.count()
+    case .AU(let ctl1, let ctl2):
+      return 2 + ctl1.count() + ctl2.count()
+    }
+  }
 
 }
 
