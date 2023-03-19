@@ -48,12 +48,8 @@ public indirect enum CTL {
         fatalError("Unknown transition")
       }
     case .true:
-      var dicEmptyMarking: [String: Int] = [:]
-      for place in net.places {
-        dicEmptyMarking[place] = 0
-      }
       res = [
-        PS(value: ([Marking(dicEmptyMarking, net: net)], []), net: net)
+        PS(value: ([], []), net: net)
       ]
     case .and(let ctl1, let ctl2):
       res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).intersection(ctl2.eval(net: net, rewrited: rewrited, simplified: simplified))
@@ -374,7 +370,7 @@ extension CTL: CustomStringConvertible {
     case .true:
       res = "true"
     case .isFireable(let s):
-      res = s
+      res = "isFireable(\(s))"
     case .after(let s):
       res = "after(\(s))"
     case .deadlock:
