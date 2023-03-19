@@ -9,6 +9,7 @@ public indirect enum CTL {
   case after(String)
   // Boolean logic
   case `true`
+  case `false`
   case and(CTL, CTL)
   case or(CTL, CTL)
   case not(CTL)
@@ -51,6 +52,8 @@ public indirect enum CTL {
       res = [
         PS(value: ([], []), net: net)
       ]
+    case .false:
+      res = []
     case .and(let ctl1, let ctl2):
       res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).intersection(ctl2.eval(net: net, rewrited: rewrited, simplified: simplified))
     case .or(let ctl1, let ctl2):
@@ -162,6 +165,161 @@ public indirect enum CTL {
     } while !res.isIncluded(resTemp)
     return res
   }
+  
+  /// Reduce a query using some rewriting on CTL formulas. Using rewriting theories of the paper: Simplification of CTL Formulae
+  /// for Efficient Model Checking of Petri Nets from Frederik Bønneland & al. .
+  /// - Returns: The reduced query
+  public func queryReduction() -> CTL {
+    switch self {
+    case .deadlock:
+      return .deadlock
+    case .isFireable(_):
+      return self
+    case .true:
+      return .true
+    case .false:
+      return .false
+    case .after(_):
+      return self
+    case .not(_):
+      return self.notReduction()
+    case .and(let ctl1, let ctl2):
+      return .and(ctl1.queryReduction(), ctl2.queryReduction())
+    case .or(let ctl1, let ctl2):
+      return .or(ctl1.queryReduction(), ctl2.queryReduction())
+    case .EX(let ctl):
+      return .EX(ctl.queryReduction())
+    case .AX(let ctl):
+      return .AX(ctl.queryReduction())
+    case .EF(_):
+      return self.efReduction()
+    case .AF(_):
+      return self.afReduction()
+    case .EG(let ctl):
+      return .EG(ctl.queryReduction())
+//      return .not(.AF(.not(ctl).queryReduction())).queryReduction()
+    case .AG(let ctl):
+      return .AG(ctl.queryReduction())
+//      return .not(.EF(.not(ctl).queryReduction())).queryReduction()
+    case .EU(_, _):
+      return self.euReduction()
+    case .AU(_, _):
+      return self.auReduction()
+    }
+  }
+  
+  public func notReduction() -> CTL {
+    switch self {
+    case .not(let ctl):
+      switch ctl {
+      case .not(let ctl1):
+        return ctl1.queryReduction()
+      case .EX(let ctl1):
+        return .AX(.not(ctl1)).queryReduction()
+      case .AX(let ctl1):
+        return .EX(.not(ctl1)).queryReduction()
+      case .or(let ctl1, let ctl2):
+        return .and(.not(ctl1), .not(ctl2)).queryReduction()
+      case .and(let ctl1, let ctl2):
+        return .or(.not(ctl1), .not(ctl2)).queryReduction()
+      default:
+        return .not(ctl.queryReduction())
+      }
+    default:
+      fatalError("This is not possible")
+    }
+  }
+  
+  public func efReduction() -> CTL {
+    switch self {
+    case .EF(let ctl):
+      switch ctl {
+      case .not(.deadlock):
+        return .not(.deadlock)
+      case .EF(let ctl1):
+        return .EF(ctl1)
+      case .AF(let ctl1):
+        return .EF(ctl1).queryReduction()
+      case .EU(_, let ctl2):
+        return .EF(ctl2).queryReduction()
+      case .AU(_, let ctl2):
+        return .EF(ctl2).queryReduction()
+      case .or(let ctl1, let ctl2):
+        return .or(.EF(ctl1), .EF(ctl2)).queryReduction()
+      default:
+        return .EF(ctl.queryReduction())
+      }
+    default:
+      fatalError("This is not possible")
+    }
+  }
+  
+  public func afReduction() -> CTL {
+    switch self {
+    case .AF(let ctl):
+      let ctlReduced = ctl.queryReduction()
+      switch ctlReduced {
+      case .not(.deadlock):
+        return .not(.deadlock)
+      case .EF(let ctl1):
+        return .EF(ctl1)
+      case .AF(let ctl1):
+        return .AF(ctl1)
+      case .AU(_, let ctl2):
+        return .AF(ctl2).queryReduction()
+      case .or(let ctl1, .EF(let ctl2)):
+        return .or(.EF(ctl2), .AF(ctl1)).queryReduction()
+      default:
+        return .AF(ctl.queryReduction())
+      }
+    default:
+      fatalError("This is not possible")
+    }
+  }
+  
+  public func auReduction() -> CTL {
+    switch self {
+    case .AU(let ctl1, let ctl2):
+      switch (ctl1, ctl2) {
+      case (_, .not(.deadlock)):
+        return .not(.deadlock)
+      case (.deadlock, _):
+        return ctl2.queryReduction()
+      case (.not(.deadlock), _):
+        return .AF(ctl2).queryReduction()
+      case (_, .EF(let ctl3)):
+        return .AF(ctl3)
+      case (_, .or(let ctl3, .EF(let ctl4))):
+        return .or(.EF(ctl4), .AU(ctl1, ctl3)).queryReduction()
+      default:
+        return .AU(ctl1.queryReduction(), ctl2.queryReduction())
+      }
+    default:
+      fatalError("This is not possible")
+    }
+  }
+  
+  public func euReduction() -> CTL {
+    switch self {
+    case .EU(let ctl1, let ctl2):
+      switch (ctl1, ctl2) {
+      case (_, .not(.deadlock)):
+        return .not(.deadlock)
+      case (.deadlock, let ctl2):
+        return ctl2.queryReduction()
+      case (.not(.deadlock), _):
+        return .EF(ctl2).queryReduction()
+      case (_, .EF(let ctl3)):
+        return .EF(ctl3)
+      case (_, .or(let ctl3, .EF(let ctl4))):
+        return .or(.EF(ctl4), .EU(ctl1, ctl3)).queryReduction()
+      default:
+        return .EU(ctl1.queryReduction(), ctl2.queryReduction())
+      }
+    default:
+      fatalError("This is not possible")
+    }
+  }
 
 }
 
@@ -191,6 +349,8 @@ extension CTL {
       }
     case .true:
       return true
+    case .false:
+      return false
     case .and(let ctl1, let ctl2):
       return ctl1.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified) && (ctl2.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified))
     case .or(let ctl1, let ctl2):
@@ -317,50 +477,6 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  /// Reduce a query using some rewriting on CTL formulas.
-  /// - Returns: The reduced query
-  public func queryReduction() -> CTL {
-    switch self {
-    case .not(_):
-      return self.notReduction()
-    case .and(let ctl1, let ctl2):
-      return .and(ctl1.queryReduction(), ctl2.queryReduction())
-    case .or(let ctl1, let ctl2):
-      return .or(ctl1.queryReduction(), ctl2.queryReduction())
-    case .EX(let ctl):
-      return .EX(ctl.queryReduction())
-    case .AX(let ctl):
-      return .AX(ctl.queryReduction())
-    case .EF(let ctl):
-      return .EF(ctl.queryReduction())
-    case .AF(let ctl):
-      return .AF(ctl.queryReduction())
-    case .EG(let ctl):
-      return .EG(ctl.queryReduction())
-    case .AG(let ctl):
-      return .AG(ctl.queryReduction())
-    case .EU(let ctl1, let ctl2):
-      return .EU(ctl1.queryReduction(), ctl2.queryReduction())
-    case .AU(let ctl1, let ctl2):
-      return .AU(ctl1.queryReduction(), ctl2.queryReduction())
-    default:
-      return self
-    }
-  }
-  
-  public func notReduction() -> CTL {
-    switch self {
-    case .not(.AX(let ctl)):
-      return .EX(.not(ctl)).queryReduction()
-    case .not(.not(let ctl)):
-      return ctl.queryReduction()
-    case .not(let ctl):
-      return .not(ctl.queryReduction())
-    default:
-      return self
-    }
-  }
-  
 }
 
 extension CTL: CustomStringConvertible {
@@ -369,6 +485,8 @@ extension CTL: CustomStringConvertible {
     switch self {
     case .true:
       res = "true"
+    case .false:
+      res = "false"
     case .isFireable(let s):
       res = "isFireable(\(s))"
     case .after(let s):

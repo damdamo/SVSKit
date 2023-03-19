@@ -246,4 +246,26 @@ final class CTLTests: XCTestCase {
     XCTAssertTrue(ctlFormula4.eval(net: net).isEquiv(ctlFormula4.eval(net: net, rewrited: true)))
   }
     
+  func testLoadCTL() {
+    let ctlParser = CTLParser()
+    let ctlDic = ctlParser.loadCTL(filePath: "CTLFireability.xml")
+//    for (key, values) in ctl {
+//      print("------------------")
+//      print(key)
+//      print(values)
+//    }
+//    let ctlFormula = ctlDic["SwimmingPool-PT-01-CTLFireability-09"]!
+    
+    let pnmlParser = PnmlParser()
+    let (net, marking) = pnmlParser.loadPN(filePath: "SwimmingPool-1.pnml")
+    
+    for (id, ctlFormula) in ctlDic {
+      print(id)
+      print(ctlFormula)
+      print("-")
+//      print(ctlFormula.queryReduction())
+      print(ctlFormula.eval(marking: marking, net: net))
+      print("-----------------------")
+    }
+  }
 }
