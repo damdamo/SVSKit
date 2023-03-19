@@ -352,16 +352,30 @@ extension CTL {
     case .false:
       return false
     case .and(let ctl1, let ctl2):
-      return ctl1.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified) && (ctl2.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified))
+      let evalCTL1 = ctl1.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
+      if evalCTL1 == false {
+        return false
+      }
+      return ctl2.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
     case .or(let ctl1, let ctl2):
-      return ctl1.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified) || (ctl2.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified))
+      let evalCTL1 = ctl1.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
+      if evalCTL1 == true {
+        return true
+      }
+      return (ctl2.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified))
     case .not(let ctl1):
       return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).not().contains(marking: marking)
     case .deadlock:
       return SPS.deadlock(net: net).contains(marking: marking)
     case .EX(let ctl1):
+      if SPS.deadlock(net: net).contains(marking: marking) {
+        return false
+      }
       return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revert().contains(marking: marking)
     case .AX(let ctl1):
+      if SPS.deadlock(net: net).contains(marking: marking) {
+        return true
+      }
       return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revertTilde(rewrited: rewrited).contains(marking: marking)
     case .EF(let ctl1):
       return ctl1.evalEF(marking: marking, net: net, simplified: simplified)
@@ -381,6 +395,9 @@ extension CTL {
 
   func evalEF(marking: Marking, net: PetriNet, simplified: Bool) -> Bool {
     var res = self.eval(net: net)
+    if res.contains(marking: marking) == true {
+      return true
+    }
     var resTemp: SPS
     repeat {
       if res.contains(marking: marking) {
@@ -397,6 +414,9 @@ extension CTL {
   
   func evalAF(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
     var res = self.eval(net: net)
+    if res.contains(marking: marking) == true {
+      return true
+    }
     var resTemp: SPS
     repeat {
       if res.contains(marking: marking) {
@@ -412,7 +432,11 @@ extension CTL {
   }
   
   func evalEG(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    var res = self.eval(net: net)
+    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+    if res.contains(marking: marking) == false {
+      return false
+    }
+    
     var resTemp: SPS
     repeat {
       if !res.contains(marking: marking) {
@@ -429,6 +453,9 @@ extension CTL {
   
   func evalAG(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
     var res = self.eval(net: net)
+    if res.contains(marking: marking) == false {
+      return false
+    }
     var resTemp: SPS
     repeat {
       if !res.contains(marking: marking) {
@@ -445,7 +472,14 @@ extension CTL {
   
   func evalEU(ctl: CTL, marking: Marking, net: PetriNet, simplified: Bool) -> Bool {
     let phi = self.eval(net: net)
+    let isPhiContained = phi.contains(marking: marking)
+    if  isPhiContained == true {
+      return true
+    }
     var res = ctl.eval(net: net)
+    if isPhiContained == false && res.contains(marking: marking) == false {
+      return false
+    }
     var resTemp: SPS
     repeat {
       if res.contains(marking: marking) {

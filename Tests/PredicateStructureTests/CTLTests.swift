@@ -263,8 +263,8 @@ final class CTLTests: XCTestCase {
       print(id)
       print(ctlFormula)
       print("-")
-//      print(ctlFormula.queryReduction())
-      print(ctlFormula.eval(marking: marking, net: net))
+      print(ctlFormula.queryReduction())
+//      print(ctlFormula.eval(marking: marking, net: net))
       print("-----------------------")
     }
   }
