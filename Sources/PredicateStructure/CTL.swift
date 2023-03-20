@@ -2,10 +2,29 @@
 ///  Semantics are often based on Kripke structures. However, the computation here is made on the fly and does not know the whole state space beforehand.
 ///   The strategy is to use the fixpoint to construct this state space, and thanks to monotonicity properties, the computation always finishes.
 public indirect enum CTL {
+  
+  
+  /// Enum that lists the accepted operators for a cardinality formula
+  public enum Operator {
+    case lt
+    case leq
+    // Other operators that could be implemented:
+    // case gt
+    // case geq
+    // case eq
+    // case neq
+  }
+  
+  /// Enum that lists the accepted expressions for a cardinality formula
+  public indirect enum Expression {
+    case place(String)
+    case value(Int)
+  }
     
   // Basic case
   case deadlock
   case isFireable(String)
+  case cardinalityFormula(e1: Expression, operator: Operator, e2: Expression)
   case after(String)
   // Boolean logic
   case `true`
@@ -32,6 +51,8 @@ public indirect enum CTL {
   public func eval(net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> SPS {
     var res: SPS
     switch self {
+    case .cardinalityFormula(e1: _, operator: _, e2: _):
+      return evalCardinality(net: net)
     case .isFireable(let t):
       if net.transitions.contains(t) {
         res = [
@@ -85,6 +106,84 @@ public indirect enum CTL {
     }
     return res
   }
+  
+  /// Encode a cardinality formula into a SPS that represents all markings satisfying the condition.
+  /// - Parameter net: The corresponding net
+  /// - Returns: The resulting set of predicate structures
+  func evalCardinality(net: PetriNet) -> SPS {
+    switch self {
+    case .cardinalityFormula(e1: .value(_), operator: _, e2: .value(_)):
+      return CTL.true.eval(net: net)
+    case .cardinalityFormula(e1: .place(_), operator: _, e2: .place(_)):
+      fatalError("The tool does not manage a cardinality comparison between places")
+    case .cardinalityFormula(e1: let e1, operator: .leq, e2: let e2):
+      return CTL.evalLeq(e1: e1, e2: e2, net: net)
+    case .cardinalityFormula(e1: let e1, operator: .lt, e2: let e2):
+      return CTL.evalLt(e1: e1, e2: e2, net: net)
+    default:
+      fatalError("This is not possible")
+    }
+  }
+  
+  /// Evaluate a "less than or equal to" expression and it creates the equivalent set of predicate structures which satisfies the condition.
+  ///  e.g.: `p1 ≤ 2`, `3 ≤ p2`
+  /// - Parameters:
+  ///   - e1: First expression
+  ///   - e2: Second expression
+  ///   - net: The corresponding Petri net
+  /// - Returns: The set of predicate structures that encodes all markings that satisfy the condition
+  static func evalLeq(e1: Expression, e2: Expression, net: PetriNet) -> SPS {
+    var marking = net.zeroMarking()
+    switch (e1, e2) {
+    // i <= p
+    case (.value(let i), .place(let p)):
+      guard net.places.contains(p) else {
+        fatalError("Place \(p) does not exist")
+      }
+      marking[p] = i
+      return [PS(value: ([marking],[]), net: net)]
+    // p <= i
+    case (.place(let p), .value(let i)):
+      guard net.places.contains(p) else {
+        fatalError("Place \(p) does not exist")
+      }
+      marking[p] = i+1
+      return [PS(value: ([],[marking]), net: net)]
+    default:
+      fatalError("This is not possible")
+    }
+  }
+  
+  /// Evaluate a "less than expression and it creates the equivalent set of predicate structures which satisfies the condition.
+  ///  e.g.: `p1 < 2`, `3 < p2`
+  /// - Parameters:
+  ///   - e1: First expression
+  ///   - e2: Second expression
+  ///   - net: The corresponding Petri net
+  /// - Returns: The set of predicate structures that encodes all markings that satisfy the condition
+  static func evalLt(e1: Expression, e2: Expression, net: PetriNet) -> SPS {
+    var marking = net.zeroMarking()
+    switch (e1, e2) {
+    // i < p
+    case (.value(let i), .place(let p)):
+      guard net.places.contains(p) else {
+        fatalError("Place \(p) does not exist")
+      }
+      marking[p] = i+1
+      return [PS(value: ([marking],[]), net: net)]
+    // p < i
+    case (.place(let p), .value(let i)):
+      guard net.places.contains(p) else {
+        fatalError("Place \(p) does not exist")
+      }
+      marking[p] = i
+      return [PS(value: ([],[marking]), net: net)]
+    default:
+      fatalError("This is not possible")
+    }
+  }
+  
+  
   
   func evalEF(net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
     var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
@@ -171,6 +270,8 @@ public indirect enum CTL {
   /// - Returns: The reduced query
   public func queryReduction() -> CTL {
     switch self {
+    case .cardinalityFormula(e1: _, operator: _, e2: _):
+      return self
     case .deadlock:
       return .deadlock
     case .isFireable(_):
@@ -334,6 +435,8 @@ public indirect enum CTL {
   /// - Returns: The number of elements of the CTL formula
   public func count() -> Int {
     switch self {
+    case .cardinalityFormula(e1: _, operator: _, e2: _):
+      return 1
     case .deadlock:
       return 1
     case .isFireable(_):
@@ -382,6 +485,8 @@ extension CTL {
   /// - Returns: True if the marking holds the CTL formula
   public func eval(marking: Marking, net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> Bool {
     switch self {
+    case .cardinalityFormula(e1: _, operator: _, e2: _):
+      return evalCardinality(net: net).contains(marking: marking)
     case .isFireable(let t):
       if net.transitions.contains(t) {
         return
@@ -571,6 +676,8 @@ extension CTL: CustomStringConvertible {
       res = "false"
     case .isFireable(let s):
       res = "isFireable(\(s))"
+    case .cardinalityFormula(e1: let e1, operator: let op, e2: let e2):
+      res = "cardinalityFormula(\(e1) \(op) \(e2))"
     case .after(let s):
       res = "after(\(s))"
     case .deadlock:

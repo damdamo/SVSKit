@@ -245,6 +245,47 @@ final class CTLTests: XCTestCase {
     XCTAssertTrue(ctlFormula3.eval(net: net).isEquiv(ctlFormula3.eval(net: net, rewrited: true)))
     XCTAssertTrue(ctlFormula4.eval(net: net).isEquiv(ctlFormula4.eval(net: net, rewrited: true)))
   }
+  
+  func testCTLCardinality() {
+    // Following Petri net:
+    //          t0
+    //       -> ▭
+    // p0  /
+    // o -
+    //     \
+    //       -> ▭ -> o <-> ▭
+    //          t1   p1   t2
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .pre(from: "p0", to: "t1", labeled: 1),
+      .post(from: "t1", to: "p1", labeled: 1),
+      .pre(from: "p1", to: "t2", labeled: 1),
+      .post(from: "t2", to: "p1", labeled: 1)
+    )
+    
+    let ctlFormula1: CTL = .AF(.cardinalityFormula(e1: .value(1), operator: .leq, e2: .place("p1")))
+    let ctlFormula2: CTL = .EG(.cardinalityFormula(e1: .value(1), operator: .leq, e2: .place("p1")))
+    let ctlFormula3: CTL = .AG(.cardinalityFormula(e1: .value(1), operator: .leq, e2: .place("p1")))
+    let sps1 = ctlFormula1.eval(net: net)
+    let sps2 = ctlFormula2.eval(net: net)
+    let sps3 = ctlFormula3.eval(net: net)
+
+    let ps: PS = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
+    let expectedRes: SPS = [ps]
+
+    let simpliedSPS1 = sps1.simplified()
+    let simpliedSPS2 = sps2.simplified()
+    let simpliedSPS3 = sps3.simplified()
+    XCTAssertEqual(simpliedSPS1, expectedRes)
+    XCTAssertEqual(simpliedSPS2, expectedRes)
+    XCTAssertEqual(simpliedSPS3, expectedRes)
+    
+    let ctlFormula4: CTL = .and(.cardinalityFormula(e1: .place("p0"), operator: .lt, e2: .value(4)), .cardinalityFormula(e1: .value(7), operator: .lt, e2: .place("p1")))
+    let expectedSPS: SPS = [PS(value: ([Marking(["p0": 0, "p1": 8], net: net)], [Marking(["p0": 4, "p1": 8], net: net)]), net: net)]
+    XCTAssertEqual(expectedSPS, ctlFormula4.eval(net: net))
+  }
     
   func testLoadCTL() {
     let ctlParser = CTLParser()
