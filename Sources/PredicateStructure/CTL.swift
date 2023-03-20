@@ -196,11 +196,11 @@ public indirect enum CTL {
     case .AF(_):
       return self.afReduction()
     case .EG(let ctl):
-      return .EG(ctl.queryReduction())
-//      return .not(.AF(.not(ctl).queryReduction())).queryReduction()
+//      return .EG(ctl.queryReduction())
+      return .not(.AF(.not(ctl).queryReduction())).queryReduction()
     case .AG(let ctl):
-      return .AG(ctl.queryReduction())
-//      return .not(.EF(.not(ctl).queryReduction())).queryReduction()
+//      return .AG(ctl.queryReduction())
+      return .not(.EF(.not(ctl).queryReduction())).queryReduction()
     case .EU(_, _):
       return self.euReduction()
     case .AU(_, _):
@@ -222,6 +222,14 @@ public indirect enum CTL {
         return .and(.not(ctl1), .not(ctl2)).queryReduction()
       case .and(let ctl1, let ctl2):
         return .or(.not(ctl1), .not(ctl2)).queryReduction()
+      case .EF(let ctl1):
+        return .AG(.not(ctl1).queryReduction())
+      case .AF(let ctl1):
+        return .EG(.not(ctl1).queryReduction())
+      case .EG(let ctl1):
+        return .AF(.not(ctl1).queryReduction())
+      case .AG(let ctl1):
+        return .EF(.not(ctl1).queryReduction())
       default:
         return .not(ctl.queryReduction())
       }
