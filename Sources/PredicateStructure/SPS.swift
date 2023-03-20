@@ -52,6 +52,7 @@ public struct SPS {
   public func not() -> SPS {
     if self.isEmpty {
       return self
+//      return [PS]
     }
     var res = SPS(values: [])
     if let first = self.first {

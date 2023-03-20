@@ -29,17 +29,12 @@ public indirect enum CTL {
   ///   - rewrited: An option to specify how to compute the function revertTilde. If it is true, we rewrite revertTilde as `not revert not`. When it is false, we use a specific function to compute it. False by default.
   ///   - simplified: An option to specify if there simplified function must be used or not. True by default.
   /// - Returns: A set of predicate structures that symbolically represents all markings that satisfy the CTL formula.
-  public func eval(net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> SPS {
+  public func eval(net: PetriNet, marking: Marking? = nil, rewrited: Bool = false, simplified: Bool = true) -> SPS {
     var res: SPS
     switch self {
-    case .isFireable(let t):
-      if net.transitions.contains(t) {
-        res = [
-          PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)
-        ]
-      } else {
-        fatalError("Unknown transition")
-      }
+    case .isFireable(_):
+      res = self.isFireable(net: net, marking: marking)
+      // TODO: IMPROVE THE AFTER WITH THE MARKING
     case .after(let t):
       if net.transitions.contains(t) {
         res = [
@@ -55,29 +50,29 @@ public indirect enum CTL {
     case .false:
       res = []
     case .and(let ctl1, let ctl2):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).intersection(ctl2.eval(net: net, rewrited: rewrited, simplified: simplified))
+      res = ctl1.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified).intersection(ctl2.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified))
     case .or(let ctl1, let ctl2):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).union(ctl2.eval(net: net, rewrited: rewrited, simplified: simplified))
+      res = ctl1.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified).union(ctl2.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified))
     case .not(let ctl1):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).not()
+      res = ctl1.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified).not()
     case .deadlock:
       res = SPS.deadlock(net: net)
     case .EX(let ctl1):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revert()
+      res = ctl1.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified).revert()
     case .AX(let ctl1):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revertTilde(rewrited: rewrited)
+      res = ctl1.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified).revertTilde(rewrited: rewrited)
     case .EF(let ctl1):
-      res = ctl1.evalEF(net: net, simplified: simplified)
+      res = ctl1.evalEF(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     case .AF(let ctl1):
-      res = ctl1.evalAF(net: net, rewrited: rewrited, simplified: simplified)
+      res = ctl1.evalAF(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     case .EG(let ctl1):
-      res = ctl1.evalEG(net: net, rewrited: rewrited, simplified: simplified)
+      res = ctl1.evalEG(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     case .AG(let ctl1):
-      res = ctl1.evalAG(net: net, rewrited: rewrited, simplified: simplified)
+      res = ctl1.evalAG(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     case .EU(let ctl1, let ctl2):
-      res = ctl1.evalEU(ctl: ctl2, net: net, simplified: simplified)
+      res = ctl1.evalEU(ctl: ctl2, marking: marking, net: net, rewrited: rewrited, simplified: simplified)
     case .AU(let ctl1, let ctl2):
-      res = ctl1.evalAU(ctl: ctl2, net: net, rewrited: rewrited, simplified: simplified)
+      res = ctl1.evalAU(ctl: ctl2, net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     }
     
     if simplified {
@@ -86,10 +81,34 @@ public indirect enum CTL {
     return res
   }
   
-  func evalEF(net: PetriNet, simplified: Bool) -> SPS {
-    var res = self.eval(net: net)
+  func isFireable(net: PetriNet, marking: Marking? = nil) -> SPS {
+    switch self {
+    case .isFireable(let t):
+      if let marking = marking {
+        if net.transitions.contains(t) {
+          let inputMarking = net.inputMarkingForATransition(transition: t)
+//          if inputMarking <= marking {
+            let newMarking = PS.convMax(markings: [marking, inputMarking], net: net)
+            return [PS(value: ([newMarking.first!], []), net: net)]
+//          }
+//          return [PS(value: ([], [net.zeroMarking()]), net: net)]
+//          return CTL.false.eval(net: net)
+        } else {
+          fatalError("Unknown transition")
+        }
+      }
+      return [PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)]
+    default:
+      fatalError("This is not possible")
+    }
+  }
+  
+  func evalEF(net: PetriNet, marking: Marking?, rewrited: Bool, simplified: Bool) -> SPS {
+    var res = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     var resTemp: SPS
     repeat {
+      print(res.count)
+//      print(res)
       resTemp = res
       res = res.union(res.revert())
       if simplified {
@@ -99,8 +118,8 @@ public indirect enum CTL {
     return res
   }
   
-  func evalAF(net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    var res = self.eval(net: net)
+  func evalAF(net: PetriNet, marking: Marking?, rewrited: Bool, simplified: Bool) -> SPS {
+    var res = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -112,10 +131,11 @@ public indirect enum CTL {
     return res
   }
   
-  func evalEG(net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    var res = self.eval(net: net)
+  func evalEG(net: PetriNet, marking: Marking?, rewrited: Bool, simplified: Bool) -> SPS {
+    var res = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     var resTemp: SPS
     repeat {
+      print(res.count)
       resTemp = res
       res = res.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
       if simplified {
@@ -125,8 +145,8 @@ public indirect enum CTL {
     return res
   }
   
-  func evalAG(net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    var res = self.eval(net: net)
+  func evalAG(net: PetriNet, marking: Marking?, rewrited: Bool, simplified: Bool) -> SPS {
+    var res = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -138,9 +158,9 @@ public indirect enum CTL {
     return res
   }
   
-  func evalEU(ctl: CTL, net: PetriNet, simplified: Bool) -> SPS {
-    let phi = self.eval(net: net)
-    var res = ctl.eval(net: net)
+  func evalEU(ctl: CTL, marking: Marking?, net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
+    let phi = self.eval(net: net, marking: marking, simplified: simplified)
+    var res = ctl.eval(net: net, marking: marking, simplified: simplified)
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -152,9 +172,9 @@ public indirect enum CTL {
     return res
   }
   
-  func evalAU(ctl: CTL, net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    let phi = self.eval(net: net)
-    var res = ctl.eval(net: net)
+  func evalAU(ctl: CTL, net: PetriNet, marking: Marking?, rewrited: Bool, simplified: Bool) -> SPS {
+    let phi = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
+    var res = ctl.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -196,11 +216,11 @@ public indirect enum CTL {
     case .AF(_):
       return self.afReduction()
     case .EG(let ctl):
-      return .EG(ctl.queryReduction())
-//      return .not(.AF(.not(ctl).queryReduction())).queryReduction()
+//      return .EG(ctl.queryReduction())
+      return .not(.AF(.not(ctl).queryReduction())).queryReduction()
     case .AG(let ctl):
-      return .AG(ctl.queryReduction())
-//      return .not(.EF(.not(ctl).queryReduction())).queryReduction()
+//      return .AG(ctl.queryReduction())
+      return .not(.EF(.not(ctl).queryReduction())).queryReduction()
     case .EU(_, _):
       return self.euReduction()
     case .AU(_, _):
@@ -374,13 +394,8 @@ extension CTL {
   /// - Returns: True if the marking holds the CTL formula
   public func eval(marking: Marking, net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> Bool {
     switch self {
-    case .isFireable(let t):
-      if net.transitions.contains(t) {
-        return
-          PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net).contains(marking: marking)
-      } else {
-        fatalError("Unknown transition")
-      }
+    case .isFireable(_):
+      return self.isFireable(net: net).contains(marking: marking)
     case .after(let t):
       if net.transitions.contains(t) {
         return PS(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net).contains(marking: marking)
@@ -404,21 +419,21 @@ extension CTL {
       }
       return (ctl2.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified))
     case .not(let ctl1):
-      return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).not().contains(marking: marking)
+      return ctl1.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified).not().contains(marking: marking)
     case .deadlock:
       return SPS.deadlock(net: net).contains(marking: marking)
     case .EX(let ctl1):
       if SPS.deadlock(net: net).contains(marking: marking) {
         return false
       }
-      return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revert().contains(marking: marking)
+      return ctl1.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified).revert().contains(marking: marking)
     case .AX(let ctl1):
       if SPS.deadlock(net: net).contains(marking: marking) {
         return true
       }
-      return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revertTilde(rewrited: rewrited).contains(marking: marking)
+      return ctl1.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified).revertTilde(rewrited: rewrited).contains(marking: marking)
     case .EF(let ctl1):
-      return ctl1.evalEF(marking: marking, net: net, simplified: simplified)
+      return ctl1.evalEF(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
     case .AF(let ctl1):
       return ctl1.evalAF(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
     case .EG(let ctl1):
@@ -426,15 +441,15 @@ extension CTL {
     case .AG(let ctl1):
       return ctl1.evalAG(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
     case .EU(let ctl1, let ctl2):
-      return ctl1.evalEU(ctl: ctl2, marking: marking, net: net, simplified: simplified)
+      return ctl1.evalEU(ctl: ctl2, marking: marking, net: net, rewrited: rewrited, simplified: simplified)
     case .AU(let ctl1, let ctl2):
       return ctl1.evalAU(ctl: ctl2, marking: marking, net: net, rewrited: rewrited, simplified: simplified)
     }
     
   }
 
-  func evalEF(marking: Marking, net: PetriNet, simplified: Bool) -> Bool {
-    var res = self.eval(net: net)
+  func evalEF(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
+    var res = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     if res.contains(marking: marking) == true {
       return true
     }
@@ -453,26 +468,30 @@ extension CTL {
   }
   
   func evalAF(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    var res = self.eval(net: net)
+    var res = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     if res.contains(marking: marking) == true {
       return true
     }
     var resTemp: SPS
     repeat {
+      print("current res \(res)")
       if res.contains(marking: marking) {
         return true
       }
       resTemp = res
+      print("revert classico: \(res.revert())")
+      print("revert Tilde: \(res.revertTilde(rewrited: rewrited))")
       res = res.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
       if simplified {
         res = res.simplified()
       }
+      print("new res 2\(res)")
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
   }
   
   func evalEG(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+    var res = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     if res.contains(marking: marking) == false {
       return false
     }
@@ -492,7 +511,7 @@ extension CTL {
   }
   
   func evalAG(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    var res = self.eval(net: net)
+    var res = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     if res.contains(marking: marking) == false {
       return false
     }
@@ -510,13 +529,13 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  func evalEU(ctl: CTL, marking: Marking, net: PetriNet, simplified: Bool) -> Bool {
-    let phi = self.eval(net: net)
+  func evalEU(ctl: CTL, marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
+    let phi = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     let isPhiContained = phi.contains(marking: marking)
     if  isPhiContained == true {
       return true
     }
-    var res = ctl.eval(net: net)
+    var res = ctl.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     if isPhiContained == false && res.contains(marking: marking) == false {
       return false
     }
@@ -535,8 +554,8 @@ extension CTL {
   }
   
   func evalAU(ctl: CTL, marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    let phi = self.eval(net: net)
-    var res = ctl.eval(net: net)
+    let phi = self.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
+    var res = ctl.eval(net: net, marking: marking, rewrited: rewrited, simplified: simplified)
     var resTemp: SPS
     repeat {
       if res.contains(marking: marking) {

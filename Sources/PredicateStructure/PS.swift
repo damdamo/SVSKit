@@ -40,7 +40,7 @@ public struct PS {
     for place in net.places {
       dicMarking[place] = 0
     }
-    return [PS(value: ([Marking(dicMarking, net: net)], []), net: net)]
+    return [PS(value: ([net.zeroMarking()], []), net: net)]
   }
   
   /// convMax, for convergence maximal, is a function to compute a singleton containing a marking where each value is the maximum of all places for a given place.

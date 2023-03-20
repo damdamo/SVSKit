@@ -1,5 +1,9 @@
 # Predicate Structure: CTL Model Checking on Parametric Petri nets
 
+## TODO
+- Pour améliorer le calcul par rapport à un marking, quand on calcule une longue chaine de formules CTL, pourquoi ne pas s'arrêter dès que le marking qu'on regarde appartient à la formule ?
+- ADD net in SPS to compute not sps quand vide
+
 This package aims at verifying CTL formulas on Petri nets with weighted arcs and potential capacity on places.
 Unlike the usual technique where an initial marking is required, this is not the case here.
 It can create the set of all markings that satisfy a CTL formula, using a symbolic representation called **Predicate structure**.

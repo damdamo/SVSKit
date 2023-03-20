@@ -249,23 +249,41 @@ final class CTLTests: XCTestCase {
   func testLoadCTL() {
     let ctlParser = CTLParser()
     let ctlDic = ctlParser.loadCTL(filePath: "CTLFireability.xml")
-//    for (key, values) in ctl {
-//      print("------------------")
-//      print(key)
-//      print(values)
-//    }
-//    let ctlFormula = ctlDic["SwimmingPool-PT-01-CTLFireability-09"]!
-    
     let pnmlParser = PnmlParser()
     let (net, marking) = pnmlParser.loadPN(filePath: "SwimmingPool-1.pnml")
     
-    for (id, ctlFormula) in ctlDic {
-      print(id)
-      print(ctlFormula)
-      print("-")
-      print(ctlFormula.queryReduction())
-//      print(ctlFormula.eval(marking: marking, net: net))
-      print("-----------------------")
-    }
+    let id = "SwimmingPool-PT-01-CTLFireability-02"
+//    let ctl = CTL.EF(.not(.isFireable("RelK")))
+//    let ctl = CTL.and(.EF(.not(.isFireable("RelK"))), .not(.isFireable("GetB")))
+//    let ctl = CTL.AF(.and(.EF(.not(.isFireable("RelK"))), .not(.isFireable("GetB"))))
+//    let ctl = CTL.not(.AF(.and(.EF(.not(.isFireable("RelK"))), .not(.isFireable("GetB")))))
+//    let ctl = CTL.or(.isFireable("RKey"),.AF(.not(.AF(.and(.EF(.not(.isFireable("RelK"))), .not(.isFireable("GetB")))))))
+//    let ctl = CTL.AX(.or(.isFireable("RKey"),.AF(.not(.AF(.and(.EF(.not(.isFireable("RelK"))), .not(.isFireable("GetB"))))))))
+
+//    let ctl = CTL.AG(.isFireable("RelK"))
+//    let ctl = CTL.or(.AG(.isFireable("RelK")), .isFireable("GetB"))
+    let ctl = CTL.EG(.or(.AG(.isFireable("RelK")), .isFireable("GetB")))
+//    let ctl = CTL.AF(.EG(.or(.AG(.isFireable("RelK")), .isFireable("GetB"))))
+
+//    let ctl = ctlDic[id]!
+    let ctlReduced = ctl.queryReduction()
+//    print(ctlDic[id]!)
+    
+    print(ctl)
+    print(ctlReduced)
+    // TESTER AVEC EVAL + CONTAIN CLASSIQUE
+    // TESTER SUR AUTRE VERSION GITHUB SI PAS BON
+    print(ctlReduced.eval(net: net, marking: marking))
+    print(ctlReduced.eval(marking: marking, net: net))
+  }
+  
+  func testRev() {
+    let ctlParser = CTLParser()
+    let ctlDic = ctlParser.loadCTL(filePath: "CTLFireability.xml")
+    let pnmlParser = PnmlParser()
+    let (net, marking) = pnmlParser.loadPN(filePath: "SwimmingPool-1.pnml")
+    
+    let ps = PS(value: ([], [net.zeroMarking()]), net: net)
+    print(ps.revert())
   }
 }
