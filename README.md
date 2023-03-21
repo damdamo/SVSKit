@@ -43,6 +43,7 @@ For a set of predicate structures `sps`, a marking `m` belongs to it if there is
 // Basic cases:
 - deadlock
 - isFireable(Transition) // Transition = String
+- cardinalityFormula(e1: Expression, operator: Operator, e2: Expression)
 - after(Transition)
 // Boolean logic
 - true
@@ -62,14 +63,33 @@ For a set of predicate structures `sps`, a marking `m` belongs to it if there is
 
 Example of some CTL formulas in Swift:
 ```Swift
+// EX(t0)
 CTL.EX(.isFireable("t0"))
+// E (t0 ∧ ¬t1) U (t0)
 CTL.EU(.and(.isFireable("t0"), .not(.isFireable("t1"))), .isFireable("t0"))
+// EF(deadlock)
 CTL.EF(.deadlock)
+// AF(1 <= p1)
+CTL.AF(.cardinalityFormula(e1: .value(1), operator: .leq, e2: .place("p1")))
+// (p0 < 4) ∧ (7 < p1)
+CTL.and(.cardinalityFormula(e1: .place("p0"), operator: .lt, e2: .value(4)), .cardinalityFormula(e1: .value(7), operator: .lt, e2: .place("p1")))
 ```
 
 Thanks to Swift inference, we do not need to write `CTL.EX(CTL.isFireable("t0"))`.
 We can reduce `CTL.isFireable` into `.isFireable`.
 The same logic is applicable for each operators, except for the first one of the list.
+
+For the cardinality, type `Expression` and `Operator` are expressible as follows:
+- `Expression`:
+  - `value(Int)`: The expression is an `Int`.
+  - `place(String)`: The expression is a place that must belong to the set of places of the Petri net.
+- `Operator`:
+  - `lt`: Operator lesser than (`<`).
+  - `leq`: Operator lesser than or equal to (`≤`).
+
+In the case of you try to compare two values, this is equivalent to having no constraint.
+The program does not support the comparison between two places.
+Therefore, an example such as `p1 < p2` is not supported.
 
 ## Use case examples
 
