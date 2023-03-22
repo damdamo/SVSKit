@@ -28,12 +28,21 @@ public indirect enum CTL {
   public indirect enum Expression: CustomStringConvertible {
     case tokenCount(String)
     case value(Int)
+    case add(Expression, Expression)
+    case sub(Expression, Expression)
+    case mul(Expression, Expression)
     public var description: String {
       switch self {
       case .tokenCount(let s):
         return "tokenCount(\(s))"
       case .value(let i):
         return i.description
+      case .add(let e1, let e2):
+        return "\(e1) + \(e2)"
+      case .sub(let e1, let e2):
+        return "\(e1) - \(e2)"
+      case .mul(let e1, let e2):
+        return "\(e1) * \(e2)"
       }
     }
   }
@@ -167,7 +176,7 @@ public indirect enum CTL {
       marking[p] = i+1
       return [PS(value: ([],[marking]), net: net)]
     default:
-      fatalError("This is not possible")
+      fatalError("Operators are not managed yet. They cannot be evaluated")
     }
   }
   
@@ -196,7 +205,7 @@ public indirect enum CTL {
       marking[p] = i
       return [PS(value: ([],[marking]), net: net)]
     default:
-      fatalError("This is not possible")
+      fatalError("Operators are not managed yet. They cannot be evaluated")
     }
   }
   

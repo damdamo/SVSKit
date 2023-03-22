@@ -246,6 +246,7 @@ For examples, look at the folder `Tests/PredicateStructureTests` and the file `L
 ## TODO:
 
 - Add continue integration with Travis
+- Integrate linear expressions with Predicate structure. For now, linear expressions can be written but not be evaluated.
 
 ## References
 
