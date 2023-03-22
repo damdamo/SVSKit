@@ -265,9 +265,9 @@ final class CTLTests: XCTestCase {
       .post(from: "t2", to: "p1", labeled: 1)
     )
     
-    let ctlFormula1: CTL = .AF(.cardinalityFormula(e1: .value(1), operator: .leq, e2: .place("p1")))
-    let ctlFormula2: CTL = .EG(.cardinalityFormula(e1: .value(1), operator: .leq, e2: .place("p1")))
-    let ctlFormula3: CTL = .AG(.cardinalityFormula(e1: .value(1), operator: .leq, e2: .place("p1")))
+    let ctlFormula1: CTL = .AF(.intExpr(e1: .value(1), operator: .leq, e2: .tokenCount("p1")))
+    let ctlFormula2: CTL = .EG(.intExpr(e1: .value(1), operator: .leq, e2: .tokenCount("p1")))
+    let ctlFormula3: CTL = .AG(.intExpr(e1: .value(1), operator: .leq, e2: .tokenCount("p1")))
     let sps1 = ctlFormula1.eval(net: net)
     let sps2 = ctlFormula2.eval(net: net)
     let sps3 = ctlFormula3.eval(net: net)
@@ -282,31 +282,25 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(simpliedSPS2, expectedRes)
     XCTAssertEqual(simpliedSPS3, expectedRes)
     
-    let ctlFormula4: CTL = .and(.cardinalityFormula(e1: .place("p0"), operator: .lt, e2: .value(4)), .cardinalityFormula(e1: .value(7), operator: .lt, e2: .place("p1")))
+    let ctlFormula4: CTL = .and(.intExpr(e1: .tokenCount("p0"), operator: .lt, e2: .value(4)), .intExpr(e1: .value(7), operator: .lt, e2: .tokenCount("p1")))
     let expectedSPS: SPS = [PS(value: ([Marking(["p0": 0, "p1": 8], net: net)], [Marking(["p0": 4, "p1": 8], net: net)]), net: net)]
     XCTAssertEqual(expectedSPS, ctlFormula4.eval(net: net))
   }
-    
+  
   func testLoadCTL() {
     let ctlParser = CTLParser()
-    let ctlDic = ctlParser.loadCTL(filePath: "CTLFireability.xml")
-//    for (key, values) in ctl {
-//      print("------------------")
-//      print(key)
-//      print(values)
-//    }
-//    let ctlFormula = ctlDic["SwimmingPool-PT-01-CTLFireability-09"]!
+    let ctlDic1 = ctlParser.loadCTL(filePath: "CTLFireability.xml")
+    var expectedCTL1: CTL = .AX(.or(.isFireable("RKey"), .AF(.EG(.or(.AG(.isFireable("RelK")), .isFireable("GetB"))))))
+    var expectedCTL2: CTL = .AG(.EF(.AF(.AG(.isFireable("GetK")))))
+    XCTAssertEqual(ctlDic1["SwimmingPool-PT-01-CTLFireability-02"]!, expectedCTL1)
+    XCTAssertEqual(ctlDic1["SwimmingPool-PT-01-CTLFireability-09"]!, expectedCTL2)
     
-    let pnmlParser = PnmlParser()
-    let (net, marking) = pnmlParser.loadPN(filePath: "SwimmingPool-1.pnml")
-    
-    for (id, ctlFormula) in ctlDic {
-      print(id)
-      print(ctlFormula)
-      print("-")
-      print(ctlFormula.queryReduction())
-//      print(ctlFormula.eval(marking: marking, net: net))
-      print("-----------------------")
-    }
+    let ctlDic2 = ctlParser.loadCTL(filePath: "CTLCardinality.xml")
+    expectedCTL1 = .AF(.AG(.intExpr(e1: .value(5), operator: .leq, e2: .tokenCount("Bags"))))
+    expectedCTL2 = .AF(.EU(.intExpr(e1: .tokenCount("Undress"), operator: .leq, e2: .tokenCount("Dressed")), .intExpr(e1: .value(6), operator: .leq, e2: .tokenCount("InBath"))))
+    XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-04"]!, expectedCTL1)
+    XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-06"]!, expectedCTL2)
   }
+  
+  
 }

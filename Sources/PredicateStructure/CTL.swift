@@ -1,9 +1,8 @@
 /// The Computation tree logic (CTL), is a language to express temporal properties that must hold a model.
 ///  Semantics are often based on Kripke structures. However, the computation here is made on the fly and does not know the whole state space beforehand.
 ///   The strategy is to use the fixpoint to construct this state space, and thanks to monotonicity properties, the computation always finishes.
-public indirect enum CTL {
-  
-  
+public indirect enum CTL: Equatable {
+    
   /// Enum that lists the accepted operators for a cardinality formula
   public enum Operator: CustomStringConvertible {
     case lt
@@ -25,7 +24,7 @@ public indirect enum CTL {
   }
   
   /// Enum that lists the accepted expressions for a cardinality formula
-  public indirect enum Expression: CustomStringConvertible {
+  public indirect enum Expression: Equatable, CustomStringConvertible {
     case tokenCount(String)
     case value(Int)
     case add(Expression, Expression)
