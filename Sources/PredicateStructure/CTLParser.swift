@@ -8,7 +8,8 @@ public class CTLParser: NSObject, XMLParserDelegate {
   var currentID: String = ""
   var currentElement: String = ""
   let booleans = ["conjunction", "disjunction", "negation"]
-  var setPlacesTransitions: Set<String> = []
+  var setTransitions: Set<String> = []
+  var setPlaces: Set<String> = []
   var CTLOperator: String = ""
   var CTLArray: [String] = []
   var CTLStringDictionnary: [String: [String]] = [:]
@@ -18,7 +19,8 @@ public class CTLParser: NSObject, XMLParserDelegate {
   /// - Returns: CTL formulas bound to their ID
   public func loadCTL(filePath: String) -> [String: CTL] {
     reset()
-    setPlacesTransitions = []
+    setTransitions = []
+    CTLStringDictionnary = [:]
     if let url = Bundle.module.url(forResource: filePath, withExtension: nil) {
       let parser = XMLParser(contentsOf: url)!
       parser.delegate = self
@@ -34,7 +36,8 @@ public class CTLParser: NSObject, XMLParserDelegate {
   /// - Returns: CTL formulas bound to their ID
   public func loadCTL(url: URL) -> [String: CTL] {
     reset()
-    setPlacesTransitions = []
+    setTransitions = []
+    CTLStringDictionnary = [:]
     let parser = XMLParser(contentsOf: url)!
     parser.delegate = self
     parser.parse()
@@ -84,6 +87,14 @@ public class CTLParser: NSObject, XMLParserDelegate {
       CTLArray.append("isFireable")
     } else if elementName == "transition" {
       currentElement = "transition"
+    } else if elementName == "integer-le" {
+      CTLArray.append("leq")
+    } else if elementName == "tokens-count" {
+      CTLArray.append("tokensCount")
+    } else if elementName == "place" {
+      currentElement = "place"
+    } else if elementName == "integer-constant" {
+      currentElement = "integerConstant"
     }
     
   }
@@ -96,7 +107,12 @@ public class CTLParser: NSObject, XMLParserDelegate {
         CTLStringDictionnary[string] = []
       } else if currentElement == "transition" {
         CTLArray.append(string)
-        setPlacesTransitions.insert(string)
+        setTransitions.insert(string)
+      } else if currentElement == "place" {
+        CTLArray.append(string)
+        setPlaces.insert(string)
+      } else if currentElement == "integerConstant" {
+        CTLArray.append(string)
       }
     }
   }
@@ -118,10 +134,13 @@ public class CTLParser: NSObject, XMLParserDelegate {
     var res: [String: CTL] = [:]
     var ctlStack: [CTL] = []
     var currentT: String = ""
+    var expressionStack: [CTL.Expression] = []
     for (key, ctlString) in CTLStringDictionnary {
       for el in ctlString.reversed() {
-        if setPlacesTransitions.contains(el) {
+        if setTransitions.contains(el) {
           currentT = el
+        } else if setPlaces.contains(el) {
+          expressionStack.insert(.tokenCount(el), at: 0)
         } else if el == "isFireable"{
           ctlStack.insert(.isFireable(currentT), at: 0)
           currentT = ""
@@ -144,9 +163,9 @@ public class CTLParser: NSObject, XMLParserDelegate {
             ctlStack.insert(.AG(ctlTemp), at: 0)
           }
         } else if binaryOperators.contains(el) {
-          let x = ctlStack[0]
-          let y = ctlStack[1]
-          ctlStack.removeFirst(2)
+          let x = ctlStack.removeFirst()
+          let y = ctlStack.removeFirst()
+//          ctlStack.removeFirst(2)
           if el == "conjunction" {
             ctlStack.insert(.and(x,y), at: 0)
           } else if el == "disjunction" {
@@ -156,6 +175,12 @@ public class CTLParser: NSObject, XMLParserDelegate {
           } else if el == "AU" {
             ctlStack.insert(.AU(x,y), at: 0)
           }
+        } else if Int(el) != nil {
+          expressionStack.insert(.value(Int(el)!), at: 0)
+        } else if el == "leq" {
+          let el1 = expressionStack.removeFirst()
+          let el2 = expressionStack.removeFirst()
+          ctlStack.insert(.intExpr(e1: el1, operator: .leq, e2: el2), at: 0)
         }
       }
       if let ctl = ctlStack.first {

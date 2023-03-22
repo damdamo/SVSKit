@@ -5,7 +5,7 @@ public indirect enum CTL {
   
   
   /// Enum that lists the accepted operators for a cardinality formula
-  public enum Operator {
+  public enum Operator: CustomStringConvertible {
     case lt
     case leq
     // Other operators that could be implemented:
@@ -13,18 +13,35 @@ public indirect enum CTL {
     // case geq
     // case eq
     // case neq
+    public var description: String {
+      switch self {
+      case .lt:
+        return "<"
+      case .leq:
+        return "≤"
+      }
+    }
+
   }
   
   /// Enum that lists the accepted expressions for a cardinality formula
-  public indirect enum Expression {
-    case place(String)
+  public indirect enum Expression: CustomStringConvertible {
+    case tokenCount(String)
     case value(Int)
+    public var description: String {
+      switch self {
+      case .tokenCount(let s):
+        return "tokenCount(\(s))"
+      case .value(let i):
+        return i.description
+      }
+    }
   }
     
   // Basic case
   case deadlock
   case isFireable(String)
-  case cardinalityFormula(e1: Expression, operator: Operator, e2: Expression)
+  case intExpr(e1: Expression, operator: Operator, e2: Expression)
   case after(String)
   // Boolean logic
   case `true`
@@ -51,7 +68,7 @@ public indirect enum CTL {
   public func eval(net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> SPS {
     var res: SPS
     switch self {
-    case .cardinalityFormula(e1: _, operator: _, e2: _):
+    case .intExpr(e1: _, operator: _, e2: _):
       return evalCardinality(net: net)
     case .isFireable(let t):
       if net.transitions.contains(t) {
@@ -112,13 +129,13 @@ public indirect enum CTL {
   /// - Returns: The resulting set of predicate structures
   func evalCardinality(net: PetriNet) -> SPS {
     switch self {
-    case .cardinalityFormula(e1: .value(_), operator: _, e2: .value(_)):
+    case .intExpr(e1: .value(_), operator: _, e2: .value(_)):
       return CTL.true.eval(net: net)
-    case .cardinalityFormula(e1: .place(_), operator: _, e2: .place(_)):
+    case .intExpr(e1: .tokenCount(_), operator: _, e2: .tokenCount(_)):
       fatalError("The tool does not manage a cardinality comparison between places")
-    case .cardinalityFormula(e1: let e1, operator: .leq, e2: let e2):
+    case .intExpr(e1: let e1, operator: .leq, e2: let e2):
       return CTL.evalLeq(e1: e1, e2: e2, net: net)
-    case .cardinalityFormula(e1: let e1, operator: .lt, e2: let e2):
+    case .intExpr(e1: let e1, operator: .lt, e2: let e2):
       return CTL.evalLt(e1: e1, e2: e2, net: net)
     default:
       fatalError("This is not possible")
@@ -136,14 +153,14 @@ public indirect enum CTL {
     var marking = net.zeroMarking()
     switch (e1, e2) {
     // i <= p
-    case (.value(let i), .place(let p)):
+    case (.value(let i), .tokenCount(let p)):
       guard net.places.contains(p) else {
         fatalError("Place \(p) does not exist")
       }
       marking[p] = i
       return [PS(value: ([marking],[]), net: net)]
     // p <= i
-    case (.place(let p), .value(let i)):
+    case (.tokenCount(let p), .value(let i)):
       guard net.places.contains(p) else {
         fatalError("Place \(p) does not exist")
       }
@@ -165,14 +182,14 @@ public indirect enum CTL {
     var marking = net.zeroMarking()
     switch (e1, e2) {
     // i < p
-    case (.value(let i), .place(let p)):
+    case (.value(let i), .tokenCount(let p)):
       guard net.places.contains(p) else {
         fatalError("Place \(p) does not exist")
       }
       marking[p] = i+1
       return [PS(value: ([marking],[]), net: net)]
     // p < i
-    case (.place(let p), .value(let i)):
+    case (.tokenCount(let p), .value(let i)):
       guard net.places.contains(p) else {
         fatalError("Place \(p) does not exist")
       }
@@ -270,7 +287,7 @@ public indirect enum CTL {
   /// - Returns: The reduced query
   public func queryReduction() -> CTL {
     switch self {
-    case .cardinalityFormula(e1: _, operator: _, e2: _):
+    case .intExpr(e1: _, operator: _, e2: _):
       return self
     case .deadlock:
       return .deadlock
@@ -435,7 +452,7 @@ public indirect enum CTL {
   /// - Returns: The number of elements of the CTL formula
   public func count() -> Int {
     switch self {
-    case .cardinalityFormula(e1: _, operator: _, e2: _):
+    case .intExpr(e1: _, operator: _, e2: _):
       return 1
     case .deadlock:
       return 1
@@ -485,7 +502,7 @@ extension CTL {
   /// - Returns: True if the marking holds the CTL formula
   public func eval(marking: Marking, net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> Bool {
     switch self {
-    case .cardinalityFormula(e1: _, operator: _, e2: _):
+    case .intExpr(e1: _, operator: _, e2: _):
       return evalCardinality(net: net).contains(marking: marking)
     case .isFireable(let t):
       if net.transitions.contains(t) {
@@ -676,8 +693,8 @@ extension CTL: CustomStringConvertible {
       res = "false"
     case .isFireable(let s):
       res = "isFireable(\(s))"
-    case .cardinalityFormula(e1: let e1, operator: let op, e2: let e2):
-      res = "cardinalityFormula(\(e1) \(op) \(e2))"
+    case .intExpr(e1: let e1, operator: let op, e2: let e2):
+      res = "\(e1) \(op) \(e2)"
     case .after(let s):
       res = "after(\(s))"
     case .deadlock:
@@ -701,9 +718,9 @@ extension CTL: CustomStringConvertible {
     case .AG(let ctl):
       res = "AG(\(ctl))"
     case .EU(let ctl1, let ctl2):
-      res = "E(\(ctl1) U \(ctl2))"
+      res = "E(\(ctl1)) U (\(ctl2))"
     case .AU(let ctl1, let ctl2):
-      res = "E(\(ctl1) U \(ctl2))"
+      res = "A(\(ctl1)) U (\(ctl2))"
     }
     return res
   }

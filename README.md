@@ -43,7 +43,7 @@ For a set of predicate structures `sps`, a marking `m` belongs to it if there is
 // Basic cases:
 - deadlock
 - isFireable(Transition) // Transition = String
-- cardinalityFormula(e1: Expression, operator: Operator, e2: Expression)
+- intExpr(e1: Expression, operator: Operator, e2: Expression)
 - after(Transition)
 // Boolean logic
 - true
@@ -70,19 +70,19 @@ CTL.EU(.and(.isFireable("t0"), .not(.isFireable("t1"))), .isFireable("t0"))
 // EF(deadlock)
 CTL.EF(.deadlock)
 // AF(1 <= p1)
-CTL.AF(.cardinalityFormula(e1: .value(1), operator: .leq, e2: .place("p1")))
+CTL.AF(.intExpr(e1: .value(1), operator: .leq, e2: .place("p1")))
 // (p0 < 4) ∧ (7 < p1)
-CTL.and(.cardinalityFormula(e1: .place("p0"), operator: .lt, e2: .value(4)), .cardinalityFormula(e1: .value(7), operator: .lt, e2: .place("p1")))
+CTL.and(.intExpr(e1: .place("p0"), operator: .lt, e2: .value(4)), .intExpr(e1: .value(7), operator: .lt, e2: .place("p1")))
 ```
 
 Thanks to Swift inference, we do not need to write `CTL.EX(CTL.isFireable("t0"))`.
 We can reduce `CTL.isFireable` into `.isFireable`.
 The same logic is applicable for each operators, except for the first one of the list.
 
-For the cardinality, type `Expression` and `Operator` are expressible as follows:
+For `intExpr`, type `Expression` and `Operator` are expressible as follows:
 - `Expression`:
   - `value(Int)`: The expression is an `Int`.
-  - `place(String)`: The expression is a place that must belong to the set of places of the Petri net.
+  - `tokensCount(String)`: The expression is a place that must belong to the set of places of the Petri net.
 - `Operator`:
   - `lt`: Operator lesser than (`<`).
   - `leq`: Operator lesser than or equal to (`≤`).
@@ -242,6 +242,10 @@ let (net, marking) = parser.loadPN(filePath: "nameOfYourFile.pnml")
 ```
 
 For examples, look at the folder `Tests/PredicateStructureTests` and the file `ListExampleTests.swift`.
+
+## TODO:
+
+- Add continue integration with Travis
 
 ## References
 
