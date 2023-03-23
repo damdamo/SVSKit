@@ -261,14 +261,13 @@ public struct PS {
   /// - Returns: The product between both parameters
   func distribute(sps: SPS) -> SPS {
     if let first = sps.first {
-      if let p = value {
-        let ps1 = PS(value: p, net: net)
+      if let _ = self.value {
         var rest = sps.values
         rest.remove(first)
         if rest == [] {
-          return SPS(values: [ps1]).intersection([first])
+          return SPS(values: [self]).intersection([first])
         }
-        return SPS(values: [ps1]).intersection([first]).union(ps1.distribute(sps: SPS(values: rest)))
+        return SPS(values: [self]).intersection([first]).union(self.distribute(sps: SPS(values: rest)))
       }
       return []
     }
@@ -538,10 +537,6 @@ extension PS {
       return true
     }
     return false
-  }
-  
-  public func isIncluded(_ sps: SPS) -> Bool {
-    return SPS(values: [self]).intersection(sps.not()) == []
   }
   
 }

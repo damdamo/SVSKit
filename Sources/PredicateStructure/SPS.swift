@@ -54,10 +54,10 @@ public struct SPS {
       return self
     }
     var res = SPS(values: [])
-    if let first = self.first {
-      let negSPS = first.not()
+    if let firstPs = self.first {
+      let negSPS = firstPs.not()
       var spsWithoutFirst = self.values
-      spsWithoutFirst.remove(first)
+      spsWithoutFirst.remove(firstPs)
       let rTemp = SPS(values: spsWithoutFirst).not()
       for ps in negSPS {
         res = res.union(ps.distribute(sps: rTemp))
@@ -88,9 +88,9 @@ public struct SPS {
       }
       return false
     }
-//    return self.intersection(sps.not()) == []
+    let negSps = sps.not()
     for ps1 in self {
-      if !ps1.isIncluded(sps) {
+      if !(SPS(values: [ps1]).intersection(negSps) == []) {
         return false
       }
     }
@@ -226,7 +226,7 @@ public struct SPS {
       var reducedSPS: Set<PS> = []
       
       for ps in mergedSet {
-        if !ps.isIncluded(SPS(values: mergedSet.filter({!($0 == ps)}))) {
+        if !(SPS(values: [ps]).isIncluded(SPS(values: mergedSet.filter({!($0 == ps)})))) {
           reducedSPS.insert(ps)
         }
       }
