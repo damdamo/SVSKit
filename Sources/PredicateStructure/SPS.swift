@@ -88,7 +88,13 @@ public struct SPS {
       }
       return false
     }
-    return self.intersection(sps.not()) == []
+//    return self.intersection(sps.not()) == []
+    for ps1 in self {
+      if !ps1.isIncluded(sps) {
+        return false
+      }
+    }
+    return true
   }
   
   /// Are two sets of predicate structures equivalent ?
@@ -220,7 +226,7 @@ public struct SPS {
       var reducedSPS: Set<PS> = []
       
       for ps in mergedSet {
-        if !SPS(values: [ps]).isIncluded(SPS(values: mergedSet.filter({!($0 == ps)}))) {
+        if !ps.isIncluded(SPS(values: mergedSet.filter({!($0 == ps)}))) {
           reducedSPS.insert(ps)
         }
       }

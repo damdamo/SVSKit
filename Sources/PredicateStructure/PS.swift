@@ -540,4 +540,8 @@ extension PS {
     return false
   }
   
+  public func isIncluded(_ sps: SPS) -> Bool {
+    return SPS(values: [self]).intersection(sps.not()) == []
+  }
+  
 }
