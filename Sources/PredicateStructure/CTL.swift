@@ -214,12 +214,14 @@ public indirect enum CTL: Equatable {
     var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
     var resTemp: SPS
     repeat {
+      print(res.count)
       resTemp = res
       res = res.union(res.revert())
       if simplified {
         res = res.simplified()
       }
     } while !res.isIncluded(resTemp)
+    print("END EF")
     return res
   }
   
@@ -578,11 +580,14 @@ extension CTL {
     }
     var resTemp: SPS
     repeat {
+      print(res.count)
       if res.contains(marking: marking) {
         return true
       }
       resTemp = res
-      res = res.union(res.revert())
+      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
+      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
+      res = res.revert()
       if simplified {
         res = res.simplified()
       }
@@ -601,7 +606,10 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = res.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
+//      res = res.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
+      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
+      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
+      res = res.revert().intersection(res.revertTilde(rewrited: rewrited))
       if simplified {
         res = res.simplified()
       }
@@ -664,7 +672,10 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = res.union(phi.intersection(res.revert()))
+//      res = res.union(phi.intersection(res.revert()))
+      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
+      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
+      res = phi.intersection(res.revert())
       if simplified {
         res = res.simplified()
       }
@@ -681,7 +692,10 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
+//      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
+      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
+      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
+      res = phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
       if simplified {
         res = res.simplified()
       }
