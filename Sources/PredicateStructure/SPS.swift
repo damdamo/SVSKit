@@ -88,17 +88,27 @@ public struct SPS {
       }
       return false
     }
-//    let negSps = sps.not()
-    var spsToSubtract: Set<PS>
+    var spsToDiff: SPS
+    var spsToDiffTemp: SPS = []
     let emptyPS = PS(value: nil, net: sps.values.first!.net)
     for ps1 in self {
-      spsToSubtract = []
+      spsToDiff = []
+      spsToDiffTemp = []
       for ps2 in sps {
         if ps1.intersection(ps2) != emptyPS {
-          spsToSubtract.insert(ps2)
+          spsToDiffTemp = []
+          for psNot in ps2.not() {
+            spsToDiffTemp = spsToDiffTemp.union(psNot.distribute(sps: spsToDiff))
+          }
+          spsToDiff = spsToDiffTemp
+          // If ps1 is already included in spsToDiff, there is no need to continue to apply the intersection on other elements. We can go to check the rest of self.
+          if SPS(values: [ps1]).intersection(spsToDiff) == [] {
+            break
+          }
         }
       }
-      if !(SPS(values: [ps1]).intersection(SPS(values: spsToSubtract).not()) == []) {
+      // If ps1 is not included in spsToDiff when all elements have been added, this means there is at least one ps not included in sps, and thus it is false.
+      if !(SPS(values: [ps1]).intersection(spsToDiff) == []) {
         return false
       }
     }
