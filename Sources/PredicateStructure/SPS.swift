@@ -88,9 +88,17 @@ public struct SPS {
       }
       return false
     }
-    let negSps = sps.not()
+//    let negSps = sps.not()
+    var spsToSubtract: Set<PS>
+    let emptyPS = PS(value: nil, net: sps.values.first!.net)
     for ps1 in self {
-      if !(SPS(values: [ps1]).intersection(negSps) == []) {
+      spsToSubtract = []
+      for ps2 in sps {
+        if ps1.intersection(ps2) != emptyPS {
+          spsToSubtract.insert(ps2)
+        }
+      }
+      if !(SPS(values: [ps1]).intersection(SPS(values: spsToSubtract).not()) == []) {
         return false
       }
     }
@@ -221,13 +229,13 @@ public struct SPS {
         mergedSet.insert(psFirstTemp)
       }
     }
-        
+      
     if complete {
-      var reducedSPS: Set<PS> = []
+      var reducedSPS: Set<PS> = mergedSet
       
       for ps in mergedSet {
-        if !(SPS(values: [ps]).isIncluded(SPS(values: mergedSet.filter({!($0 == ps)})))) {
-          reducedSPS.insert(ps)
+        if SPS(values: [ps]).isIncluded(SPS(values: reducedSPS.filter({!($0 == ps)}))) {
+          reducedSPS.remove(ps)
         }
       }
       return SPS(values: reducedSPS)

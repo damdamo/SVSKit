@@ -108,7 +108,7 @@ extension Marking: CustomStringConvertible {
     }
     
     var res = "["
-    for (place, values) in storage {
+    for (place, values) in storage.sorted(by: {$0.key < $1.key}) {
       res.append("\(place): \(values), ")
     }
     res.removeLast()

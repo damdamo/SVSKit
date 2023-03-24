@@ -214,13 +214,12 @@ public indirect enum CTL: Equatable {
     var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
     var resTemp: SPS
     repeat {
-      print(res.count)
       resTemp = res
       res = res.union(res.revert())
       if simplified {
         res = res.simplified()
       }
-    } while !res.isIncluded(resTemp)
+    } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
     print("END EF")
     return res
   }
@@ -580,7 +579,6 @@ extension CTL {
     }
     var resTemp: SPS
     repeat {
-      print(res.count)
       if res.contains(marking: marking) {
         return true
       }
@@ -591,7 +589,13 @@ extension CTL {
       if simplified {
         res = res.simplified()
       }
-    } while !res.isIncluded(resTemp)
+//      print("Count res: \(Set(res.filter({!resTemp.contains($0)})).count)")
+//    } while !res.isIncluded(resTemp)
+      print("Res count: \(res.count)")
+      print("ResTemp count: \(resTemp.count)")
+//      print("Res: \(res)")
+    } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+
     return res.contains(marking: marking)
   }
   

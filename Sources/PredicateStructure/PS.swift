@@ -484,15 +484,6 @@ extension PS: Hashable {
   }
 }
 
-extension PS: CustomStringConvertible {
-  public var description: String {
-    if let p = value {
-      return "(\(p.inc), \(p.exc))"
-    }
-    return "∅"
-  }
-}
-
 extension PS {
   
   public func isIncluded (_ ps: PS) -> Bool {
@@ -539,4 +530,13 @@ extension PS {
     return false
   }
   
+}
+
+extension PS: CustomStringConvertible {
+  public var description: String {
+    if let p = value {
+      return "(\(p.inc), \(p.exc))"
+    }
+    return "∅"
+  }
 }
