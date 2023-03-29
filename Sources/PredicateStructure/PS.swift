@@ -124,20 +124,19 @@ public struct PS {
   public func canonised() -> PS {
     if let p = value {
       let canInclude = PS.convMax(markings: p.inc, net: net)
-      let preCanExclude = minSet(markings: p.exc)
             
       if let markingInclude = canInclude.first {
         // In (a,b) ∈ PS, if a marking in b is included in a, it returns empty
-        for marking in preCanExclude {
+        for marking in p.exc {
           if marking <= markingInclude {
             return PS(value: nil, net: net)
           }
         }
-        
+                
         // In ({q},b) ∈ PS, forall q_b in b, if q(p) >= q_b(p) => q_b(p) = q(p)
         var canExclude: Set<Marking> = []
         var markingTemp: Marking
-        for marking in preCanExclude {
+        for marking in p.exc {
           markingTemp = marking
           for place in net.places {
             if markingTemp[place]! < markingInclude[place]! {
@@ -146,12 +145,15 @@ public struct PS {
           }
           canExclude.insert(markingTemp)
         }
+        // This is important to apply the minSet operation after the normalisation with include marking
+        // Marking could become comparable with the previous step, and then be removed by minSet.
+        canExclude = minSet(markings: canExclude)
         if canInclude.isEmpty && canExclude.isEmpty {
           return PS(value: nil, net: net)
         }
         return PS(value: (canInclude, canExclude), net: net)
       }
-      return PS(value: ([], preCanExclude), net: net)
+      return PS(value: ([], minSet(markings: p.exc)), net: net)
     }
     
     return PS(value: nil, net: net)
@@ -469,6 +471,58 @@ public struct PS {
       return res
     }
     return []
+  }
+  
+  /// Subtract two PS, by removing all markings for the right PS into the left PS
+  /// - Parameter ps: The ps to subtract
+  /// - Returns: A sps containing no value of ps
+  public func subtract(_ ps: PS) -> SPS {
+    if self == ps || self.value == nil {
+      return []
+    } else if ps.value == nil {
+      return SPS(values: [self])
+    }
+    
+    let intersect = self.intersection(ps)
+    if intersect.value == nil  {
+      return [self]
+    }
+    
+    let a = self.value!.inc
+    let b = self.value!.exc
+    let c = intersect.value!.inc
+    let d = intersect.value!.exc
+    
+    var res: Set<PS> = []
+
+    // If c == [], the start of the new predicate structures depends on d
+    if c != [] {
+      let ps1 = PS(value: (a, c.union(b)), net: net).canonised()
+      res = res.union(SPS(values: [ps1]))
+    }
+    
+    for marking in d {
+      let ps = PS(value: ([marking],b), net: net).canonised()
+      res.insert(ps)
+    }
+    res.remove(PS(value: nil, net: net))
+    return SPS(values: res)
+  }
+  
+  /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
+  /// - Parameter sps: The set of predicate structures to subtract
+  /// - Returns: A set of predicate structures where all elements of sps have been removed from ps
+  public func subtract(_ sps: SPS) -> SPS {
+    var res: SPS = [self]
+    var spsTemp: SPS
+    for ps in sps {
+      spsTemp = []
+      for psTemp in res {
+        spsTemp = spsTemp.union(psTemp.subtract(ps))
+      }
+      res = spsTemp
+    }
+    return res
   }
 
 }

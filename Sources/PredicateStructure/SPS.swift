@@ -88,32 +88,58 @@ public struct SPS {
       }
       return false
     }
-    var spsToDiff: SPS
-    var spsToDiffTemp: SPS = []
-    let emptyPS = PS(value: nil, net: sps.values.first!.net)
-    for ps1 in self {
-      spsToDiff = []
-      spsToDiffTemp = []
-      for ps2 in sps {
-        if ps1.intersection(ps2) != emptyPS {
-          spsToDiffTemp = []
-          for psNot in ps2.not() {
-            spsToDiffTemp = spsToDiffTemp.union(psNot.distribute(sps: spsToDiff))
-          }
-          spsToDiff = spsToDiffTemp
-          // If ps1 is already included in spsToDiff, there is no need to continue to apply the intersection on other elements. We can go to check the rest of self.
-          if SPS(values: [ps1]).intersection(spsToDiff) == [] {
-            break
-          }
-        }
-      }
-      // If ps1 is not included in spsToDiff when all elements have been added, this means there is at least one ps not included in sps, and thus it is false.
-      if !(SPS(values: [ps1]).intersection(spsToDiff) == []) {
-        return false
-      }
-    }
-    return true
+    return self.subtract(sps) == []
   }
+//  public func isIncluded(_ sps: SPS) -> Bool {
+//    if sps == [] {
+//      if self == [] {
+//        return true
+//      }
+//      return false
+//    }
+//    var spsToDiff: SPS
+//    var spsToDiffTemp: SPS = []
+//    var isEmpty: Bool = false
+//    var distribCache: [PS: [SPS: SPS]] = [:]
+//    let emptyPS = PS(value: nil, net: sps.values.first!.net)
+//    for ps1 in self {
+//      spsToDiff = []
+//      for ps2 in sps {
+//        if ps1.intersection(ps2) != emptyPS {
+//          spsToDiffTemp = []
+//          for psNot in ps2.not() {
+//            if let r = distribCache[psNot]?[spsToDiff] {
+//              spsToDiffTemp = spsToDiffTemp.union(r)
+//            } else {
+//              let ps2Distrib = psNot.distribute(sps: spsToDiff)
+//              if let _ = distribCache[psNot] {
+//                distribCache[psNot]![spsToDiff] = ps2Distrib
+//              } else {
+//                distribCache[psNot] = [:]
+//                distribCache[psNot]![spsToDiff] = ps2Distrib
+//              }
+//              spsToDiffTemp = spsToDiffTemp.union(ps2Distrib)
+//            }
+//          }
+//          spsToDiff = spsToDiffTemp
+//          // If ps1 is already included in spsToDiff, there is no need to continue to apply the intersection on other elements. We can go to check the rest of self.
+//          if SPS(values: [ps1]).intersection(spsToDiff) == [] {
+//            isEmpty = true
+//            break
+//          }
+//        }
+//      }
+//      // If ps1 is not included in spsToDiff when all elements have been added, this means there is at least one ps not included in sps, and thus it is false.
+//      if !isEmpty {
+//        if !(SPS(values: [ps1]).intersection(spsToDiff) == []) {
+//          return false
+//        }
+//      } else {
+//        isEmpty = false
+//      }
+//    }
+//    return true
+//  }
   
   /// Are two sets of predicate structures equivalent ?
   /// - Parameters:
@@ -181,7 +207,6 @@ public struct SPS {
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
   public func simplified(complete: Bool = false) -> SPS {
-    
     if self.isEmpty {
       return self
     }
@@ -263,6 +288,17 @@ public struct SPS {
       markings.insert(net.inputMarkingForATransition(transition: transition))
     }
     return SPS(values: [PS(value: ([], markings), net: net)])
+  }
+  
+  /// Subtract two sets of predicate structures
+  /// - Parameter sps: The set of predicate structures to subtract
+  /// - Returns: The resulting set of predicate structures
+  public func subtract(_ sps: SPS) -> SPS {
+    var res: SPS = []
+    for ps1 in self {
+      res = res.union(ps1.subtract(sps))
+    }
+    return res
   }
   
 }

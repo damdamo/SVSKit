@@ -35,9 +35,9 @@ final class CTLTests: XCTestCase {
     
     let ctlFormula: CTL = .AX(.isFireable("t2"))
     let sps = ctlFormula.eval(net: net, rewrited: true)
-    let simpliedSPS = sps.simplified(complete: true)
+    let simplifiedSPS = sps.simplified(complete: true)
 
-    XCTAssertTrue(simpliedSPS.isEquiv(expectedSPS))
+    XCTAssertTrue(simplifiedSPS.isEquiv(expectedSPS))
     
   }
 
@@ -152,8 +152,6 @@ final class CTLTests: XCTestCase {
     let simpliedSPS3 = sps3.simplified()
     XCTAssertEqual(simpliedSPS1, expectedRes)
     XCTAssertEqual(simpliedSPS2, expectedRes)
-    print(sps3)
-    print(simpliedSPS3)
     XCTAssertEqual(simpliedSPS3, expectedRes)
   }
 

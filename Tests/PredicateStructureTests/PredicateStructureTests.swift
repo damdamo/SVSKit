@@ -280,4 +280,121 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertFalse(ps5.isIncluded(ps1))
   }
   
+  func testSubtraction1() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let m1 = Marking(["p0": 2, "p1": 3], net: net)
+    let m2 = Marking(["p0": 0, "p1": 8], net: net)
+    let m3 = Marking(["p0": 0, "p1": 6], net: net)
+    let m4 = Marking(["p0": 3, "p1": 3], net: net)
+    let m5 =  Marking(["p0": 2, "p1": 6], net: net)
+    let m1p = Marking(["p0": 3, "p1": 6], net: net)
+    let m2p = Marking(["p0": 3, "p1": 8], net: net)
+    
+    let ps1 = PS(value: ([m1],[m2]), net: net)
+    let ps2 = PS(value: ([m3],[m4]), net: net)
+    let ps3 = PS(value: ([m1],[m5]), net: net)
+    let ps1p = PS(value: ([m1p],[m2p]), net: net)
+    
+    XCTAssertEqual(ps1.subtract(ps1), [])
+    // ({(2,3)}, {(0,8)}) - ({(0,6)}, {(3,3)}) = {({(2,3)}, {(2,6)}), ({(3,6)}, {(3,8)})}
+    XCTAssertEqual(ps1.subtract(ps2), SPS(values: [ps3, ps1p]))
+    XCTAssertEqual(ps1.subtract([ps2]), SPS(values: [ps3, ps1p]))
+    
+    let m6 = Marking(["p0": 1, "p1": 2], net: net)
+    let m7 = Marking(["p0": 8, "p1": 8], net: net)
+    let m8 = Marking(["p0": 1, "p1": 6], net: net)
+    let ps4 = PS(value: ([m6],[]), net: net)
+    let ps5 = PS(value: ([m3],[m7]), net: net)
+    let ps5p = PS(value: ([m3],[]), net: net)
+    let ps6 = PS(value: ([m6],[m8]), net: net)
+    let ps7 = PS(value: ([m7],[]), net: net)
+    
+    // ({(1,2)}, {}) - ({(0,6)}, {(8,8)}) = {({(1,2)}, {(1,6)}), ({(8,8)}, {})}
+    XCTAssertEqual(ps4.subtract(ps5), SPS(values: [ps6,ps7]))
+    XCTAssertEqual(ps4.subtract([ps5]), SPS(values: [ps6,ps7]))
+    // ({(1,2)}, {}) - ({(0,6)}, {}) = {({(1,2)}, {(1,6)})}
+    XCTAssertEqual(ps4.subtract(ps5p), SPS(values: [ps6]))
+    
+    let m9 = Marking(["p0": 0, "p1": 4], net: net)
+    let m10 = Marking(["p0": 5, "p1": 3], net: net)
+    let m11 = Marking(["p0": 1, "p1": 1], net: net)
+    let m12 = Marking(["p0": 5, "p1": 4], net: net)
+
+    
+    let ps8 = PS(value: ([m6],[m9]), net: net)
+    let ps9 = PS(value: ([m11],[m10]), net: net)
+    let ps10 = PS(value: ([m10],[m12]), net: net)
+    
+    
+    // ({(1,2)}, {(0,4)}) - ({(1,1)}, {(5,3)}) = {({(5,3)}, {(5,4)})}
+    XCTAssertEqual(ps8.subtract(ps9), [ps10])
+    
+    let ps11 = PS(value: ([m10],[]), net: net)
+    // ({(1,2)}, {(0,4)}) - {({(1,1)}, {(5,3)}), ({(5,3)}, {})} = {}
+    XCTAssertEqual(ps8.subtract([ps9,ps11]), [])
+    
+    let m13 = Marking(["p0": 5, "p1": 5], net: net)
+    let m14 = Marking(["p0": 10, "p1": 10], net: net)
+    let m15 = Marking(["p0": 3, "p1": 3], net: net)
+    let m16 = Marking(["p0": 6, "p1": 6], net: net)
+    let m17 = Marking(["p0": 8, "p1": 8], net: net)
+    
+    let ps12 = PS(value: ([m13],[m14]), net: net)
+    let ps13 = PS(value: ([m15],[m16]), net: net)
+    let ps14 = PS(value: ([m17],[]), net: net)
+    let ps15 = PS(value: ([m16],[m17]), net: net)
+    XCTAssertEqual(ps12.subtract([ps13, ps14]), [ps15])
+  }
+  
+  func testSubtraction2() {
+    
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let m1 = Marking(["p0": 2, "p1": 0, "p2": 0], net: net)
+    let m2 = Marking(["p0": 0, "p1": 5, "p2": 1], net: net)
+    let ps1 = PS(value: ([],[m1]), net: net)
+    let ps2 = PS(value: ([],[m1,m2]), net: net)
+    
+    // ({}, {(2,0,0)}) - ({}, {(2,0,0), (0,5,1)}) = {}
+    XCTAssertEqual(ps2.subtract(ps1), [])
+  }
+  
+  func testSubtraction3() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    let m1 = Marking(["p0": 0, "p1": 3], net: net)
+    let m2 = Marking(["p0": 1, "p1": 1], net: net)
+    let m3 = Marking(["p0": 0, "p1": 4], net: net)
+    let m4 = Marking(["p0": 1, "p1": 2], net: net)
+    let m5 =  Marking(["p0": 2, "p1": 1], net: net)
+    
+    let ps1 = PS(value: ([m1],[]), net: net)
+    let ps2 = PS(value: ([m2],[]), net: net)
+    let ps3 = PS(value: ([m3],[]), net: net)
+    let ps4 = PS(value: ([m4],[]), net: net)
+    let ps5 = PS(value: ([m5],[]), net: net)
+    
+    let sps1 = SPS(values: [ps1,ps2])
+    let sps2 = SPS(values: [ps3,ps4,ps5])
+    // {({(0,3)}, {}), ({(1,1)}, {})} - {({(0,4)}, {}), ({(1,2)}, {}), ({(2,1)}, {})}
+    // =
+    // {({(0,3)}, {}), ({(1,1)}, {})} ∩ ¬({({(0,4)}, {}), ({(1,2)}, {}), ({(2,1)}, {})})
+    XCTAssertEqual(sps1.subtract(sps2), sps1.intersection(sps2.not()))
+  }
+  
 }
