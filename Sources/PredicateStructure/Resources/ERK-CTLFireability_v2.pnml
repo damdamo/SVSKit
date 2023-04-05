@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+    <net id="ComposedModel" type="http://www.pnml.org/version-2009/grammar/ptnet">
+        <page id="page0">
+            <place id="Raf1Star">
+                <graphics>
+                    <position x="210" y="290"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>Raf1Star</text>
+                </name>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="RKIP">
+                <graphics>
+                    <position x="50" y="290"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>RKIP</text>
+                </name>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="Raf1Star_RKIP">
+                <graphics>
+                    <position x="290" y="370"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>Raf1Star_RKIP</text>
+                </name>
+                <initialMarking>
+                    <text>0</text>
+                </initialMarking>
+            </place>
+            <place id="Raf1Star_RKIP_ERKPP">
+                <graphics>
+                    <position x="450" y="370"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>Raf1Star_RKIP_ERKPP</text>
+                </name>
+                <initialMarking>
+                    <text>0</text>
+                </initialMarking>
+            </place>
+            <transition id="r1">
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>r1</text>
+                </name>
+                <graphics>
+                    <position x="210" y="370"/>
+                </graphics>
+            </transition>
+            <transition id="r2">
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>r2</text>
+                </name>
+                <graphics>
+                    <position x="130" y="290"/>
+                </graphics>
+            </transition>
+            <transition id="r3">
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>r3</text>
+                </name>
+                <graphics>
+                    <position x="370" y="370"/>
+                </graphics>
+            </transition>
+            <transition id="r4">
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>r4</text>
+                </name>
+                <graphics>
+                    <position x="290" y="290"/>
+                </graphics>
+            </transition>
+            <transition id="r5">
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>r5</text>
+                </name>
+                <graphics>
+                    <position x="530" y="370"/>
+                </graphics>
+            </transition>
+            <transition id="r11">
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>r11</text>
+                </name>
+                <graphics>
+                    <position x="50" y="370"/>
+                </graphics>
+            </transition>
+            <arc id="Raf1Star_to_r1" source="Raf1Star" target="r1" type="normal"/>
+            <arc id="RKIP_to_r1" source="RKIP" target="r1" type="normal"/>
+            <arc id="Raf1Star_RKIP_to_r2" source="Raf1Star_RKIP" target="r2" type="normal"/>
+            <arc id="Raf1Star_RKIP_to_r3" source="Raf1Star_RKIP" target="r3" type="normal"/>
+            <arc id="Raf1Star_RKIP_ERKPP_to_r4" source="Raf1Star_RKIP_ERKPP" target="r4" type="normal"/>
+            <arc id="Raf1Star_RKIP_ERKPP_to_r5" source="Raf1Star_RKIP_ERKPP" target="r5" type="normal"/>
+            <arc id="r1_to_Raf1Star_RKIP" source="r1" target="Raf1Star_RKIP" type="normal"/>
+            <arc id="r2_to_Raf1Star" source="r2" target="Raf1Star" type="normal"/>
+            <arc id="r2_to_RKIP" source="r2" target="RKIP" type="normal"/>
+            <arc id="r3_to_Raf1Star_RKIP_ERKPP" source="r3" target="Raf1Star_RKIP_ERKPP" type="normal"/>
+            <arc id="r4_to_Raf1Star_RKIP" source="r4" target="Raf1Star_RKIP" type="normal"/>
+            <arc id="r5_to_Raf1Star" source="r5" target="Raf1Star" type="normal"/>
+            <arc id="r11_to_RKIP" source="r11" target="RKIP" type="normal"/>
+        </page>
+        <name>
+            <text>ComposedModel</text>
+        </name>
+    </net>
+</pnml>

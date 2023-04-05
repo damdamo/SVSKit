@@ -90,56 +90,6 @@ public struct SPS {
     }
     return self.subtract(sps) == []
   }
-//  public func isIncluded(_ sps: SPS) -> Bool {
-//    if sps == [] {
-//      if self == [] {
-//        return true
-//      }
-//      return false
-//    }
-//    var spsToDiff: SPS
-//    var spsToDiffTemp: SPS = []
-//    var isEmpty: Bool = false
-//    var distribCache: [PS: [SPS: SPS]] = [:]
-//    let emptyPS = PS(value: nil, net: sps.values.first!.net)
-//    for ps1 in self {
-//      spsToDiff = []
-//      for ps2 in sps {
-//        if ps1.intersection(ps2) != emptyPS {
-//          spsToDiffTemp = []
-//          for psNot in ps2.not() {
-//            if let r = distribCache[psNot]?[spsToDiff] {
-//              spsToDiffTemp = spsToDiffTemp.union(r)
-//            } else {
-//              let ps2Distrib = psNot.distribute(sps: spsToDiff)
-//              if let _ = distribCache[psNot] {
-//                distribCache[psNot]![spsToDiff] = ps2Distrib
-//              } else {
-//                distribCache[psNot] = [:]
-//                distribCache[psNot]![spsToDiff] = ps2Distrib
-//              }
-//              spsToDiffTemp = spsToDiffTemp.union(ps2Distrib)
-//            }
-//          }
-//          spsToDiff = spsToDiffTemp
-//          // If ps1 is already included in spsToDiff, there is no need to continue to apply the intersection on other elements. We can go to check the rest of self.
-//          if SPS(values: [ps1]).intersection(spsToDiff) == [] {
-//            isEmpty = true
-//            break
-//          }
-//        }
-//      }
-//      // If ps1 is not included in spsToDiff when all elements have been added, this means there is at least one ps not included in sps, and thus it is false.
-//      if !isEmpty {
-//        if !(SPS(values: [ps1]).intersection(spsToDiff) == []) {
-//          return false
-//        }
-//      } else {
-//        isEmpty = false
-//      }
-//    }
-//    return true
-//  }
   
   /// Are two sets of predicate structures equivalent ?
   /// - Parameters:
@@ -246,7 +196,7 @@ public struct SPS {
         setTemp2.insert(firstPS)
       }
     }
-        
+            
     while !setTemp2.isEmpty {
       psFirst = setTemp2.first!
       psFirstTemp = psFirst
@@ -264,19 +214,19 @@ public struct SPS {
         mergedSet.insert(psFirstTemp)
       }
     }
-      
-    if complete {
-      var reducedSPS: Set<PS> = mergedSet
-      
-      for ps in mergedSet {
-        if SPS(values: [ps]).isIncluded(SPS(values: reducedSPS.filter({!($0 == ps)}))) {
-          reducedSPS.remove(ps)
-        }
+
+    var reducedSPS: Set<PS> = mergedSet
+
+    while !mergedSet.isEmpty {
+      let firstPS = mergedSet.first!
+      mergedSet.remove(firstPS)
+      if SPS(values: [firstPS]).isIncluded(SPS(values: mergedSet)) {
+        reducedSPS.remove(firstPS)
       }
-      return SPS(values: reducedSPS)
     }
     
-    return SPS(values: mergedSet)
+    return SPS(values: reducedSPS)
+    
   }
   
   /// Create a set of predicate structures to represent all markings such as no transition are fireable.
@@ -287,13 +237,16 @@ public struct SPS {
     for transition in net.transitions {
       markings.insert(net.inputMarkingForATransition(transition: transition))
     }
-    return SPS(values: [PS(value: ([], markings), net: net)])
+    return SPS(values: [PS(value: ([net.zeroMarking()], markings), net: net).canonised()])
   }
   
   /// Subtract two sets of predicate structures
   /// - Parameter sps: The set of predicate structures to subtract
   /// - Returns: The resulting set of predicate structures
   public func subtract(_ sps: SPS) -> SPS {
+    if self == sps {
+      return []
+    }
     var res: SPS = []
     for ps1 in self {
       res = res.union(ps1.subtract(sps))

@@ -17,7 +17,18 @@ public struct PS {
   public let net: PetriNet
   
   public init(value: (inc: Set<Marking>, exc: Set<Marking>)?, net: PetriNet) {
-    self.value = value
+    if let v = value {
+      // If `inc` is an empty set, we replace it by the zero marking, containing 0 for all places
+      // It corresponds to the marking accepting all markings.
+      if v.inc.isEmpty {
+        let couple = (Set([net.zeroMarking()]), v.exc)
+        self.value = couple
+      } else {
+        self.value = value
+      }
+    } else {
+      self.value = value
+    }
     self.net = net
   }
   
@@ -28,7 +39,7 @@ public struct PS {
       var sps: Set<PS> = []
       for el in p.inc {
         // .ps([], [el])
-        sps.insert(PS(value: ([], [el]) , net: net))
+        sps.insert(PS(value: ([net.zeroMarking()], [el]) , net: net))
       }
       for el in p.exc {
         sps.insert(PS(value: ([el], []) , net: net))
@@ -41,6 +52,36 @@ public struct PS {
       dicMarking[place] = 0
     }
     return [PS(value: ([Marking(dicMarking, net: net)], []), net: net)]
+  }
+  
+  /// Change the target marking using the source marking, by using the source marking as a lower bound for each place. If a place of a target marking is lower than this lower bound, its value is changed to be equal to the lower bound. Otherwise, nothing is changed.
+  /// - Parameters:
+  ///   - sourceMarking: The reference marking
+  ///   - targetMarking: The marking to be changed if necessary
+  ///   - net: The current Petri net
+  /// - Returns: A new marking containing the modified target marking
+  public static func normaliseMarking(sourceMarking: Marking, targetMarking: Marking, net: PetriNet) -> Marking {
+    var marking = targetMarking
+    for place in net.places {
+      if sourceMarking[place]! > targetMarking[place]! {
+        marking[place]! = sourceMarking[place]!
+      }
+    }
+    return marking
+  }
+  
+  /// Change the target markings using the source marking, by using the source marking as a lower bound for each place. If a place of a target marking is lower than this lower bound, its value is changed to be equal to the lower bound. Otherwise, nothing is changed.
+  /// - Parameters:
+  ///   - sourceMarking: The reference marking
+  ///   - targetMarkings: The markings to be changed if necessary
+  ///   - net: The current Petri net
+  /// - Returns: A new set of markings containing the changed target markings
+  public static func normaliseMarkings(sourceMarking: Marking, targetMarkings: Set<Marking>, net: PetriNet) -> Set<Marking> {
+    var markingSet: Set<Marking> = []
+    for marking in targetMarkings {
+      markingSet.insert(PS.normaliseMarking(sourceMarking: sourceMarking, targetMarking: marking, net: net))
+    }
+    return markingSet
   }
   
   /// convMax, for convergence maximal, is a function to compute a singleton containing a marking where each value is the maximum of all places for a given place.
@@ -123,8 +164,8 @@ public struct PS {
   /// - Returns: The canonical form of the predicate structure.
   public func canonised() -> PS {
     if let p = value {
-      let canInclude = PS.convMax(markings: p.inc, net: net)
-            
+      var canInclude = PS.convMax(markings: p.inc, net: net)
+
       if let markingInclude = canInclude.first {
         // In (a,b) ∈ PS, if a marking in b is included in a, it returns empty
         for marking in p.exc {
@@ -132,30 +173,24 @@ public struct PS {
             return PS(value: nil, net: net)
           }
         }
-                
+
         // In ({q},b) ∈ PS, forall q_b in b, if q(p) >= q_b(p) => q_b(p) = q(p)
-        var canExclude: Set<Marking> = []
-        var markingTemp: Marking
-        for marking in p.exc {
-          markingTemp = marking
-          for place in net.places {
-            if markingTemp[place]! < markingInclude[place]! {
-              markingTemp[place] = markingInclude[place]
-            }
-          }
-          canExclude.insert(markingTemp)
-        }
+        var canExclude: Set<Marking> = PS.normaliseMarkings(sourceMarking: markingInclude, targetMarkings: p.exc, net: net)
         // This is important to apply the minSet operation after the normalisation with include marking
         // Marking could become comparable with the previous step, and then be removed by minSet.
         canExclude = minSet(markings: canExclude)
-        if canInclude.isEmpty && canExclude.isEmpty {
+        
+        if canInclude == [] {
+          canInclude = [net.zeroMarking()]
+        }
+        if canInclude == canExclude {
           return PS(value: nil, net: net)
         }
         return PS(value: (canInclude, canExclude), net: net)
       }
       return PS(value: ([], minSet(markings: p.exc)), net: net)
     }
-    
+
     return PS(value: nil, net: net)
   }
   
@@ -304,33 +339,35 @@ public struct PS {
       return [self]
     }
     
+    // This manages the case where self or ps is included in the other one
+    let intersect = self.intersection(ps)
+    if self == intersect {
+      return [ps]
+    } else if ps == intersect {
+      return [self]
+    }
+    
     let a = ps1Temp.value!.inc
     let b = ps1Temp.value!.exc
     let c = ps2Temp.value!.inc
     let d = ps2Temp.value!.exc
     
+    // This manages the case where there is a potential overlap
     if let am = a.first, let cm = c.first {
-      if let bm = b.first {
-        if cm <= bm && am <= cm {
-          if let dm = d.first {
-            if bm <= dm {
+      if am <= cm {
+        if let bm = b.first {
+          if cm <= bm {
+            if let dm = d.first {
+              if bm <= dm {
+                return [PS(value: (a,d), net: net)]
+              }
+            } else {
               return [PS(value: (a,d), net: net)]
             }
-            return [PS(value: (a,b), net: net)]
           }
-          return [PS(value: (a,d), net: net)]
-        }
-      } else {
-        if am <= cm {
-          if let dm = d.first {
-            if am <= dm {
-              return [PS(value: (a,b), net: net)]
-            }
-            return [self, ps]
-          }
+        } else {
           return [PS(value: (a,b), net: net)]
         }
-        return [self, ps]
       }
     }
     
@@ -376,7 +413,7 @@ public struct PS {
   public func revert() -> SPS {
     var res: Set<PS> = []
     for transition in net.transitions {
-      if let rev = self.revert(transition: transition) {
+      if let rev = self.revert(transition: transition)?.canonised() {
         res.insert(rev)
       }
     }
@@ -482,25 +519,25 @@ public struct PS {
     } else if ps.value == nil {
       return SPS(values: [self])
     }
-    
+
     let intersect = self.intersection(ps)
     if intersect.value == nil  {
       return [self]
     }
-    
+
     let a = self.value!.inc
     let b = self.value!.exc
     let c = intersect.value!.inc
     let d = intersect.value!.exc
-    
+
     var res: Set<PS> = []
 
     // If c == [], the start of the new predicate structures depends on d
-    if c != [] {
-      let ps1 = PS(value: (a, c.union(b)), net: net).canonised()
-      res = res.union(SPS(values: [ps1]))
-    }
-    
+//    if c != [] {
+    let ps1 = PS(value: (a, c.union(b)), net: net).canonised()
+    res = res.union(SPS(values: [ps1]))
+//    }
+
     for marking in d {
       let ps = PS(value: ([marking],b), net: net).canonised()
       res.insert(ps)
@@ -524,6 +561,13 @@ public struct PS {
     }
     return res
   }
+  
+  /// Is a predicate structure included in another one ?
+  /// - Parameter ps: The predicate structure to check if self is contained
+  /// - Returns: True if it is contained, false otherwise.
+  public func isIncluded (_ ps: PS) -> Bool {
+    return self.subtract(ps) == []
+  }
 
 }
 
@@ -538,54 +582,6 @@ extension PS: Hashable {
   }
 }
 
-extension PS {
-  
-  public func isIncluded (_ ps: PS) -> Bool {
-    
-    if self == ps {
-      return true
-    }
-    
-    if let p1 = self.value, let p2 = ps.value {
-      // (Ø, _) ⊆ (_, _)
-      if p1.inc.isEmpty {
-        // (Ø, _) ⊆ ({}, _)
-        if !p2.inc.isEmpty {
-          return false
-        }
-      }
-      else {
-        for m1 in p1.inc {
-          for m2 in p2.inc {
-            if !(m2 <= m1) {
-              return false
-            }
-          }
-        }
-      }
-      
-      // (Ø, _) ⊆ (_, _)
-      if p1.exc.isEmpty {
-        // // (Ø, _) ⊆ (_, {_})
-        if !p2.exc.isEmpty {
-          return false
-        }
-      } else {
-        for m1 in p1.exc {
-          for m2 in p2.exc {
-            if !(m1 <= m2) {
-              return false
-            }
-          }
-        }
-      }
-      return true
-    }
-    return false
-  }
-  
-}
-
 extension PS: CustomStringConvertible {
   public var description: String {
     if let p = value {
@@ -594,3 +590,110 @@ extension PS: CustomStringConvertible {
     return "∅"
   }
 }
+
+//  public func subtract(_ ps: PS) -> SPS {
+//    if self == ps || self.value == nil {
+//      return []
+//    } else if ps.value == nil {
+//      return SPS(values: [self])
+//    }
+//
+//    let intersect = self.intersection(ps)
+//    if intersect.value == nil  {
+//      return [self]
+//    } else if self == intersect {
+////      print("------------------")
+////      print("IS INCLUDED \(self.isIncluded(ps))")
+////      print(self)
+////      print(ps)
+////      print("------------------")
+//      return []
+//    }
+//
+//    let a = self.value!.inc
+//    let b = self.value!.exc
+//    let c = ps.value!.inc
+//    let d = ps.value!.exc
+//
+//    var res: Set<PS> = []
+//
+//    if c == [] {
+//      if a == [] {
+//        for m in d {
+//          res.insert(PS(value: ([m], b), net: net).canonised())
+//        }
+//      } else {
+//        for m in d {
+////          if !(a.first! >= m) {
+//          res.insert(PS(value: (a.union([m]), b), net: net).canonised())
+////          }
+//        }
+//      }
+//    } else {
+//      res.insert(PS(value: (a, b.union(c)), net: net).canonised())
+//      for m in d {
+//        res.insert(PS(value: ([m], b), net: net).canonised())
+//      }
+//    }
+//
+//    res.remove(PS(value: nil, net: net))
+//    return SPS(values: res)
+//  }
+
+//extension PS {
+//  public func isIncluded (_ ps: PS) -> Bool {
+//    if self == ps {
+//      return true
+//    } else if self.value == nil  {
+//      return true
+//    } else if ps.value == nil {
+//      return false
+//    }
+//
+//    var a = self.value!.inc
+//    let b = self.value!.exc
+//    let c = ps.value!.inc
+//    let d = ps.value!.exc
+//
+//    if (a == [] && b == []) || (c == [] && d == []) {
+//      fatalError("The definition does not allow to have a predicate structure of the form ([],[])")
+//    }
+//
+//    if (a == [] && c != []) || (b == [] && d != []) {
+//      return false
+//    }
+//
+//    if a.count > 1 {
+//      a = PS.convMax(markings: a, net: net)
+//    }
+//
+//    var bool = false
+//
+//    if a.count == 1 {
+//      for m2 in c {
+//        if m2 <= a.first! {
+//          bool = true
+//          break
+//        }
+//        if !bool {
+//          return false
+//        }
+//      }
+//    }
+//
+//    bool = false
+//
+//    for m2 in d {
+//      for m1 in b {
+//        if m1 <= m2 {
+//          bool = true
+//        }
+//      }
+//      if !bool {
+//        return false
+//      }
+//    }
+//
+//    return true
+//  }
+//}

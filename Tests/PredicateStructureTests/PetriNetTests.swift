@@ -12,7 +12,8 @@ final class PetriNetTests: XCTestCase {
       .post(from: "t0", to: "p0", labeled: 1),
       .post(from: "t0", to: "p1", labeled: 1),
       .pre(from: "p0", to: "t1", labeled: 1),
-      .pre(from: "p1", to: "t1", labeled: 1)
+      .pre(from: "p1", to: "t1", labeled: 1),
+      capacity: ["p0": 10, "p1": 10]
     )
     
     let marking = Marking(["p0": 0, "p1": 1], net: pn)

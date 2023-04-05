@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+    <net id="ComposedModel" type="http://www.pnml.org/version-2009/grammar/ptnet">
+        <page id="page0">
+            <place id="MEKPP_ERK">
+                <graphics>
+                    <position x="1090" y="350"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>MEKPP_ERK</text>
+                </name>
+                <initialMarking>
+                    <text>0</text>
+                </initialMarking>
+            </place>
+            <place id="MEKPP">
+                <graphics>
+                    <position x="930" y="350"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>MEKPP</text>
+                </name>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <place id="ERK">
+                <graphics>
+                    <position x="850" y="270"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>ERK</text>
+                </name>
+                <initialMarking>
+                    <text>1</text>
+                </initialMarking>
+            </place>
+            <transition id="r6">
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>r6</text>
+                </name>
+                <graphics>
+                    <position x="1010" y="350"/>
+                </graphics>
+            </transition>
+            <transition id="r7">
+                <name>
+                    <graphics>
+                        <offset x="-5" y="35"/>
+                    </graphics>
+                    <text>r7</text>
+                </name>
+                <graphics>
+                    <position x="930" y="270"/>
+                </graphics>
+            </transition>
+            <arc id="MEKPP_ERK_to_r7" source="MEKPP_ERK" target="r7" type="normal"/>
+            <arc id="MEKPP_to_r6" source="MEKPP" target="r6" type="normal"/>
+            <arc id="ERK_to_r6" source="ERK" target="r6" type="normal"/>
+            <arc id="r7_to_ERK" source="r7" target="ERK" type="normal"/>
+            <arc id="r7_to_MEKPP" source="r7" target="MEKPP" type="normal"/>
+            <arc id="r6_to_MEKPP_ERK" source="r6" target="MEKPP_ERK" type="normal"/>
+        </page>
+        <name>
+            <text>ComposedModel</text>
+        </name>
+    </net>
+</pnml>

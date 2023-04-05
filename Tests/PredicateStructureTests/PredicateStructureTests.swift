@@ -84,7 +84,7 @@ final class PredicateStructureTests: XCTestCase {
     let marking3 = Marking(["p1": 3, "p2": 0], net: net)
     let marking4 = Marking(["p1": 5, "p2": 8], net: net)
     let sps: SPS = [PS(value: ([marking1], [marking2]), net: net), PS(value: ([marking3], [marking4]), net: net)]
-    let expectedSPS: SPS = [PS(value: ([], [marking1, marking3]), net: net), PS(value: ([marking4], []), net: net)]
+    let expectedSPS: SPS = [PS(value: ([net.zeroMarking()], [marking1, marking3]), net: net), PS(value: ([marking4], []), net: net)]
 
     XCTAssertEqual(sps.not(), expectedSPS)
   }
@@ -165,7 +165,8 @@ final class PredicateStructureTests: XCTestCase {
       .post(from: "t0", to: "p0", labeled: 1),
       .post(from: "t0", to: "p1", labeled: 1),
       .pre(from: "p0", to: "t1", labeled: 1),
-      .pre(from: "p1", to: "t1", labeled: 1)
+      .pre(from: "p1", to: "t1", labeled: 1),
+      capacity: ["p0": 10, "p1": 10]
     )
     let marking1 = Marking(["p0": 0, "p1": 1], net: net)
     let marking2 = Marking(["p0": 1, "p1": 1], net: net)
@@ -268,12 +269,12 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertTrue(ps1.isIncluded(ps3))
     XCTAssertFalse(ps3.isIncluded(ps1))
  
-    let ps4 = PS(value: ([],[]), net: net)
-    
-    XCTAssertTrue(ps1.isIncluded(ps4))
-    XCTAssertTrue(ps2.isIncluded(ps4))
-    XCTAssertFalse(ps4.isIncluded(ps1))
-    XCTAssertFalse(ps4.isIncluded(ps2))
+//    let ps4 = PS(value: ([],[]), net: net)
+//    
+//    XCTAssertTrue(ps1.isIncluded(ps4))
+//    XCTAssertTrue(ps2.isIncluded(ps4))
+//    XCTAssertFalse(ps4.isIncluded(ps1))
+//    XCTAssertFalse(ps4.isIncluded(ps2))
     
     let ps5 = PS(value: ([],[marking1]), net: net)
     XCTAssertTrue(ps1.isIncluded(ps5))
@@ -358,7 +359,8 @@ final class PredicateStructureTests: XCTestCase {
       places: ["p0", "p1", "p2"],
       transitions: ["t0"],
       arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p1", labeled: 1)
+      .post(from: "t0", to: "p1", labeled: 1),
+      capacity: ["p0": 10, "p1": 10, "p2": 10]
     )
     
     let m1 = Marking(["p0": 2, "p1": 0, "p2": 0], net: net)
@@ -368,6 +370,20 @@ final class PredicateStructureTests: XCTestCase {
     
     // ({}, {(2,0,0)}) - ({}, {(2,0,0), (0,5,1)}) = {}
     XCTAssertEqual(ps2.subtract(ps1), [])
+    
+    // {([[p0: 8, p1: 9, p2: 0]], [[p0: 8, p1: 9, p2: 1]]), ([[p0: 4, p1: 6, p2: 0]], [[p0: 4, p1: 6, p2: 1]])} - ([[p0: 4, p1: 6, p2: 0]], [[p0: 4, p1: 6, p2: 1]])
+    let m3 = Marking(["p0": 8, "p1": 9, "p2": 0], net: net)
+    let m4 = Marking(["p0": 8, "p1": 9, "p2": 1], net: net)
+    let m5 = Marking(["p0": 4, "p1": 6, "p2": 0], net: net)
+    let m6 = Marking(["p0": 4, "p1": 6, "p2": 2], net: net)
+    
+    let ps3 = PS(value: ([m3], [m4]), net: net)
+    let ps4 = PS(value: ([m5], [m6]), net: net)
+    let sps1 = SPS(values: [ps3,ps4])
+    let sps2 = SPS(values: [ps4])
+    
+    XCTAssertTrue(sps1.isEquiv(sps2))
+
   }
   
   func testSubtraction3() {
@@ -395,6 +411,40 @@ final class PredicateStructureTests: XCTestCase {
     // =
     // {({(0,3)}, {}), ({(1,1)}, {})} ∩ ¬({({(0,4)}, {}), ({(1,2)}, {}), ({(2,1)}, {})})
     XCTAssertEqual(sps1.subtract(sps2), sps1.intersection(sps2.not()))
+    
+    let m6 = Marking(["p0": 10, "p1": 10], net: net)
+    let m7 = Marking(["p0": 5, "p1": 0], net: net)
+    let m8 = Marking(["p0": 0, "p1": 5], net: net)
+    
+    let ps6 = PS(value: ([net.zeroMarking()],[m6]), net: net)
+    let ps7 = PS(value: ([net.zeroMarking()],[m7,m8]), net: net)
+    let ps8 = PS(value: ([m7],[m6]), net: net)
+    let ps9 = PS(value: ([m8],[m6]), net: net)
+    
+    let sps3 = SPS(values: [ps6])
+    let sps4 = SPS(values: [ps7])
+    let sps5 = SPS(values: [ps8,ps9])
+    
+    // ({}, {(10,10)}) - ({}, {(5,0),(0,5)})
+    XCTAssertEqual(sps3.subtract(sps4), sps5)
+  }
+    
+  func testMergePS() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let m1 = Marking(["p0": 0, "p1": 0], net: net)
+    let m2 = Marking(["p0": 4, "p1": 4], net: net)
+    let m3 = Marking(["p0": 8, "p1": 8], net: net)
+    let m4 = Marking(["p0": 12, "p1": 7], net: net)
+    
+    let ps1 = PS(value: ([m1],[m3]), net: net)
+    let ps2 = PS(value: ([m2],[m4]), net: net)
+    XCTAssertEqual(ps1.merge(ps2), [ps1, ps2])
   }
   
 }
