@@ -95,7 +95,7 @@ final class CTLTests: XCTestCase {
       .pre(from: "p0", to: "t1", labeled: 1),
       .post(from: "t1", to: "p1", labeled: 1),
       .pre(from: "p1", to: "t2", labeled: 1),
-      capacity: ["p0": 4, "p1": 4]
+      capacity: ["p0": 6, "p1": 6]
     )
 
     let ctlFormula1: CTL = .AF(.isFireable("t2"))
@@ -158,6 +158,9 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(simpliedSPS1, expectedRes)
     XCTAssertEqual(simpliedSPS2, expectedRes)
     XCTAssertEqual(simpliedSPS3, expectedRes)
+    
+    let ctlFormula4: CTL = .AX(.or(.isFireable("t0"), .isFireable("t2")))
+    XCTAssertEqual(ctlFormula4.eval(net: net, rewrited: true), ctlFormula4.eval(net: net, rewrited: false))
   }
 
   func testCTLEval3() {
@@ -244,12 +247,38 @@ final class CTLTests: XCTestCase {
     let ctlFormula2: CTL = .AF(.and(.isFireable("t1"), .not(.isFireable("t2"))))
     let ctlFormula3: CTL = .AG(.not(.isFireable("t0")))
     let ctlFormula4: CTL = .AG(.not(.isFireable("t2")))
+    let ctlFormula5: CTL = .AX(.or(.isFireable("t0"), .isFireable("t2")))
     
     XCTAssertEqual(ctlFormula1.eval(net: net), ctlFormula1.eval(net: net, rewrited: true))
     XCTAssertEqual(ctlFormula2.eval(net: net), ctlFormula2.eval(net: net, rewrited: true))
     XCTAssertTrue(ctlFormula3.eval(net: net).isEquiv(ctlFormula3.eval(net: net, rewrited: true)))
     XCTAssertTrue(ctlFormula4.eval(net: net).isEquiv(ctlFormula4.eval(net: net, rewrited: true)))
+    XCTAssertTrue(ctlFormula5.eval(net: net, rewrited: false).isEquiv(ctlFormula5.eval(net: net, rewrited: true)))
   }
+  
+  func testCTLAXDiff2() {
+    // Following Petri net:
+    // p0     t0
+    // o ---> ▭
+    //
+    // p1     t1
+    // o ---> ▭
+    //
+    // p2     t2
+    // o ---> ▭
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .pre(from: "p1", to: "t1", labeled: 1),
+      .pre(from: "p2", to: "t2", labeled: 1)
+    )
+    
+    let ctl: CTL = .AX(.or(.isFireable("t0"), .or(.isFireable("t1"), .isFireable("t2"))))
+    
+    XCTAssertTrue(ctl.eval(net: net, rewrited: true).isEquiv(ctl.eval(net: net, rewrited: false)))
+  }
+
   
   func testCTLCardinality() {
     // Following Petri net:
@@ -294,18 +323,17 @@ final class CTLTests: XCTestCase {
   
   func testLoadCTL() {
     let ctlParser = CTLParser()
-    let ctlDic1 = ctlParser.loadCTL(filePath: "CTLFireability.xml")
+    let ctlDic1 = ctlParser.loadCTL(filePath: "CTLFireabilitySwimmingPool-1.xml")
     var expectedCTL1: CTL = .AX(.or(.isFireable("RKey"), .AF(.EG(.or(.AG(.isFireable("RelK")), .isFireable("GetB"))))))
     var expectedCTL2: CTL = .AG(.EF(.AF(.AG(.isFireable("GetK")))))
     XCTAssertEqual(ctlDic1["SwimmingPool-PT-01-CTLFireability-02"]!, expectedCTL1)
     XCTAssertEqual(ctlDic1["SwimmingPool-PT-01-CTLFireability-09"]!, expectedCTL2)
     
-    let ctlDic2 = ctlParser.loadCTL(filePath: "CTLCardinality.xml")
+    let ctlDic2 = ctlParser.loadCTL(filePath: "CTLCardinalitySwimmingPool-1.xml")
     expectedCTL1 = .AF(.AG(.intExpr(e1: .value(5), operator: .leq, e2: .tokenCount("Bags"))))
     expectedCTL2 = .AF(.EU(.intExpr(e1: .tokenCount("Undress"), operator: .leq, e2: .tokenCount("Dressed")), .intExpr(e1: .value(6), operator: .leq, e2: .tokenCount("InBath"))))
     XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-04"]!, expectedCTL1)
     XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-06"]!, expectedCTL2)
   }
-  
   
 }

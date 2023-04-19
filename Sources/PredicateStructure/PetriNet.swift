@@ -108,6 +108,10 @@ public class PetriNet
   public let output: [TransitionType: [PlaceType: ArcLabel]]
   /// The maximum number of tokens inside a place
   public let capacity: [PlaceType: Int]
+  /// Computed property to compute the power set of a set of transitions
+  public var powersetT: Set<Set<TransitionType>> {
+    transitions.powerset
+  }
 
   /// Initializes a Petri net with a sequence describing its preconditions and postconditions.
   ///

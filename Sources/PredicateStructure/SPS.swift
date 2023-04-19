@@ -131,18 +131,22 @@ public struct SPS {
   /// An extension of the revert function that represents AX in CTL logic.
   /// - Returns: A new set of predicate structures
   public func revertTilde(rewrited: Bool) -> SPS {
-    if rewrited {
-      return (self.not()).revert().not()
-    }
+    
     if self.values.isEmpty {
       return []
     }
-
-    var res: SPS = []
-    for ps in self {
-      res = res.union(ps.revertTilde())
+    
+    // AX Φ ≡ ¬ EX ¬ Φ
+    if rewrited {
+      return self.not().revert().not()
     }
-    return res.union(SPS.deadlock(net: self.first!.net))
+    
+    // The trick is to take the predicate structure containing all markings, and to apply the subtraction with the current sps to get the negation.
+    let net = self.values.first!.net
+    let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
+    let applyNot = spsAll.subtract(self)
+    let applyRevert = applyNot.revert()
+    return spsAll.subtract(applyRevert)
   }
   
   /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:
@@ -156,7 +160,7 @@ public struct SPS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-  public func simplified(complete: Bool = false) -> SPS {
+  public func simplified() -> SPS {
     if self.isEmpty {
       return self
     }
@@ -237,7 +241,11 @@ public struct SPS {
     for transition in net.transitions {
       markings.insert(net.inputMarkingForATransition(transition: transition))
     }
-    return SPS(values: [PS(value: ([net.zeroMarking()], markings), net: net).canonised()])
+    let ps = PS(value: ([net.zeroMarking()], markings), net: net).canonised()
+    if let _ = ps.value {
+      return SPS(values: [PS(value: ([net.zeroMarking()], markings), net: net).canonised()])
+    }
+    return []
   }
   
   /// Subtract two sets of predicate structures
@@ -249,7 +257,9 @@ public struct SPS {
     }
     var res: SPS = []
     for ps1 in self {
-      res = res.union(ps1.subtract(sps))
+      if let _ = ps1.canonised().value {
+        res = res.union(ps1.subtract(sps))
+      }
     }
     return res
   }

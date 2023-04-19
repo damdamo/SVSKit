@@ -112,9 +112,6 @@ public indirect enum CTL: Equatable {
       res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revert()
     case .AX(let ctl1):
       res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revertTilde(rewrited: rewrited)
-      if simplified {
-        res = res.simplified()
-      }
     case .EF(let ctl1):
       res = ctl1.evalEF(net: net, rewrited: rewrited, simplified: simplified)
     case .AF(let ctl1):
@@ -583,17 +580,11 @@ extension CTL {
         return true
       }
       resTemp = res
-      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
-      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
       res = res.union(res.revert())
 
       if simplified {
         res = res.simplified()
       }
-//      print("---------------------")
-//      print("Res count: \(res.count)")
-//      print("ResTemp count: \(resTemp.count)")
-//      print("---------------------")
     } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
     return res.contains(marking: marking)
   }

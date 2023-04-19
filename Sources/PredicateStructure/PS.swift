@@ -455,60 +455,6 @@ public struct PS {
     return false
   }
   
-  /// The evaluation of the CTL operation AX for a specific predicate structure, without using the rewriting into ¬EX¬
-  /// The idea behind AX is to give marking such as the next step, we get a specific predicate structure.
-  /// For instance, if we think in term of transitions, it would mean to be sure that at the next step, a given transition may be always fireable.
-  /// However, it does not mean that this transition will be always fired !
-  /// To compute it, the revert function is also computed, but for each set of transitions in the power set of transitions, we have to ensure that the other transitions cannot be fired.
-  /// The goal is to take the same path to have the potential to fire the same transition afterwards.
-  /// For instance, let assume Transition = {t0, t1, t2}, powerset(Transition) = {{t0}, {t1}, {t2}, {t0, t1}, {t0, t2}, {t1, t2}, {t0, t1, t2}} (We remove the empty solution {})
-  /// For each set in the powerset, we apply the intersection between the transition. For {t0,t1}, we get: rev(t0).intersection(rev(t1))
-  /// Finally, on the rest of the transitions (here Transition \ {t0,t1} = {t2}), we use the intersection with the negation of the other transitions.
-  /// - Returns: A set of predicate structures that contains the result of the revertTilde.
-  public func revertTilde() -> SPS {
-    if let _ = self.value {
-      var res: SPS = []
-      var resTemp: SPS = []
-      var revPS: [String: PS] = [:]
-      var revTransitionsPS: [Set<String>: PS] = [:]
-      
-      for t in net.transitions {
-        if let rev = self.revert(transition: t) {
-          if let _ = rev.value {
-            revPS[t] = rev
-          }
-        }
-      }
-      
-      let validTransitions = Set(revPS.keys)
-      let powersetT = validTransitions.powerset.filter({$0 != []})
-      
-      for transitions in powersetT {
-        for transition in transitions {
-          if let rev = revPS[transition] {
-            if let ps = revTransitionsPS[transitions] {
-              revTransitionsPS[transitions] = ps.intersection(rev)
-            } else {
-              revTransitionsPS[transitions] = rev
-            }
-          }
-        }
-      }
-            
-      for transitions in powersetT {
-        if let rev = revTransitionsPS[transitions] {
-          resTemp = SPS(values: [rev])
-          for transition in validTransitions.subtracting(transitions) {
-            let psToIntersect = PS(value: ([net.inputMarkingForATransition(transition: transition)], []), net: net)
-            resTemp = resTemp.intersection(psToIntersect.not())
-          }
-          res = res.union(resTemp)
-        }
-      }
-      return res
-    }
-    return []
-  }
   
   /// Subtract two PS, by removing all markings for the right PS into the left PS
   /// - Parameter ps: The ps to subtract
@@ -532,11 +478,8 @@ public struct PS {
 
     var res: Set<PS> = []
 
-    // If c == [], the start of the new predicate structures depends on d
-//    if c != [] {
     let ps1 = PS(value: (a, c.union(b)), net: net).canonised()
     res = res.union(SPS(values: [ps1]))
-//    }
 
     for marking in d {
       let ps = PS(value: ([marking],b), net: net).canonised()
@@ -590,110 +533,3 @@ extension PS: CustomStringConvertible {
     return "∅"
   }
 }
-
-//  public func subtract(_ ps: PS) -> SPS {
-//    if self == ps || self.value == nil {
-//      return []
-//    } else if ps.value == nil {
-//      return SPS(values: [self])
-//    }
-//
-//    let intersect = self.intersection(ps)
-//    if intersect.value == nil  {
-//      return [self]
-//    } else if self == intersect {
-////      print("------------------")
-////      print("IS INCLUDED \(self.isIncluded(ps))")
-////      print(self)
-////      print(ps)
-////      print("------------------")
-//      return []
-//    }
-//
-//    let a = self.value!.inc
-//    let b = self.value!.exc
-//    let c = ps.value!.inc
-//    let d = ps.value!.exc
-//
-//    var res: Set<PS> = []
-//
-//    if c == [] {
-//      if a == [] {
-//        for m in d {
-//          res.insert(PS(value: ([m], b), net: net).canonised())
-//        }
-//      } else {
-//        for m in d {
-////          if !(a.first! >= m) {
-//          res.insert(PS(value: (a.union([m]), b), net: net).canonised())
-////          }
-//        }
-//      }
-//    } else {
-//      res.insert(PS(value: (a, b.union(c)), net: net).canonised())
-//      for m in d {
-//        res.insert(PS(value: ([m], b), net: net).canonised())
-//      }
-//    }
-//
-//    res.remove(PS(value: nil, net: net))
-//    return SPS(values: res)
-//  }
-
-//extension PS {
-//  public func isIncluded (_ ps: PS) -> Bool {
-//    if self == ps {
-//      return true
-//    } else if self.value == nil  {
-//      return true
-//    } else if ps.value == nil {
-//      return false
-//    }
-//
-//    var a = self.value!.inc
-//    let b = self.value!.exc
-//    let c = ps.value!.inc
-//    let d = ps.value!.exc
-//
-//    if (a == [] && b == []) || (c == [] && d == []) {
-//      fatalError("The definition does not allow to have a predicate structure of the form ([],[])")
-//    }
-//
-//    if (a == [] && c != []) || (b == [] && d != []) {
-//      return false
-//    }
-//
-//    if a.count > 1 {
-//      a = PS.convMax(markings: a, net: net)
-//    }
-//
-//    var bool = false
-//
-//    if a.count == 1 {
-//      for m2 in c {
-//        if m2 <= a.first! {
-//          bool = true
-//          break
-//        }
-//        if !bool {
-//          return false
-//        }
-//      }
-//    }
-//
-//    bool = false
-//
-//    for m2 in d {
-//      for m1 in b {
-//        if m1 <= m2 {
-//          bool = true
-//        }
-//      }
-//      if !bool {
-//        return false
-//      }
-//    }
-//
-//    return true
-//  }
-//}
