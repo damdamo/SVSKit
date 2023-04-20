@@ -116,23 +116,23 @@ let net = PetriNet(
 )
 
 // Three examples of CTL formulas:
-let ctlFormula1: CTL = .AX(.isFireable("t2"))
-let ctlFormula2: CTL = .EF(.isFireable("t2"))
-let ctlFormula3: CTL = .AF(.isFireable("t2"))
+let ctlFormula1 = CTL(formula: .AX(.isFireable("t2"), net: net)
+let ctlFormula2 = CTL(formula: .EF(.isFireable("t2"), net: net)
+let ctlFormula3 = CTL(formula: .AF(.isFireable("t2"), net: net)
 
 let marking = Marking(["p0": 2, "p1": 1], net: net)
 
 // Check CTL formulas for a given marking:
 
 // Return: false
-print(ctlFormula1.eval(marking: marking, net: net))
+print(ctlFormula1.eval(marking: marking))
 // Return: true
-print(ctlFormula2.eval(marking: marking, net: net))
+print(ctlFormula2.eval(marking: marking))
 // Return: false
-print(ctlFormula3.eval(marking: marking, net: net))
+print(ctlFormula3.eval(marking: marking))
 
 // To obtain the sets of predicate structures that represent all markings:
-let eval1 = ctlFormula1.eval(net: net)
+let eval1 = ctlFormula1.eval()
 // Return:
 // {
 //   ([], [[p1: 2, p0: 0], [p0: 1, p1: 0]]),
@@ -147,12 +147,12 @@ print(eval1.underlyingMarkings())
 //   ([[p1: 0, p0: 2]], []),
 //   ([[p1: 1, p0: 1]], [])
 // }
-print(ctlFormula2.eval(net: net))
+print(ctlFormula2.eval())
 // Return:
 // {
 //    ([[p1: 2, p0: 0]], [])
 // }
-print(ctlFormula3.eval(net: net))
+print(ctlFormula3.eval())
 ```
 
 For more examples, look at `Tests/PredicateStructureTests/CTLTests.swift` file.
@@ -160,12 +160,12 @@ For more examples, look at `Tests/PredicateStructureTests/CTLTests.swift` file.
 The signatures of the `eval` function are the following:
 
 If we want to check for a marking:
-`eval(marking: Marking, net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> Bool`
+`eval(marking: Marking) -> Bool`
 
 If we want to obtain all markings:
-`eval(net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> SPS`
+`eval() -> SPS`
 
-Two parameters are optionals and can be changed if needed:
+Two parameters are optionals and can be changed during the declaration of a CTL formula if needed:
 - rewrited: false by default. In CTL computation, the extended syntax is often computed using the rewriting into basic components. For example, `AX Φ ≡ ¬EX¬Φ`. When it is set to false, the extended syntax is not rewritten. In the case of `AX`, a specific function is dedicated to compute it.
 - simplified: true by default. During a computation, the number of generated predicate structures may increase faster with redundant results. The simplification aims to reduce the set of predicate structures during the computation, using certain tricks. If it is set to true, no simplification is applied.
 
@@ -178,12 +178,14 @@ The capacity is set by default to 20 for each place, but may be adapted as in th
 The below example shows how to use the query reduction:
 
 ```swift
-let ctl1 = CTL.not(.not(.true))
+// We suppose the declaration of a net before
+...
+let ctl1 = CTL(formula: .not(.not(.true)), net: net)
 
 // Return: .true
 print(ctl1.queryReduction())
 
-let ctl2 = CTL.EF(.EF(.true))
+let ctl2 = CTL(formula: .EF(.EF(.true)), net: net)
 // Return: .EF(.true)
 print(ctl2.queryReduction())
 ```
