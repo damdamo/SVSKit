@@ -13,22 +13,25 @@
 //    //     Thanks to the lowest fixpoint, at each step, the state space can only grow.
 //    //     Hence, if the marking belong to the predicate structure at any point of the iterations, we can return an early answer.
 //    //     The additional optimisation happens when eval is called with the given marking
-//    XCTAssertFalse(CTL.EU(.isFireable("GetB"), .isFireable("RBag")).eval(marking: marking1, net: net1))
+//    let ctl1 = CTL(formula: .EU(.isFireable("GetB"), .isFireable("RBag")), net: net1)
+//    let ctl2 = CTL(formula: .not(.AF(.not(.EF(.isFireable("GetB"))))), net: net1)
+//    XCTAssertFalse(ctl1.eval(marking: marking1))
 //    print(s.elapsed.humanFormat)
 //    s.reset()
-//    XCTAssertTrue(CTL.not(.AF(.not(.EF(.isFireable("GetB"))))).eval(marking: marking1, net: net1))
+//    XCTAssertTrue(ctl2.eval(marking: marking1))
 //    print(s.elapsed.humanFormat)
 //
 //    marking1["Out"] = 2
 //    marking1["Cabins"] = 1
 //    marking1["Bags"] = 2
 //
-//    let efCTL: CTL = .not(.EF(.isFireable("RBag")))
-//    XCTAssertFalse(efCTL.eval(marking: marking1, net: net1))
-//    XCTAssertFalse(CTL.AG(.isFireable("RBag")).eval(marking: marking1, net: net1))
+//    let efCTL = CTL(formula: .not(.EF(.isFireable("RBag"))), net: net1)
+//    let agCTL = CTL(formula: .AG(.isFireable("RBag")), net: net1)
+//    XCTAssertFalse(efCTL.eval(marking: marking1))
+//    XCTAssertFalse(agCTL.eval(marking: marking1))
 //
 //    marking1["Cabins"] = 0
-//    XCTAssertTrue(efCTL.eval(marking: marking1, net: net1))
+//    XCTAssertTrue(efCTL.eval(marking: marking1))
 //
 //  }
 //
@@ -41,7 +44,7 @@
 //    // Query after reduction: EF (not EF (1 <= SwimmingPool_dash_PT_dash_01_Undress))
 ////    let ctl: CTL = .EF(.not(.EF(.intExpr(e1: .value(1), operator: .leq, e2: .tokenCount("Undress")))))
 ////    let ctl: CTL = .not(.deadlock)
-//    let ctl: CTL = .AG(.not(.deadlock))
+//    let ctl = CTL(formula: .AG(.not(.deadlock)), net: net1)
 ////      let ctl: CTL = .not(.deadlock)
 ////    let ctl: CTL = .not(.EF(.deadlock))
 ////    let ctl: CTL = .EF(.deadlock)
@@ -61,7 +64,7 @@
 ////    print(s.elapsed.humanFormat)
 //    
 //    s.reset()
-//    let e = ctl.eval(net: net1)
+//    let e = ctl.eval()
 //    print(s.elapsed.humanFormat)
 ////    let spsAll = SPS(values: [PS(value: ([net1.zeroMarking()], []), net: net1)])
 ////    s.reset()
@@ -91,12 +94,12 @@
 //      .post(from: "t3", to: "p1", labeled: 1)
 //    )
 //
-//    let ctl: CTL = .AG(.not(.deadlock))
+//    let ctl: CTL = CTL(formula: .AG(.not(.deadlock)), net: net, rewrited: true)
 //    let marking = Marking(["p1": 3, "p2": 0, "p3": 0, "p4": 1, "p5": 2], net: net)
 //    var timer = Stopwatch()
-//    for i in 0 ..< 10 {
+//    for _ in 0 ..< 10 {
 ////      print(ctl.eval(net: net))
-//      print(ctl.eval(marking: marking, net: net, rewrited: true))
+//      print(ctl.eval(marking: marking))
 //      print(timer.elapsed.humanFormat)
 //    }
 //    print("Final time: \(timer.elapsed.humanFormat)")
@@ -167,13 +170,13 @@
 //    s.reset()
 //
 //    var answers: [String: Bool] = [:]
-//    for (key, ctl) in dicCTL.sorted(by: {$0.key < $1.key}) {
-//      let ctlReduced = ctl.queryReduction()
+//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+//      let ctlReduced = CTL(formula: formula, net: net1, rewrited: false, debug: true).queryReduction()
 //      print("-------------------------------")
 //      print(key)
 ////      print(ctlReduced)
 //      s.reset()
-//      answers[key] = ctlReduced.eval(marking: marking1, net: net1, rewrited: true)
+//      answers[key] = ctlReduced.eval(marking: marking1)
 //      print(s.elapsed.humanFormat)
 //      print("-------------------------------")
 //    }
@@ -200,10 +203,10 @@
 //    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
 //    
 //    print("Marking: \(marking1)")
-//    let ctl: CTL = .AG(.not(.deadlock))
+//    let ctl = CTL(formula: .AG(.not(.deadlock)), net: net1, rewrited: false)
 //    
 //    s.reset()
-//    ctl.eval(marking: marking1, net: net1, rewrited: false)
+//    ctl.eval(marking: marking1)
 //    print("TIME FOR AG")
 //    print(s.elapsed.humanFormat)
 //  }
@@ -243,14 +246,14 @@
 ////    print(ctl.eval(net: net1))
 //
 //    var answers: [String: Bool] = [:]
-//    for (key, ctl) in dicCTL.sorted(by: {$0.key < $1.key}) {
-//      let ctlReduced = ctl.queryReduction()
+//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+//      let ctlReduced = CTL(formula: formula, net: net1, rewrited: false).queryReduction()
 //      print("-------------------------------")
 //      print(key)
 //      print(ctlReduced)
 //      s.reset()
 //      if ctlReduced.count() < 10 {
-//        answers[key] = ctlReduced.eval(marking: marking1, net: net1)
+//        answers[key] = ctlReduced.eval(marking: marking1)
 //        print("Is the formula true ? \(answers[key]!)")
 //      }
 ////      ctlReduced.eval(net: net1)
@@ -273,7 +276,7 @@
 //    print(net1.places)
 //    print(net1.transitions)
 //
-//    let ctl: CTL = .AG(.or(.isFireable("r7"), .isFireable("r6")))
+//    let ctl = CTL(formula: .AG(.or(.isFireable("r7"), .isFireable("r6"))), net: net1)
 //    let ctlReduc = ctl.queryReduction()
 //    
 //    print(ctl)

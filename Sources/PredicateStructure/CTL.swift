@@ -60,6 +60,7 @@ public struct CTL {
     }
   }
   
+  // Enum that list all CTL formulas
   public indirect enum Formula: Equatable, CustomStringConvertible {
     // Basic case
     case deadlock
@@ -286,11 +287,17 @@ public struct CTL {
   func evalEF() -> SPS {
     var res = self.eval()
     var resTemp: SPS
+    if debug {
+      print("Predicate structure number at the start of EF evaluation: \(res.count)")
+    }
     repeat {
       resTemp = res
       res = res.union(res.revert())
       if simplified {
         res = res.simplified()
+      }
+      if debug {
+        print("Predicate structure number during EF evaluation: \(res.count)")
       }
     } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
     return res
@@ -299,11 +306,17 @@ public struct CTL {
   func evalAF() -> SPS {
     var res = self.eval()
     var resTemp: SPS
+    if debug {
+      print("Predicate structure number at the start of AF evaluation: \(res.count)")
+    }
     repeat {
       resTemp = res
       res = res.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
       if simplified {
         res = res.simplified()
+      }
+      if debug {
+        print("Predicate structure number during AF evaluation: \(res.count)")
       }
     } while !res.isIncluded(resTemp)
     return res
@@ -312,11 +325,17 @@ public struct CTL {
   func evalEG() -> SPS {
     var res = self.eval()
     var resTemp: SPS
+    if debug {
+      print("Predicate structure number at the start of EG evaluation: \(res.count)")
+    }
     repeat {
       resTemp = res
       res = res.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
       if simplified {
         res = res.simplified()
+      }
+      if debug {
+        print("Predicate structure number during EG evaluation: \(res.count)")
       }
     } while !resTemp.isIncluded(res)
     return res
@@ -325,11 +344,17 @@ public struct CTL {
   func evalAG() -> SPS {
     var res = self.eval()
     var resTemp: SPS
+    if debug {
+      print("Predicate structure number at the start of AG evaluation: \(res.count)")
+    }
     repeat {
       resTemp = res
       res = res.intersection(res.revertTilde(rewrited: rewrited))
       if simplified {
         res = res.simplified()
+      }
+      if debug {
+        print("Predicate structure number during AG evaluation: \(res.count)")
       }
     } while !resTemp.isIncluded(res)
     return res
@@ -339,11 +364,17 @@ public struct CTL {
     let phi = self.eval()
     var res = ctl.eval()
     var resTemp: SPS
+    if debug {
+      print("Predicate structure number at the start of EU evaluation: \(res.count)")
+    }
     repeat {
       resTemp = res
       res = res.union(phi.intersection(res.revert()))
       if simplified {
         res = res.simplified()
+      }
+      if debug {
+        print("Predicate structure number during EU evaluation: \(res.count)")
       }
     } while !res.isIncluded(resTemp)
     return res
@@ -353,23 +384,34 @@ public struct CTL {
     let phi = self.eval()
     var res = ctl.eval()
     var resTemp: SPS
+    if debug {
+      print("Predicate structure number at the start of AU evaluation: \(res.count)")
+    }
     repeat {
       resTemp = res
       res = res.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
       if simplified {
         res = res.simplified()
       }
+      if debug {
+        print("Predicate structure number during AU evaluation: \(res.count)")
+      }
     } while !res.isIncluded(resTemp)
     return res
   }
   
-  
-  public func queryReduction() -> CTL {
-    return CTL(formula: queryReduction(formula), net: net)
-  }
   /// Reduce a query using some rewriting on CTL formulas. Using rewriting theories of the paper: Simplification of CTL Formulae
   /// for Efficient Model Checking of Petri Nets from Frederik Bønneland & al. .
-  /// - Returns: The reduced query
+  /// - Returns: The reduced CTL
+  public func queryReduction() -> CTL {
+    return CTL(formula: queryReduction(formula), net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+  }
+  
+  
+  /// Reduce a query using some rewriting on CTL formulas. Using rewriting theories of the paper: Simplification of CTL Formulae
+  /// for Efficient Model Checking of Petri Nets from Frederik Bønneland & al. .
+  /// - Parameter formula: The formula to rewrite
+  /// - Returns: The rewritten formula
   func queryReduction(_ formula: Formula) -> Formula {
     switch formula {
     case .intExpr(e1: _, operator: _, e2: _):
@@ -400,10 +442,8 @@ public struct CTL {
       return afReduction(formula)
     case .EG(let formula):
       return queryReduction(.not(.AF(queryReduction(.not(formula)))))
-//      return .not(.AF(.not(ctl).queryReduction())).queryReduction()
     case .AG(let formula):
       return queryReduction(.not(.EF(queryReduction(.not(formula)))))
-//      return .not(.EF(.not(ctl).queryReduction())).queryReduction()
     case .EU(_, _):
       return euReduction(formula)
     case .AU(_, _):
@@ -413,8 +453,8 @@ public struct CTL {
   
   public func notReduction(_ formula: Formula) -> Formula {
     switch formula {
-    case .not(let formula):
-      switch formula {
+    case .not(let subFormula):
+      switch subFormula {
       case .not(let formula1):
         return queryReduction(formula1)
       case .EX(let formula1):
@@ -434,7 +474,7 @@ public struct CTL {
       case .AG(let formula1):
         return .EF(queryReduction(.not(formula1)))
       default:
-        return .not(queryReduction(formula))
+        return .not(queryReduction(subFormula))
       }
     default:
       fatalError("This is not possible")
@@ -458,7 +498,7 @@ public struct CTL {
       case .or(let formula1, let formula2):
         return queryReduction(.or(.EF(formula1), .EF(formula2)))
       default:
-        return .EF(queryReduction(formula))
+        return .EF(queryReduction(subFormula))
       }
     default:
       fatalError("This is not possible")
@@ -481,7 +521,7 @@ public struct CTL {
       case .or(let formula1, .EF(let formula2)):
         return queryReduction(.or(.EF(formula2), .AF(formula1)))
       default:
-        return .AF(queryReduction(formula))
+        return .AF(queryReduction(subFormula))
       }
     default:
       fatalError("This is not possible")
@@ -667,6 +707,9 @@ extension CTL {
 
   func evalEF(marking: Marking) -> Bool {
     var res = self.eval()
+    if debug {
+      print("Predicate structure number at the start of EF evaluation: \(res.count)")
+    }
     if res.contains(marking: marking) == true {
       return true
     }
@@ -681,12 +724,18 @@ extension CTL {
       if simplified {
         res = res.simplified()
       }
+      if debug {
+        print("Predicate structure number during EF evaluation: \(res.count)")
+      }
     } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
     return res.contains(marking: marking)
   }
   
   func evalAF(marking: Marking) -> Bool {
     var res = self.eval()
+    if debug {
+      print("Predicate structure number at the start of AF evaluation: \(res.count)")
+    }
     if res.contains(marking: marking) == true {
       return true
     }
@@ -702,16 +751,21 @@ extension CTL {
       if simplified {
         res = res.simplified()
       }
+      if debug {
+        print("Predicate structure number during AF evaluation: \(res.count)")
+      }
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
   }
   
   func evalEG(marking: Marking) -> Bool {
     var res = self.eval()
+    if debug {
+      print("Predicate structure number at the start of EG evaluation: \(res.count)")
+    }
     if res.contains(marking: marking) == false {
       return false
     }
-    
     var resTemp: SPS
     repeat {
       if !res.contains(marking: marking) {
@@ -722,12 +776,18 @@ extension CTL {
       if simplified {
         res = res.simplified()
       }
+      if debug {
+        print("Predicate structure number during EG evaluation: \(res.count)")
+      }
     } while !resTemp.isIncluded(res)
     return res.contains(marking: marking)
   }
   
   func evalAG(marking: Marking) -> Bool {
     var res = self.eval()
+    if debug {
+      print("Predicate structure number at the start of AG evaluation: \(res.count)")
+    }
     if res.contains(marking: marking) == false {
       return false
     }
@@ -741,17 +801,26 @@ extension CTL {
       if simplified {
         res = res.simplified()
       }
+      if debug {
+        print("Predicate structure number during AG evaluation: \(res.count)")
+      }
     } while !resTemp.isIncluded(res)
     return res.contains(marking: marking)
   }
   
   func evalEU(_ ctl: CTL, marking: Marking) -> Bool {
     let phi = self.eval()
+    if debug {
+      print("Predicate structure number of phi at the start of EU evaluation: \(phi.count)")
+    }
     let isPhiContained = phi.contains(marking: marking)
     if  isPhiContained == true {
       return true
     }
     var res = ctl.eval()
+    if debug {
+      print("Predicate structure number of psi at the start of EU evaluation: \(res.count)")
+    }
     if isPhiContained == false && res.contains(marking: marking) == false {
       return false
     }
@@ -767,6 +836,9 @@ extension CTL {
       if simplified {
         res = res.simplified()
       }
+      if debug {
+        print("Predicate structure number during EU evaluation: \(res.count)")
+      }
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
   }
@@ -774,6 +846,10 @@ extension CTL {
   func evalAU(_ ctl: CTL, marking: Marking) -> Bool {
     let phi = self.eval()
     var res = ctl.eval()
+    if debug {
+      print("Predicate structure number of phi at the start of AU evaluation: \(phi.count)")
+      print("Predicate structure number of psi at the start of AU evaluation: \(res.count)")
+    }
     var resTemp: SPS
     repeat {
       if res.contains(marking: marking) {
@@ -785,6 +861,9 @@ extension CTL {
       res = res.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
       if simplified {
         res = res.simplified()
+      }
+      if debug {
+        print("Predicate structure number during EU evaluation: \(res.count)")
       }
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
