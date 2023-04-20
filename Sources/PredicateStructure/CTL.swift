@@ -1,7 +1,21 @@
 /// The Computation tree logic (CTL), is a language to express temporal properties that must hold a model.
 ///  Semantics are often based on Kripke structures. However, the computation here is made on the fly and does not know the whole state space beforehand.
 ///   The strategy is to use the fixpoint to construct this state space, and thanks to monotonicity properties, the computation always finishes.
-public indirect enum CTL: Equatable {
+public struct CTL {
+  
+  let formula: Formula
+  let net: PetriNet
+  let rewrited: Bool
+  let simplified: Bool
+  let debug: Bool
+  
+  public init(formula: Formula, net: PetriNet, rewrited: Bool = false, simplified: Bool = true, debug: Bool = false) {
+    self.formula = formula
+    self.net = net
+    self.rewrited = rewrited
+    self.simplified = simplified
+    self.debug = debug
+  }
     
   /// Enum that lists the accepted operators for a cardinality formula
   public enum Operator: CustomStringConvertible {
@@ -45,27 +59,71 @@ public indirect enum CTL: Equatable {
       }
     }
   }
+  
+  public indirect enum Formula: Equatable, CustomStringConvertible {
+    // Basic case
+    case deadlock
+    case isFireable(String)
+    case intExpr(e1: Expression, operator: Operator, e2: Expression)
+    case after(String)
+    // Boolean logic
+    case `true`
+    case `false`
+    case and(Formula, Formula)
+    case or(Formula, Formula)
+    case not(Formula)
+    // CTL operators
+    case EX(Formula)
+    case EF(Formula)
+    case EG(Formula)
+    case EU(Formula, Formula)
+    case AX(Formula)
+    case AF(Formula)
+    case AG(Formula)
+    case AU(Formula, Formula)
     
-  // Basic case
-  case deadlock
-  case isFireable(String)
-  case intExpr(e1: Expression, operator: Operator, e2: Expression)
-  case after(String)
-  // Boolean logic
-  case `true`
-  case `false`
-  case and(CTL, CTL)
-  case or(CTL, CTL)
-  case not(CTL)
-  // CTL operators
-  case EX(CTL)
-  case EF(CTL)
-  case EG(CTL)
-  case EU(CTL, CTL)
-  case AX(CTL)
-  case AF(CTL)
-  case AG(CTL)
-  case AU(CTL, CTL)
+    public var description: String {
+      var res: String = ""
+      switch self {
+      case .true:
+        res = "true"
+      case .false:
+        res = "false"
+      case .isFireable(let s):
+        res = "isFireable(\(s))"
+      case .intExpr(e1: let e1, operator: let op, e2: let e2):
+        res = "\(e1) \(op) \(e2)"
+      case .after(let s):
+        res = "after(\(s))"
+      case .deadlock:
+        res = "deadlock"
+      case .not(let formula):
+        res = "not(\(formula))"
+      case .and(let formula1, let formula2):
+        res = "and(\(formula1), \(formula2))"
+      case .or(let formula1, let formula2):
+        res = "or(\(formula1), \(formula2))"
+      case .EX(let formula):
+        res = "EX(\(formula))"
+      case .AX(let formula):
+        res = "AX(\(formula))"
+      case .EF(let formula):
+        res = "EF(\(formula))"
+      case .AF(let formula):
+        res = "AF(\(formula))"
+      case .EG(let formula):
+        res = "EG(\(formula))"
+      case .AG(let formula):
+        res = "AG(\(formula))"
+      case .EU(let formula1, let formula2):
+        res = "E(\(formula1)) U (\(formula2))"
+      case .AU(let formula1, let formula2):
+        res = "A(\(formula1)) U (\(formula2))"
+      }
+      return res
+    }
+      
+  }
   
   /// Evaluate a CTL formula to find all markings that satisfy it.
   /// - Parameters:
@@ -73,11 +131,11 @@ public indirect enum CTL: Equatable {
   ///   - rewrited: An option to specify how to compute the function revertTilde. If it is true, we rewrite revertTilde as `not revert not`. When it is false, we use a specific function to compute it. False by default.
   ///   - simplified: An option to specify if there simplified function must be used or not. True by default.
   /// - Returns: A set of predicate structures that symbolically represents all markings that satisfy the CTL formula.
-  public func eval(net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> SPS {
+  public func eval() -> SPS {
     var res: SPS
-    switch self {
+    switch formula {
     case .intExpr(e1: _, operator: _, e2: _):
-      return evalCardinality(net: net)
+      return evalCardinality()
     case .isFireable(let t):
       if net.transitions.contains(t) {
         res = [
@@ -100,30 +158,45 @@ public indirect enum CTL: Equatable {
       ]
     case .false:
       res = []
-    case .and(let ctl1, let ctl2):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).intersection(ctl2.eval(net: net, rewrited: rewrited, simplified: simplified))
-    case .or(let ctl1, let ctl2):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).union(ctl2.eval(net: net, rewrited: rewrited, simplified: simplified))
-    case .not(let ctl1):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).not()
+    case .and(let formula1, let formula2):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.eval().intersection(ctl2.eval())
+    case .or(let formula1, let formula2):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.eval().union(ctl2.eval())
+    case .not(let formula):
+      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.eval().not()
     case .deadlock:
       res = SPS.deadlock(net: net)
-    case .EX(let ctl1):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revert()
-    case .AX(let ctl1):
-      res = ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revertTilde(rewrited: rewrited)
-    case .EF(let ctl1):
-      res = ctl1.evalEF(net: net, rewrited: rewrited, simplified: simplified)
-    case .AF(let ctl1):
-      res = ctl1.evalAF(net: net, rewrited: rewrited, simplified: simplified)
-    case .EG(let ctl1):
-      res = ctl1.evalEG(net: net, rewrited: rewrited, simplified: simplified)
-    case .AG(let ctl1):
-      res = ctl1.evalAG(net: net, rewrited: rewrited, simplified: simplified)
-    case .EU(let ctl1, let ctl2):
-      res = ctl1.evalEU(ctl: ctl2, net: net, rewrited: rewrited, simplified: simplified)
-    case .AU(let ctl1, let ctl2):
-      res = ctl1.evalAU(ctl: ctl2, net: net, rewrited: rewrited, simplified: simplified)
+    case .EX(let formula):
+      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.eval().revert()
+    case .AX(let formula):
+      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.eval().revertTilde(rewrited: rewrited)
+    case .EF(let formula):
+      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.evalEF()
+    case .AF(let formula):
+      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.evalAF()
+    case .EG(let formula):
+      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.evalEG()
+    case .AG(let formula):
+      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.evalAG()
+    case .EU(let formula1, let formula2):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.evalEU(ctl2)
+    case .AU(let formula1, let formula2):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      res = ctl1.evalAU(ctl2)
     }
     
     if simplified {
@@ -135,16 +208,16 @@ public indirect enum CTL: Equatable {
   /// Encode a cardinality formula into a SPS that represents all markings satisfying the condition.
   /// - Parameter net: The corresponding net
   /// - Returns: The resulting set of predicate structures
-  func evalCardinality(net: PetriNet) -> SPS {
-    switch self {
+  func evalCardinality() -> SPS {
+    switch formula {
     case .intExpr(e1: .value(_), operator: _, e2: .value(_)):
-      return CTL.true.eval(net: net)
+      return CTL(formula: .true, net: net, rewrited: rewrited, simplified: simplified).eval()
     case .intExpr(e1: .tokenCount(_), operator: _, e2: .tokenCount(_)):
       fatalError("The tool does not manage a cardinality comparison between places")
     case .intExpr(e1: let e1, operator: .leq, e2: let e2):
-      return CTL.evalLeq(e1: e1, e2: e2, net: net)
+      return evalLeq(e1: e1, e2: e2)
     case .intExpr(e1: let e1, operator: .lt, e2: let e2):
-      return CTL.evalLt(e1: e1, e2: e2, net: net)
+      return evalLt(e1: e1, e2: e2)
     default:
       fatalError("This is not possible")
     }
@@ -157,7 +230,7 @@ public indirect enum CTL: Equatable {
   ///   - e2: Second expression
   ///   - net: The corresponding Petri net
   /// - Returns: The set of predicate structures that encodes all markings that satisfy the condition
-  static func evalLeq(e1: Expression, e2: Expression, net: PetriNet) -> SPS {
+  func evalLeq(e1: Expression, e2: Expression) -> SPS {
     var marking = net.zeroMarking()
     switch (e1, e2) {
     // i <= p
@@ -186,7 +259,7 @@ public indirect enum CTL: Equatable {
   ///   - e2: Second expression
   ///   - net: The corresponding Petri net
   /// - Returns: The set of predicate structures that encodes all markings that satisfy the condition
-  static func evalLt(e1: Expression, e2: Expression, net: PetriNet) -> SPS {
+  func evalLt(e1: Expression, e2: Expression) -> SPS {
     var marking = net.zeroMarking()
     switch (e1, e2) {
     // i < p
@@ -210,8 +283,8 @@ public indirect enum CTL: Equatable {
   
   
   
-  func evalEF(net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalEF() -> SPS {
+    var res = self.eval()
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -223,8 +296,8 @@ public indirect enum CTL: Equatable {
     return res
   }
   
-  func evalAF(net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalAF() -> SPS {
+    var res = self.eval()
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -236,8 +309,8 @@ public indirect enum CTL: Equatable {
     return res
   }
   
-  func evalEG(net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalEG() -> SPS {
+    var res = self.eval()
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -249,8 +322,8 @@ public indirect enum CTL: Equatable {
     return res
   }
   
-  func evalAG(net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalAG() -> SPS {
+    var res = self.eval()
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -262,9 +335,9 @@ public indirect enum CTL: Equatable {
     return res
   }
   
-  func evalEU(ctl: CTL, net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    let phi = self.eval(net: net, rewrited: rewrited, simplified: simplified)
-    var res = ctl.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalEU(_ ctl: CTL) -> SPS {
+    let phi = self.eval()
+    var res = ctl.eval()
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -276,9 +349,9 @@ public indirect enum CTL: Equatable {
     return res
   }
   
-  func evalAU(ctl: CTL, net: PetriNet, rewrited: Bool, simplified: Bool) -> SPS {
-    let phi = self.eval(net: net, rewrited: rewrited, simplified: simplified)
-    var res = ctl.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalAU(_ ctl: CTL) -> SPS {
+    let phi = self.eval()
+    var res = ctl.eval()
     var resTemp: SPS
     repeat {
       resTemp = res
@@ -290,174 +363,182 @@ public indirect enum CTL: Equatable {
     return res
   }
   
+  
+  public func queryReduction() -> CTL {
+    return CTL(formula: queryReduction(formula), net: net)
+  }
   /// Reduce a query using some rewriting on CTL formulas. Using rewriting theories of the paper: Simplification of CTL Formulae
   /// for Efficient Model Checking of Petri Nets from Frederik Bønneland & al. .
   /// - Returns: The reduced query
-  public func queryReduction() -> CTL {
-    switch self {
+  func queryReduction(_ formula: Formula) -> Formula {
+    switch formula {
     case .intExpr(e1: _, operator: _, e2: _):
-      return self
+      return formula
     case .deadlock:
       return .deadlock
     case .isFireable(_):
-      return self
+      return formula
     case .true:
       return .true
     case .false:
       return .false
     case .after(_):
-      return self
+      return formula
     case .not(_):
-      return self.notReduction()
-    case .and(let ctl1, let ctl2):
-      return .and(ctl1.queryReduction(), ctl2.queryReduction())
-    case .or(let ctl1, let ctl2):
-      return .or(ctl1.queryReduction(), ctl2.queryReduction())
-    case .EX(let ctl):
-      return .EX(ctl.queryReduction())
-    case .AX(let ctl):
-      return .AX(ctl.queryReduction())
+      return self.notReduction(formula)
+    case .and(let formula1, let formula2):
+      return .and(queryReduction(formula1), queryReduction(formula2))
+    case .or(let formula1, let formula2):
+      return .or(queryReduction(formula1), queryReduction(formula2))
+    case .EX(let formula):
+      return .EX(queryReduction(formula))
+    case .AX(let formula):
+      return .AX(queryReduction(formula))
     case .EF(_):
-      return self.efReduction()
+      return efReduction(formula)
     case .AF(_):
-      return self.afReduction()
-    case .EG(let ctl):
-      return .not(.AF(.not(ctl).queryReduction())).queryReduction()
-    case .AG(let ctl):
-      return .not(.EF(.not(ctl).queryReduction())).queryReduction()
+      return afReduction(formula)
+    case .EG(let formula):
+      return queryReduction(.not(.AF(queryReduction(.not(formula)))))
+//      return .not(.AF(.not(ctl).queryReduction())).queryReduction()
+    case .AG(let formula):
+      return queryReduction(.not(.EF(queryReduction(.not(formula)))))
+//      return .not(.EF(.not(ctl).queryReduction())).queryReduction()
     case .EU(_, _):
-      return self.euReduction()
+      return euReduction(formula)
     case .AU(_, _):
-      return self.auReduction()
+      return auReduction(formula)
     }
   }
   
-  public func notReduction() -> CTL {
-    switch self {
-    case .not(let ctl):
-      switch ctl {
-      case .not(let ctl1):
-        return ctl1.queryReduction()
-      case .EX(let ctl1):
-        return .AX(.not(ctl1)).queryReduction()
-      case .AX(let ctl1):
-        return .EX(.not(ctl1)).queryReduction()
-      case .or(let ctl1, let ctl2):
-        return .and(.not(ctl1), .not(ctl2)).queryReduction()
-      case .and(let ctl1, let ctl2):
-        return .or(.not(ctl1), .not(ctl2)).queryReduction()
-      case .EF(let ctl1):
-        return .AG(.not(ctl1).queryReduction())
-      case .AF(let ctl1):
-        return .EG(.not(ctl1).queryReduction())
-      case .EG(let ctl1):
-        return .AF(.not(ctl1).queryReduction())
-      case .AG(let ctl1):
-        return .EF(.not(ctl1).queryReduction())
+  public func notReduction(_ formula: Formula) -> Formula {
+    switch formula {
+    case .not(let formula):
+      switch formula {
+      case .not(let formula1):
+        return queryReduction(formula1)
+      case .EX(let formula1):
+        return queryReduction(.AX(.not(formula1)))
+      case .AX(let formula1):
+        return queryReduction(.EX(.not(formula1)))
+      case .or(let formula1, let formula2):
+        return queryReduction(.and(.not(formula1), .not(formula2)))
+      case .and(let formula1, let formula2):
+        return queryReduction(.or(.not(formula1), .not(formula2)))
+      case .EF(let formula1):
+        return .AG(queryReduction(.not(formula1)))
+      case .AF(let formula1):
+        return .EG(queryReduction(.not(formula1)))
+      case .EG(let formula1):
+        return .AF(queryReduction(.not(formula1)))
+      case .AG(let formula1):
+        return .EF(queryReduction(.not(formula1)))
       default:
-        return .not(ctl.queryReduction())
+        return .not(queryReduction(formula))
       }
     default:
       fatalError("This is not possible")
     }
   }
   
-  public func efReduction() -> CTL {
-    switch self {
-    case .EF(let ctl):
-      switch ctl {
+  public func efReduction(_ formula: Formula) -> Formula {
+    switch formula {
+    case .EF(let subFormula):
+      switch subFormula {
       case .not(.deadlock):
         return .not(.deadlock)
-      case .EF(let ctl1):
-        return .EF(ctl1)
-      case .AF(let ctl1):
-        return .EF(ctl1).queryReduction()
-      case .EU(_, let ctl2):
-        return .EF(ctl2).queryReduction()
-      case .AU(_, let ctl2):
-        return .EF(ctl2).queryReduction()
-      case .or(let ctl1, let ctl2):
-        return .or(.EF(ctl1), .EF(ctl2)).queryReduction()
+      case .EF(let formula1):
+        return .EF(formula1)
+      case .AF(let formula1):
+        return queryReduction(.EF(formula1))
+      case .EU(_, let formula2):
+        return queryReduction(.EF(formula2))
+      case .AU(_, let formula2):
+        return queryReduction(.EF(formula2))
+      case .or(let formula1, let formula2):
+        return queryReduction(.or(.EF(formula1), .EF(formula2)))
       default:
-        return .EF(ctl.queryReduction())
+        return .EF(queryReduction(formula))
       }
     default:
       fatalError("This is not possible")
     }
   }
   
-  public func afReduction() -> CTL {
-    switch self {
-    case .AF(let ctl):
-      let ctlReduced = ctl.queryReduction()
-      switch ctlReduced {
+  public func afReduction(_ formula: Formula) -> Formula {
+    switch formula {
+    case .AF(let subFormula):
+      let formulaReduced = queryReduction(subFormula)
+      switch formulaReduced {
       case .not(.deadlock):
         return .not(.deadlock)
-      case .EF(let ctl1):
-        return .EF(ctl1)
-      case .AF(let ctl1):
-        return .AF(ctl1)
-      case .AU(_, let ctl2):
-        return .AF(ctl2).queryReduction()
-      case .or(let ctl1, .EF(let ctl2)):
-        return .or(.EF(ctl2), .AF(ctl1)).queryReduction()
+      case .EF(let formula1):
+        return .EF(formula1)
+      case .AF(let formula1):
+        return .AF(formula1)
+      case .AU(_, let formula2):
+        return queryReduction(.AF(formula2))
+      case .or(let formula1, .EF(let formula2)):
+        return queryReduction(.or(.EF(formula2), .AF(formula1)))
       default:
-        return .AF(ctl.queryReduction())
+        return .AF(queryReduction(formula))
       }
     default:
       fatalError("This is not possible")
     }
   }
   
-  public func auReduction() -> CTL {
-    switch self {
-    case .AU(let ctl1, let ctl2):
-      switch (ctl1, ctl2) {
+  public func auReduction(_ formula: Formula) -> Formula {
+    switch formula {
+    case .AU(let formula1, let formula2):
+      switch (formula1, formula2) {
       case (_, .not(.deadlock)):
         return .not(.deadlock)
       case (.deadlock, _):
-        return ctl2.queryReduction()
+        return queryReduction(formula2)
       case (.not(.deadlock), _):
-        return .AF(ctl2).queryReduction()
-      case (_, .EF(let ctl3)):
-        return .AF(ctl3)
-      case (_, .or(let ctl3, .EF(let ctl4))):
-        return .or(.EF(ctl4), .AU(ctl1, ctl3)).queryReduction()
+        return queryReduction(.AF(formula2))
+      case (_, .EF(let formula3)):
+        return .AF(formula3)
+      case (_, .or(let formula3, .EF(let formula4))):
+        return queryReduction(.or(.EF(formula4), .AU(formula1, formula3)))
       default:
-        return .AU(ctl1.queryReduction(), ctl2.queryReduction())
+        return .AU(queryReduction(formula1), queryReduction(formula2))
       }
     default:
       fatalError("This is not possible")
     }
   }
   
-  public func euReduction() -> CTL {
-    switch self {
-    case .EU(let ctl1, let ctl2):
-      switch (ctl1, ctl2) {
+  public func euReduction(_ formula: Formula) -> Formula {
+    switch formula {
+    case .EU(let formula1, let formula2):
+      switch (formula1, formula2) {
       case (_, .not(.deadlock)):
         return .not(.deadlock)
-      case (.deadlock, let ctl2):
-        return ctl2.queryReduction()
+      case (.deadlock, let formula2):
+        return queryReduction(formula2)
       case (.not(.deadlock), _):
-        return .EF(ctl2).queryReduction()
-      case (_, .EF(let ctl3)):
-        return .EF(ctl3)
-      case (_, .or(let ctl3, .EF(let ctl4))):
-        return .or(.EF(ctl4), .EU(ctl1, ctl3)).queryReduction()
+        return queryReduction(.EF(formula2))
+      case (_, .EF(let formula3)):
+        return .EF(formula3)
+      case (_, .or(let formula3, .EF(let formula4))):
+        return queryReduction(.or(.EF(formula4), .EU(formula1, formula3)))
       default:
-        return .EU(ctl1.queryReduction(), ctl2.queryReduction())
+        return .EU(queryReduction(formula1), queryReduction(formula2))
       }
     default:
       fatalError("This is not possible")
     }
   }
   
-  
+  public func count() -> Int {
+    return count(formula)
+  }
   /// Count the number of elements of a CTL formula
   /// - Returns: The number of elements of the CTL formula
-  public func count() -> Int {
-    switch self {
+  public func count(_ formula: Formula) -> Int {
+    switch formula {
     case .intExpr(e1: _, operator: _, e2: _):
       return 1
     case .deadlock:
@@ -470,28 +551,28 @@ public indirect enum CTL: Equatable {
       return 1
     case .after(_):
       return 1
-    case .not(let ctl):
-      return 1 + ctl.count()
-    case .and(let ctl1, let ctl2):
-      return 2 + ctl1.count() + ctl2.count()
-    case .or(let ctl1, let ctl2):
-      return 2 + ctl1.count() + ctl2.count()
-    case .EX(let ctl):
-      return 1 + ctl.count()
-    case .AX(let ctl):
-      return 1 + ctl.count()
-    case .EF(let ctl):
-      return 1 + ctl.count()
-    case .AF(let ctl):
-      return 1 + ctl.count()
-    case .EG(let ctl):
-      return 1 + ctl.count()
-    case .AG(let ctl):
-      return 1 + ctl.count()
-    case .EU(let ctl1, let ctl2):
-      return 2 + ctl1.count() + ctl2.count()
-    case .AU(let ctl1, let ctl2):
-      return 2 + ctl1.count() + ctl2.count()
+    case .not(let formula1):
+      return 1 + count(formula1)
+    case .and(let formula1, let formula2):
+      return 2 + count(formula1) + count(formula2)
+    case .or(let formula1, let formula2):
+      return 2 + count(formula1) + count(formula2)
+    case .EX(let formula1):
+      return 1 + count(formula1)
+    case .AX(let formula1):
+      return 1 + count(formula1)
+    case .EF(let formula1):
+      return 1 + count(formula1)
+    case .AF(let formula1):
+      return 1 + count(formula1)
+    case .EG(let formula1):
+      return 1 + count(formula1)
+    case .AG(let formula1):
+      return 1 + count(formula1)
+    case .EU(let formula1, let formula2):
+      return 2 + count(formula1) + count(formula2)
+    case .AU(let formula1, let formula2):
+      return 2 + count(formula1) + count(formula2)
     }
   }
 
@@ -506,10 +587,10 @@ extension CTL {
   ///   - rewrited: An option to specify how to compute the function revertTilde. If it is true, we rewrite revertTilde as `not revert not`. When it is false, we use a specific function to compute it. False by default.
   ///   - simplified: An option to specify if there simplified function must be used or not. True by default.
   /// - Returns: True if the marking holds the CTL formula
-  public func eval(marking: Marking, net: PetriNet, rewrited: Bool = false, simplified: Bool = true) -> Bool {
-    switch self {
+  public func eval(marking: Marking) -> Bool {
+    switch formula {
     case .intExpr(e1: _, operator: _, e2: _):
-      return evalCardinality(net: net).contains(marking: marking)
+      return evalCardinality().contains(marking: marking)
     case .isFireable(let t):
       if net.transitions.contains(t) {
         return
@@ -527,50 +608,65 @@ extension CTL {
       return true
     case .false:
       return false
-    case .and(let ctl1, let ctl2):
-      let evalCTL1 = ctl1.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
+    case .and(let formula1, let formula2):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let evalCTL1 = ctl1.eval(marking: marking)
       if evalCTL1 == false {
         return false
       }
-      return ctl2.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
-    case .or(let ctl1, let ctl2):
-      let evalCTL1 = ctl1.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
+      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl2.eval(marking: marking)
+    case .or(let formula1, let formula2):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let evalCTL1 = ctl1.eval(marking: marking)
       if evalCTL1 == true {
         return true
       }
-      return (ctl2.eval(marking: marking, net: net, rewrited: rewrited, simplified: simplified))
-    case .not(let ctl1):
-      return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).not().contains(marking: marking)
+      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return (ctl2.eval(marking: marking))
+    case .not(let formula1):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.eval().not().contains(marking: marking)
     case .deadlock:
       return SPS.deadlock(net: net).contains(marking: marking)
-    case .EX(let ctl1):
+    case .EX(let formula1):
       if SPS.deadlock(net: net).contains(marking: marking) {
         return false
       }
-      return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revert().contains(marking: marking)
-    case .AX(let ctl1):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.eval().revert().contains(marking: marking)
+    case .AX(let formula1):
       if SPS.deadlock(net: net).contains(marking: marking) {
         return true
       }
-      return ctl1.eval(net: net, rewrited: rewrited, simplified: simplified).revertTilde(rewrited: rewrited).contains(marking: marking)
-    case .EF(let ctl1):
-      return ctl1.evalEF(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
-    case .AF(let ctl1):
-      return ctl1.evalAF(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
-    case .EG(let ctl1):
-      return ctl1.evalEG(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
-    case .AG(let ctl1):
-      return ctl1.evalAG(marking: marking, net: net, rewrited: rewrited, simplified: simplified)
-    case .EU(let ctl1, let ctl2):
-      return ctl1.evalEU(ctl: ctl2, marking: marking, net: net, rewrited: rewrited, simplified: simplified)
-    case .AU(let ctl1, let ctl2):
-      return ctl1.evalAU(ctl: ctl2, marking: marking, net: net, rewrited: rewrited, simplified: simplified)
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.eval().revertTilde(rewrited: rewrited).contains(marking: marking)
+    case .EF(let formula1):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.evalEF(marking: marking)
+    case .AF(let formula1):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.evalAF(marking: marking)
+    case .EG(let formula1):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.evalEG(marking: marking)
+    case .AG(let formula1):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.evalAG(marking: marking)
+    case .EU(let formula1, let formula2):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.evalEU(ctl2, marking: marking)
+    case .AU(let formula1, let formula2):
+      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      return ctl1.evalAU(ctl2, marking: marking)
     }
     
   }
 
-  func evalEF(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalEF(marking: Marking) -> Bool {
+    var res = self.eval()
     if res.contains(marking: marking) == true {
       return true
     }
@@ -589,8 +685,8 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  func evalAF(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalAF(marking: Marking) -> Bool {
+    var res = self.eval()
     if res.contains(marking: marking) == true {
       return true
     }
@@ -610,8 +706,8 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  func evalEG(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    var res = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalEG(marking: Marking) -> Bool {
+    var res = self.eval()
     if res.contains(marking: marking) == false {
       return false
     }
@@ -630,8 +726,8 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  func evalAG(marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    var res = self.eval(net: net)
+  func evalAG(marking: Marking) -> Bool {
+    var res = self.eval()
     if res.contains(marking: marking) == false {
       return false
     }
@@ -649,13 +745,13 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  func evalEU(ctl: CTL, marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    let phi = self.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalEU(_ ctl: CTL, marking: Marking) -> Bool {
+    let phi = self.eval()
     let isPhiContained = phi.contains(marking: marking)
     if  isPhiContained == true {
       return true
     }
-    var res = ctl.eval(net: net, rewrited: rewrited, simplified: simplified)
+    var res = ctl.eval()
     if isPhiContained == false && res.contains(marking: marking) == false {
       return false
     }
@@ -675,9 +771,9 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
-  func evalAU(ctl: CTL, marking: Marking, net: PetriNet, rewrited: Bool, simplified: Bool) -> Bool {
-    let phi = self.eval(net: net, rewrited: rewrited, simplified: simplified)
-    var res = ctl.eval(net: net, rewrited: rewrited, simplified: simplified)
+  func evalAU(_ ctl: CTL, marking: Marking) -> Bool {
+    let phi = self.eval()
+    var res = ctl.eval()
     var resTemp: SPS
     repeat {
       if res.contains(marking: marking) {
@@ -696,45 +792,21 @@ extension CTL {
   
 }
 
+extension CTL: Equatable {
+  public static func == (lhs: CTL, rhs: CTL) -> Bool {
+    return lhs.formula == rhs.formula
+  }
+}
+
 extension CTL: CustomStringConvertible {
   public var description: String {
     var res: String = ""
-    switch self {
-    case .true:
-      res = "true"
-    case .false:
-      res = "false"
-    case .isFireable(let s):
-      res = "isFireable(\(s))"
-    case .intExpr(e1: let e1, operator: let op, e2: let e2):
-      res = "\(e1) \(op) \(e2)"
-    case .after(let s):
-      res = "after(\(s))"
-    case .deadlock:
-      res = "deadlock"
-    case .not(let ctl):
-      res = "not(\(ctl))"
-    case .and(let ctl1, let ctl2):
-      res = "and(\(ctl1), \(ctl2))"
-    case .or(let ctl1, let ctl2):
-      res = "or(\(ctl1), \(ctl2))"
-    case .EX(let ctl):
-      res = "EX(\(ctl))"
-    case .AX(let ctl):
-      res = "AX(\(ctl))"
-    case .EF(let ctl):
-      res = "EF(\(ctl))"
-    case .AF(let ctl):
-      res = "AF(\(ctl))"
-    case .EG(let ctl):
-      res = "EG(\(ctl))"
-    case .AG(let ctl):
-      res = "AG(\(ctl))"
-    case .EU(let ctl1, let ctl2):
-      res = "E(\(ctl1)) U (\(ctl2))"
-    case .AU(let ctl1, let ctl2):
-      res = "A(\(ctl1)) U (\(ctl2))"
-    }
+    res.append("CTL formula: \(formula.description)\\")
+    res.append("Options: \\")
+    res.append("  Rewrited: \(rewrited)")
+    res.append("  Simplified: \(simplified)")
+    res.append("  Debug: \(debug)")
     return res
-  }
+    }
+  
 }

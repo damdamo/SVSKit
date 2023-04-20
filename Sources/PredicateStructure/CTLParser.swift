@@ -17,7 +17,7 @@ public class CTLParser: NSObject, XMLParserDelegate {
   /// Load CTL formulas from a local xml file.
   /// - Parameter filePath: The path name in the Resource folder
   /// - Returns: CTL formulas bound to their ID
-  public func loadCTL(filePath: String) -> [String: CTL] {
+  public func loadCTL(filePath: String) -> [String: CTL.Formula] {
     reset()
     setTransitions = []
     CTLStringDictionnary = [:]
@@ -34,7 +34,7 @@ public class CTLParser: NSObject, XMLParserDelegate {
   /// Load CTL formulas from an url.
   /// - Parameter filePath: The url of the xml file
   /// - Returns: CTL formulas bound to their ID
-  public func loadCTL(url: URL) -> [String: CTL] {
+  public func loadCTL(url: URL) -> [String: CTL.Formula] {
     reset()
     setTransitions = []
     CTLStringDictionnary = [:]
@@ -127,12 +127,12 @@ public class CTLParser: NSObject, XMLParserDelegate {
   
   /// Create the CTL formulas corresponding to the parsing of the xml file
   /// - Returns: A dictionnary of CTL formulas bound to their ID
-  func createCTLFormulas() -> [String: CTL] {
+  func createCTLFormulas() -> [String: CTL.Formula] {
     let unaryOperators = ["negation", "EX", "AX", "EF", "AF", "EG", "AG"]
     let binaryOperators = ["conjunction", "disjunction", "EU", "AU"]
-    var ctlTemp: CTL
-    var res: [String: CTL] = [:]
-    var ctlStack: [CTL] = []
+    var ctlTemp: CTL.Formula
+    var res: [String: CTL.Formula] = [:]
+    var ctlStack: [CTL.Formula] = []
     var currentT: String = ""
     var expressionStack: [CTL.Expression] = []
     for (key, ctlString) in CTLStringDictionnary {
