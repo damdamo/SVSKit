@@ -1,6 +1,5 @@
 [![Build Status](https://app.travis-ci.com/damdamo/PredicateStructure.svg?branch=main)](https://travis-ci.org/damdamo/Teri)
 
-
 # Predicate Structure: CTL Model Checking on Parametric Petri nets
 
 This package aims at verifying CTL formulas on Petri nets with weighted arcs and potential capacity on places.
