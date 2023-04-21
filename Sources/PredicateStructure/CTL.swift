@@ -285,14 +285,15 @@ public struct CTL {
   
   
   func evalEF() -> SPS {
-    var res = self.eval()
+    let phi = self.eval()
+    var res = phi
     var resTemp: SPS
     if debug {
       print("Predicate structure number at the start of EF evaluation: \(res.count)")
     }
     repeat {
       resTemp = res
-      res = res.union(res.revert())
+      res = phi.union(res.revert())
       if simplified {
         res = res.simplified()
       }
@@ -304,14 +305,15 @@ public struct CTL {
   }
   
   func evalAF() -> SPS {
-    var res = self.eval()
+    let phi = self.eval()
+    var res = phi
     var resTemp: SPS
     if debug {
       print("Predicate structure number at the start of AF evaluation: \(res.count)")
     }
     repeat {
       resTemp = res
-      res = res.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
+      res = phi.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
       if simplified {
         res = res.simplified()
       }
@@ -323,14 +325,15 @@ public struct CTL {
   }
   
   func evalEG() -> SPS {
-    var res = self.eval()
+    let phi = self.eval()
+    var res = phi
     var resTemp: SPS
     if debug {
       print("Predicate structure number at the start of EG evaluation: \(res.count)")
     }
     repeat {
       resTemp = res
-      res = res.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
+      res = phi.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
       if simplified {
         res = res.simplified()
       }
@@ -342,14 +345,15 @@ public struct CTL {
   }
   
   func evalAG() -> SPS {
-    var res = self.eval()
+    let phi = self.eval()
+    var res = phi
     var resTemp: SPS
     if debug {
       print("Predicate structure number at the start of AG evaluation: \(res.count)")
     }
     repeat {
       resTemp = res
-      res = res.intersection(res.revertTilde(rewrited: rewrited))
+      res = phi.intersection(res.revertTilde(rewrited: rewrited))
       if simplified {
         res = res.simplified()
       }
@@ -362,14 +366,16 @@ public struct CTL {
   
   func evalEU(_ ctl: CTL) -> SPS {
     let phi = self.eval()
-    var res = ctl.eval()
-    var resTemp: SPS
+    let psi = ctl.eval()
+    var res = psi
     if debug {
-      print("Predicate structure number at the start of EU evaluation: \(res.count)")
+      print("Predicate structure number of phi at the start of EU evaluation: \(phi.count)")
+      print("Predicate structure number of psi at the start of EU evaluation: \(res.count)")
     }
+    var resTemp: SPS
     repeat {
       resTemp = res
-      res = res.union(phi.intersection(res.revert()))
+      res = psi.union(phi.intersection(res.revert()))
       if simplified {
         res = res.simplified()
       }
@@ -382,14 +388,16 @@ public struct CTL {
   
   func evalAU(_ ctl: CTL) -> SPS {
     let phi = self.eval()
-    var res = ctl.eval()
+    let psi = ctl.eval()
+    var res = psi
     var resTemp: SPS
     if debug {
-      print("Predicate structure number at the start of AU evaluation: \(res.count)")
+      print("Predicate structure number of phi at the start of AU evaluation: \(phi.count)")
+      print("Predicate structure number of psi at the start of AU evaluation: \(res.count)")
     }
     repeat {
       resTemp = res
-      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
+      res = psi.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
       if simplified {
         res = res.simplified()
       }
@@ -706,7 +714,8 @@ extension CTL {
   }
 
   func evalEF(marking: Marking) -> Bool {
-    var res = self.eval()
+    let phi = self.eval()
+    var res = phi
     if debug {
       print("Predicate structure number at the start of EF evaluation: \(res.count)")
     }
@@ -719,7 +728,7 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = res.union(res.revert())
+      res = phi.union(res.revert())
 
       if simplified {
         res = res.simplified()
@@ -732,7 +741,8 @@ extension CTL {
   }
   
   func evalAF(marking: Marking) -> Bool {
-    var res = self.eval()
+    let phi = self.eval()
+    var res = phi
     if debug {
       print("Predicate structure number at the start of AF evaluation: \(res.count)")
     }
@@ -747,7 +757,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = res.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
+      res = phi.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
       if simplified {
         res = res.simplified()
       }
@@ -759,7 +769,8 @@ extension CTL {
   }
   
   func evalEG(marking: Marking) -> Bool {
-    var res = self.eval()
+    let phi = self.eval()
+    var res = phi
     if debug {
       print("Predicate structure number at the start of EG evaluation: \(res.count)")
     }
@@ -772,7 +783,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = res.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
+      res = phi.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
       if simplified {
         res = res.simplified()
       }
@@ -784,7 +795,8 @@ extension CTL {
   }
   
   func evalAG(marking: Marking) -> Bool {
-    var res = self.eval()
+    let phi = self.eval()
+    var res = phi
     if debug {
       print("Predicate structure number at the start of AG evaluation: \(res.count)")
     }
@@ -797,7 +809,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = res.intersection(res.revertTilde(rewrited: rewrited))
+      res = phi.intersection(res.revertTilde(rewrited: rewrited))
       if simplified {
         res = res.simplified()
       }
@@ -809,21 +821,22 @@ extension CTL {
   }
   
   func evalEU(_ ctl: CTL, marking: Marking) -> Bool {
-    let phi = self.eval()
+    let psi = ctl.eval()
     if debug {
-      print("Predicate structure number of phi at the start of EU evaluation: \(phi.count)")
+      print("Predicate structure number of phi at the start of EU evaluation: \(psi.count)")
     }
-    let isPhiContained = phi.contains(marking: marking)
-    if  isPhiContained == true {
+    let isPsiContained = psi.contains(marking: marking)
+    if  isPsiContained == true {
       return true
     }
-    var res = ctl.eval()
+    let phi = self.eval()
     if debug {
-      print("Predicate structure number of psi at the start of EU evaluation: \(res.count)")
+      print("Predicate structure number of psi at the start of EU evaluation: \(phi.count)")
     }
-    if isPhiContained == false && res.contains(marking: marking) == false {
+    if isPsiContained == false && phi.contains(marking: marking) == false {
       return false
     }
+    var res = psi
     var resTemp: SPS
     repeat {
       if res.contains(marking: marking) {
@@ -832,7 +845,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = res.union(phi.intersection(res.revert()))
+      res = psi.union(phi.intersection(res.revert()))
       if simplified {
         res = res.simplified()
       }
@@ -844,12 +857,22 @@ extension CTL {
   }
   
   func evalAU(_ ctl: CTL, marking: Marking) -> Bool {
-    let phi = self.eval()
-    var res = ctl.eval()
+    let psi = ctl.eval()
     if debug {
-      print("Predicate structure number of phi at the start of AU evaluation: \(phi.count)")
-      print("Predicate structure number of psi at the start of AU evaluation: \(res.count)")
+      print("Predicate structure number of phi at the start of AU evaluation: \(psi.count)")
     }
+    let isPsiContained = psi.contains(marking: marking)
+    if  isPsiContained == true {
+      return true
+    }
+    let phi = self.eval()
+    if debug {
+      print("Predicate structure number of psi at the start of AU evaluation: \(phi.count)")
+    }
+    if isPsiContained == false && phi.contains(marking: marking) == false {
+      return false
+    }
+    var res = psi
     var resTemp: SPS
     repeat {
       if res.contains(marking: marking) {
@@ -858,12 +881,12 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = res.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
+      res = psi.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
       if simplified {
         res = res.simplified()
       }
       if debug {
-        print("Predicate structure number during EU evaluation: \(res.count)")
+        print("Predicate structure number during AU evaluation: \(res.count)")
       }
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
@@ -880,10 +903,10 @@ extension CTL: Equatable {
 extension CTL: CustomStringConvertible {
   public var description: String {
     var res: String = ""
-    res.append("CTL formula: \(formula.description)\\")
-    res.append("Options: \\")
-    res.append("  Rewrited: \(rewrited)")
-    res.append("  Simplified: \(simplified)")
+    res.append("CTL formula: \(formula.description)\n")
+    res.append("Options: \n")
+    res.append("  Rewrited: \(rewrited)\n")
+    res.append("  Simplified: \(simplified)\n")
     res.append("  Debug: \(debug)")
     return res
     }

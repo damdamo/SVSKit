@@ -508,8 +508,17 @@ public struct PS {
   /// Is a predicate structure included in another one ?
   /// - Parameter ps: The predicate structure to check if self is contained
   /// - Returns: True if it is contained, false otherwise.
-  public func isIncluded (_ ps: PS) -> Bool {
+  public func isIncluded(_ ps: PS) -> Bool {
     return self.subtract(ps) == []
+  }
+  
+  /// Count the number of markings that composes the predicate structure.
+  /// - Returns: Marking number of a predicate structure
+  public func countMarking() -> Int {
+    if let val = self.value {
+      return val.inc.count + val.exc.count
+    }
+    return 0
   }
 
 }
