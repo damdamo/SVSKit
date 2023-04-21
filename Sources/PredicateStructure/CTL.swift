@@ -3,10 +3,18 @@
 ///   The strategy is to use the fixpoint to construct this state space, and thanks to monotonicity properties, the computation always finishes.
 public struct CTL {
   
+  /// CTL formula
   let formula: Formula
+  /// Related Petri net
   let net: PetriNet
+  /// Option to decide how to compute AX, either by using the negation (¬ EX ¬) when set to true, or by subtracting the current solution to the whole state ( {({(0, 0, ...)}, {})} \ sps) set to false.
+  /// Set to false
   let rewrited: Bool
+  /// Option to decide if the simplification function should be called during execution. It removes redundancy in sps and ps.
+  /// Set to true
   let simplified: Bool
+  /// Option to print the state number in fixpoint loop.
+  /// Set to false
   let debug: Bool
   
   public init(formula: Formula, net: PetriNet, rewrited: Bool = false, simplified: Bool = true, debug: Bool = false) {
@@ -282,8 +290,6 @@ public struct CTL {
     }
   }
   
-  
-  
   func evalEF() -> SPS {
     let phi = self.eval()
     var res = phi
@@ -459,7 +465,7 @@ public struct CTL {
     }
   }
   
-  public func notReduction(_ formula: Formula) -> Formula {
+  func notReduction(_ formula: Formula) -> Formula {
     switch formula {
     case .not(let subFormula):
       switch subFormula {
@@ -489,7 +495,7 @@ public struct CTL {
     }
   }
   
-  public func efReduction(_ formula: Formula) -> Formula {
+  func efReduction(_ formula: Formula) -> Formula {
     switch formula {
     case .EF(let subFormula):
       switch subFormula {
@@ -513,7 +519,7 @@ public struct CTL {
     }
   }
   
-  public func afReduction(_ formula: Formula) -> Formula {
+  func afReduction(_ formula: Formula) -> Formula {
     switch formula {
     case .AF(let subFormula):
       let formulaReduced = queryReduction(subFormula)
@@ -536,7 +542,7 @@ public struct CTL {
     }
   }
   
-  public func auReduction(_ formula: Formula) -> Formula {
+  func auReduction(_ formula: Formula) -> Formula {
     switch formula {
     case .AU(let formula1, let formula2):
       switch (formula1, formula2) {
@@ -558,7 +564,7 @@ public struct CTL {
     }
   }
   
-  public func euReduction(_ formula: Formula) -> Formula {
+  func euReduction(_ formula: Formula) -> Formula {
     switch formula {
     case .EU(let formula1, let formula2):
       switch (formula1, formula2) {
