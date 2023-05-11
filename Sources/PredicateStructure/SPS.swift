@@ -21,8 +21,8 @@ public struct SPS {
     }
     let ps = self.values.first!
     var union = self.values.union(sps.values)
-    if union.contains(PS(value: nil, net: ps.net)) {
-      union.remove(PS(value: nil, net: ps.net))
+    if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
+      union.remove(PS(value: ps.emptyValue, net: ps.net))
     }
     return SPS(values: union)
   }
@@ -37,7 +37,7 @@ public struct SPS {
     for ps1 in self {
       for ps2 in sps {
         let intersect = ps1.intersection(ps2, isCanonical: isCanonical)
-        if let _ = intersect.value {
+        if intersect.value != ps1.emptyValue{
           res.insert(intersect)
         }
       }
@@ -175,7 +175,7 @@ public struct SPS {
     
     for ps in self {
       let can = ps.canonised()
-      if let _ = can.value {
+      if can.value != can.emptyValue {
         setTemp1.insert(can)
       }
     }
@@ -242,7 +242,7 @@ public struct SPS {
       markings.insert(net.inputMarkingForATransition(transition: transition))
     }
     let ps = PS(value: ([net.zeroMarking()], markings), net: net).canonised()
-    if let _ = ps.value {
+    if ps.value != ps.emptyValue {
       return SPS(values: [PS(value: ([net.zeroMarking()], markings), net: net).canonised()])
     }
     return []
@@ -257,7 +257,7 @@ public struct SPS {
     }
     var res: SPS = []
     for ps1 in self {
-      if let _ = ps1.canonised().value {
+      if ps1.canonised().value != ps1.emptyValue {
         res = res.union(ps1.subtract(sps))
       }
     }

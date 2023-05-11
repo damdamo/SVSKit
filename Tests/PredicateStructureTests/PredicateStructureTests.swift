@@ -17,7 +17,7 @@ final class PredicateStructureTests: XCTestCase {
     let marking2 = Marking(["p1": 1, "p2": 42, "p3": 2], net: net)
     let expectedConvMax = Marking(["p1": 4, "p2": 42, "p3": 6], net: net)
     let expectedConvMin = Marking(["p1": 1, "p2": 5, "p3": 2], net: net)
-    let psEmpty: PS = PS(value: nil, net: net)
+    let psEmpty: PS = PS(value: ([net.zeroMarking()], [net.zeroMarking()]), net: net)
 
     XCTAssertEqual(PS.convMax(markings: [marking1, marking2], net: net), [expectedConvMax])
     XCTAssertEqual(PS.convMin(markings: [marking1, marking2], net: net), [expectedConvMin])
@@ -59,7 +59,7 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS(value: ([marking1], [marking2]), net: net)
     let ps2 = PS(value: ([marking3], [marking4]), net: net)
 
-    XCTAssertEqual(SPS(values: [ps1]).union([PS(value: nil, net: net)]), [ps1])
+    XCTAssertEqual(SPS(values: [ps1]).union([PS(value: ps1.emptyValue, net: net)]), [ps1])
     XCTAssertEqual(SPS(values: [ps1]).intersection([ps2], isCanonical: false), [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)])
 
     let ps3 = PS(value: ([marking2], [marking3]), net: net)
@@ -445,6 +445,28 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS(value: ([m1],[m3]), net: net)
     let ps2 = PS(value: ([m2],[m4]), net: net)
     XCTAssertEqual(ps1.merge(ps2), [ps1, ps2])
+  }
+
+  func testIsEmpty() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let m1 = Marking(["p0": 3, "p1": 4], net: net)
+    let m2 = Marking(["p0": 1, "p1": 2], net: net)
+    let m3 = Marking(["p0": 1, "p1": 5], net: net)
+    let m4 = Marking(["p0": 0, "p1": 0], net: net)
+    
+    let ps1 = PS(value: ([m1],[m2]), net: net)
+    let ps2 = PS(value: ([m1],[m3]), net: net)
+    let ps3 = PS(value: ([m1],[m4]), net: net)
+    
+    XCTAssertTrue(ps1.isEmpty())
+    XCTAssertFalse(ps2.isEmpty())
+    XCTAssertTrue(ps3.isEmpty())
   }
   
 //  func testThesis() {
