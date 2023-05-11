@@ -482,7 +482,9 @@ public struct PS {
     res = res.union(SPS(values: [ps1]))
 
     for marking in d {
-      let ps = PS(value: ([marking],b), net: net).canonised()
+      var newA = a
+      newA.insert(marking)
+      let ps = PS(value: (newA,b), net: net).canonised()
       res.insert(ps)
     }
     res.remove(PS(value: nil, net: net))
