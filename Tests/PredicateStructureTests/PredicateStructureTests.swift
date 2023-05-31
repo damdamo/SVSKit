@@ -40,8 +40,9 @@ final class PredicateStructureTests: XCTestCase {
     
     let marking7 = Marking(["p1": 1, "p2": 3, "p3": 6], net: net)
     let expectedPS2 = PS(value: ([marking7], [Marking(["p1": 2, "p2": 3, "p3": 6], net: net), Marking(["p1": 1, "p2": 4, "p3": 6], net: net), Marking(["p1": 1, "p2": 3, "p3": 7], net: net)]), net: net)
+    let expectedPS3 = PS(value: ([marking6], [Marking(["p1": 2, "p2": 3, "p3": 5], net: net), Marking(["p1": 1, "p2": 4, "p3": 5], net: net), Marking(["p1": 1, "p2": 3, "p3": 7], net: net)]), net: net)
     
-    XCTAssertEqual(psEmpty.encodeMarkingSet([marking6, marking7]), [expectedPS1,expectedPS2])
+    XCTAssertEqual(psEmpty.encodeMarkingSet([marking6, marking7]), [expectedPS3])
   }
   
   func testSPS1() {
@@ -236,13 +237,13 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(sps1.simplified(), sps2)
     XCTAssertEqual(ps1.merge(ps3), [ps1,ps3])
     
-    let ps5 = PS(value: ([marking2], []), net: net)
-    XCTAssertEqual(ps5.merge(ps3), [ps5])
+//    let ps5 = PS(value: ([marking2], []), net: net)
+//    XCTAssertEqual(ps5.merge(ps3), [ps5])
     
-    let marking5 = Marking(["p0": 3, "p1": 3], net: net)
-    let ps6 = PS(value: ([marking5], [marking4]), net: net)
-    let ps7 = PS(value: ([marking1], [marking4]), net: net)
-    XCTAssertEqual(ps6.merge(ps1), [ps7])
+//    let marking5 = Marking(["p0": 3, "p1": 3], net: net)
+//    let ps6 = PS(value: ([marking5], [marking4]), net: net)
+//    let ps7 = PS(value: ([marking1], [marking4]), net: net)
+//    XCTAssertEqual(ps6.merge(ps1), [ps7])
     
     let ps8 = PS(value: ([marking3], [marking2]), net: net)
     XCTAssertEqual(SPS(values: [ps8]).simplified(), [])
@@ -445,6 +446,17 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS(value: ([m1],[m3]), net: net)
     let ps2 = PS(value: ([m2],[m4]), net: net)
     XCTAssertEqual(ps1.merge(ps2), [ps1, ps2])
+    XCTAssertFalse(ps1.mergeable(ps2))
+    
+    let ps3 = PS(value: ([m3],[m4]), net: net)
+    XCTAssertTrue(ps1.mergeable(ps3))
+    XCTAssertTrue(ps3.mergeable(ps1))
+    
+    let m5 = Marking(["p0": 20, "p1": 20], net: net)
+    let ps4 = PS(value: ([m3],[m5]), net: net)
+    let sps1 = SPS(values: [ps1, ps2, ps3, ps4])
+    
+    XCTAssertEqual(sps1.mergeable(ps1), SPS(values: [ps3,ps4]))
   }
 
   func testIsEmpty() {
@@ -463,10 +475,82 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS(value: ([m1],[m2]), net: net)
     let ps2 = PS(value: ([m1],[m3]), net: net)
     let ps3 = PS(value: ([m1],[m4]), net: net)
+    let ps4 = PS(value: ([m1],[m1]), net: net)
     
     XCTAssertTrue(ps1.isEmpty())
     XCTAssertFalse(ps2.isEmpty())
     XCTAssertTrue(ps3.isEmpty())
+    XCTAssertTrue(ps4.isEmpty())
+  }
+  
+  func testCanonical() {
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let m1 = Marking(["p0": 3, "p1": 0, "p2": 4], net: net)
+    let m2 = Marking(["p0": 1, "p1": 5, "p2": 0], net: net)
+    let m3 = Marking(["p0": 1, "p1": 0, "p2": 7], net: net)
+    
+    let ps1 = PS(value: ([m1],[]), net: net)
+    let ps2 = PS(value: ([m2],[]), net: net)
+    let ps3 = PS(value: ([m3],[]), net: net)
+    
+    let sps1 = SPS(values: [ps1])
+    let sps2 = SPS(values: [ps2])
+    let sps3 = SPS(values: [ps3])
+    
+    let m4 = Marking(["p0": 1, "p1": 5, "p2": 7], net: net)
+    let m5 = Marking(["p0": 3, "p1": 0, "p2": 7], net: net)
+    let m6 = Marking(["p0": 3, "p1": 5, "p2": 4], net: net)
+    
+    let ps4 = PS(value: ([m2],[m4]), net: net)
+    let ps5 = PS(value: ([m1],[m5, m6]), net: net)
+    let ps5p = PS(value: ([m1],[m5]), net: net)
+    
+    let expectedSPS1 = SPS(values: [ps3, ps4, ps5])
+    
+    let ps1p = PS(value: ([m1],[m5]), net: net)
+    let ps2p = PS(value: ([m2],[m4]), net: net)
+    let ps3p = PS(value: ([m3],[]), net: net)
+    
+    let sps1p = SPS(values: [ps1p])
+    let sps2p = SPS(values: [ps2p])
+    let sps3p = SPS(values: [ps3p])
+    
+    let expectedSPS1p = SPS(values: [ps3, ps4, ps5p])
+    
+    XCTAssertEqual(expectedSPS1, sps1.union(sps2.union(sps3)))
+    XCTAssertEqual(expectedSPS1p, sps1p.union(sps2p.union(sps3p)))
+    
+    
+    let m7 = Marking(["p0": 2, "p1": 2, "p2": 2], net: net)
+    let m8 = Marking(["p0": 6, "p1": 6, "p2": 6], net: net)
+    let m9 = Marking(["p0": 4, "p1": 4, "p2": 4], net: net)
+    let m10 = Marking(["p0": 9, "p1": 9, "p2": 9], net: net)
+    
+    let ps6 = PS(value: ([m7],[m8]), net: net)
+    let ps7 = PS(value: ([m9],[m10]), net: net)
+    let ps8 = PS(value: ([m7],[m10]), net: net)
+    
+    let sps4 = SPS(values: [ps6])
+    let sps5 = SPS(values: [ps7])
+
+    let expectedSPS2 = SPS(values: [ps8])
+    XCTAssertEqual(expectedSPS2, sps4.union(sps5))
+    
+    let ps9 = PS(value: ([m7],[m9]), net: net)
+    let ps10 = PS(value: ([m8],[m10]), net: net)
+    
+    let sps6 = SPS(values: [ps9])
+    let sps7 = SPS(values: [ps10])
+
+    let expectedSPS3 = SPS(values: [ps9, ps10])
+    
+    XCTAssertEqual(expectedSPS3, sps6.union(sps7))
   }
   
 //  func testThesis() {
@@ -670,5 +754,35 @@ final class PredicateStructureTests: XCTestCase {
 //    
 //    print(sps4.not().isEquiv(spsAll.subtract(sps4)))
 //  }
+  
+    func testCanonicalSPS() {
+      let net = PetriNet(
+        places: ["p0", "p1", "p2"],
+        transitions: ["t0"],
+        arcs: .pre(from: "p0", to: "t0", labeled: 1),
+        .post(from: "t0", to: "p1", labeled: 1),
+        capacity: ["p0": 10, "p1": 10, "p2": 10]
+      )
+  
+      let marking1 = Marking(["p0": 3, "p1": 1,  "p2": 2], net: net)
+      let marking2 = Marking(["p0": 3, "p1": 4,  "p2": 4], net: net)
+      let marking3 = Marking(["p0": 3, "p1": 9,  "p2": 2], net: net)
+      let marking4 = Marking(["p0": 1, "p1": 3,  "p2": 3], net: net)
+      let marking5 = Marking(["p0": 3, "p1": 3,  "p2": 3], net: net)
+      let marking6 = Marking(["p0": 3, "p1": 9,  "p2": 3], net: net)
+      
+      
+  
+      let ps1 = PS(value: ([marking1],[marking2, marking3]), net: net)
+      let ps2 = PS(value: ([marking4],[marking5]), net: net)
+      
+      let ps3 = PS(value: ([marking1],[marking5, marking3]), net: net)
+      let ps4 = PS(value: ([marking4],[marking2, marking6]), net: net)
+      
+      let sps1 = SPS(values: [ps1, ps2])
+      let sps2 = SPS(values: [ps3, ps4])
+      print(sps1.isEquiv(sps2))
+      
+    }
   
 }

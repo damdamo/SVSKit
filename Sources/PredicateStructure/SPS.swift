@@ -13,12 +13,54 @@ public struct SPS {
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the union is applied
   /// - Returns: The result of the union.
-  public func union(_ sps: SPS) -> SPS {
+//  public func union(_ sps: SPS) -> SPS {
+//    if self.isEmpty {
+//      return sps
+//    } else if sps.isEmpty{
+//      return self
+//    }
+//    let ps = self.values.first!
+//    var union = self.values.union(sps.values)
+//    if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
+//      union.remove(PS(value: ps.emptyValue, net: ps.net))
+//    }
+//    return SPS(values: union)
+//  }
+  public func union(_ sps: SPS, isCanonical: Bool = true) -> SPS {
     if self.isEmpty {
       return sps
     } else if sps.isEmpty{
       return self
     }
+
+    if isCanonical {
+      let firstSelf = self.values.first!
+      let restSelf = SPS(values: self.values.subtracting([firstSelf]))
+      if self.intersection(sps, isCanonical: isCanonical).isEmpty {
+        let mergeablePS = sps.mergeable(firstSelf)
+        if mergeablePS.isEmpty {
+          let newSPS = SPS(values: sps.values.union([firstSelf]))
+          return restSelf.union(newSPS, isCanonical: isCanonical)
+        }
+        let extractPSToMerge = mergeablePS.sorted(by: {(ps1, ps2) -> Bool in
+          let markingIncPs1 = ps1.value.inc.first!
+          let markingIncPs2 = ps2.value.inc.first!
+          return Marking.leq(lhs: markingIncPs1, rhs: markingIncPs2)
+        }).first!
+        
+        let mergePS: SPS = firstSelf.merge(extractPSToMerge)
+        let restSPS = SPS(values: sps.values.subtracting([extractPSToMerge]))
+        
+        return restSelf.union(mergePS.union(restSPS), isCanonical: isCanonical)
+      }
+      let spsSingleton = SPS(values: [firstSelf])
+      let qa = firstSelf.value.inc.first!
+      let spsLower = SPS(values: Set(sps.filter({!(Marking.leq(lhs: qa, rhs: $0.value.inc.first!))})))
+      let spsWithoutLower = SPS(values: sps.values.subtracting(spsLower.values))
+      let newSPS = SPS(values: spsWithoutLower.subtract(spsSingleton, isCanonical: isCanonical).values.union(spsLower.values))
+      return restSelf.union(spsSingleton.subtract(spsLower, isCanonical: isCanonical), isCanonical: isCanonical).union(newSPS)
+    }
+
     let ps = self.values.first!
     var union = self.values.union(sps.values)
     if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
@@ -33,11 +75,19 @@ public struct SPS {
   ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
   /// - Returns: The result of the intersection.
   public func intersection(_ sps: SPS, isCanonical: Bool = true) -> SPS {
+    if self.isEmpty || sps.isEmpty {
+      return []
+    }
+    
     var res: Set<PS> = []
     for ps1 in self {
       for ps2 in sps {
         let intersect = ps1.intersection(ps2, isCanonical: isCanonical)
-        if intersect.value != ps1.emptyValue{
+        if isCanonical {
+          if !intersect.isEmpty() {
+            res.insert(intersect)
+          }
+        } else {
           res.insert(intersect)
         }
       }
@@ -45,7 +95,27 @@ public struct SPS {
 
     return SPS(values: res)
   }
-  
+
+  /// Subtract two sets of predicate structures
+  /// - Parameter sps: The set of predicate structures to subtract
+  /// - Returns: The resulting set of predicate structures
+  public func subtract(_ sps: SPS, isCanonical: Bool = true) -> SPS {
+    if self == sps || self.isEmpty {
+      return []
+    } else if sps.isEmpty {
+      return self
+    }
+    
+    var res: Set<PS> = []
+    for ps1 in self {
+      if ps1.canonised().value != ps1.emptyValue {
+        res = res.union(ps1.subtract(sps, isCanonical: isCanonical).values)
+//        res = res.union(ps1.subtract(sps, isCanonical: isCanonical))
+      }
+    }
+    return SPS(values: res)
+  }
+
   
   /// Compute the negation of a set of predicate structures. This is the result of a combination of all elements inside a predicate structure with each element of the other predicate structures. E.g.: notSPS({([q1], [q2]), ([q3], [q4]), ([q5], [q6])}) = {([],[q1,q3,q5]), ([q6],[q1,q3]), ([q4],[q1,q5]), ([q4,q6],[q1]), ([q2],[q3,q5]), ([q2, q6],[q3]), ([q2, q4],[q5]), ([q2, q4,q6],[])}
   /// - Returns: The negation of a set of predicate structures
@@ -64,6 +134,17 @@ public struct SPS {
       }
     }
     return res
+  }
+  
+  // All mergeable markings with ps
+  public func mergeable(_ ps: PS) -> SPS {
+    var res: Set<PS> = []
+    for ps1 in self {
+      if ps.mergeable(ps1) {
+        res.insert(ps1)
+      }
+    }
+    return SPS(values: res)
   }
   
   /// Compute all of the underlying markings for a set of predicate structures.
@@ -247,23 +328,7 @@ public struct SPS {
     }
     return []
   }
-  
-  /// Subtract two sets of predicate structures
-  /// - Parameter sps: The set of predicate structures to subtract
-  /// - Returns: The resulting set of predicate structures
-  public func subtract(_ sps: SPS) -> SPS {
-    if self == sps {
-      return []
-    }
-    var res: SPS = []
-    for ps1 in self {
-      if ps1.canonised().value != ps1.emptyValue {
-        res = res.union(ps1.subtract(sps))
-      }
-    }
-    return res
-  }
-  
+    
 }
 
 /// Allow the comparison between SPS.
@@ -335,3 +400,29 @@ extension SPS: CustomStringConvertible {
   }
   
 }
+
+//// --------------------------------------------------------------------------------------
+//// Alternative version of the intersection for SPS in a functional way
+//// --------------------------------------------------------------------------------------
+//  public func intersection(_ sps: SPS, isCanonical: Bool = true) -> SPS {
+//    if self.isEmpty || sps.isEmpty {
+//      return []
+//    }
+//
+//    if self.values.count == 1 {
+//      let firstValue = sps.values.first!
+//      let restSPS = SPS(values: sps.values.subtracting([firstValue]))
+//      let intersect = self.first!.intersection(firstValue, isCanonical: isCanonical)
+//      if isCanonical {
+//        if intersect.isEmpty() {
+//          return self.intersection(restSPS, isCanonical: isCanonical)
+//        }
+//      }
+//      return SPS(values: [intersect]).union(self.intersection(restSPS, isCanonical: isCanonical))
+//    }
+//
+//    let firstValue = self.values.first!
+//    let restSPS = SPS(values: self.values.subtracting([firstValue]))
+//
+//    return SPS(values: [firstValue]).intersection(sps, isCanonical: isCanonical).union(restSPS.intersection(sps, isCanonical: isCanonical))
+//  }

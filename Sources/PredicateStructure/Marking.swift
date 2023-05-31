@@ -45,7 +45,20 @@ public struct Marking {
     set { storage[place] = newValue }
   }
   
-
+  /// <= and leq are different. <= is a comparable operator to know if a marking is included in another one. leq is a function to give an order to all markings, even if they are not comparable.
+  public static func leq(lhs: Marking, rhs: Marking) -> Bool {
+    if lhs == rhs {
+      return true
+    }
+    for (key, _) in lhs.storage.sorted(by: {$0.key < $1.key}) {
+      if lhs[key]! < rhs[key]! {
+        return true
+      } else if rhs[key]! < lhs[key]! {
+        return false
+      }
+    }
+    return true
+  }
 }
 
 extension Marking: Equatable {

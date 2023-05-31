@@ -249,7 +249,6 @@ For examples, look at the folder `Tests/PredicateStructureTests` and the file `L
 
 ## TODO:
 
-- Add continue integration with Travis
 - Integrate linear expressions with Predicate structure. For now, linear expressions can be written but not be evaluated.
 - When a Petri net contains a transition without a pre arc and only a post arc, the old function pre for all returns a result when it should be empty. The reason is we cannot avoid to fire this transition, thus the logic of pre for all cannot be handled.
 - Uniformise with a the Petri net bound between two versions of pre for all (example test in ListExampleTests)
