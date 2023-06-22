@@ -649,4 +649,75 @@ final class PredicateStructureTests: XCTestCase {
 //    print(sps4.not().isEquiv(spsAll.subtract(sps4)))
 //  }
   
+    func testThesis() {
+      let net = PetriNet(
+        places: ["p0", "p1", "p2"],
+        transitions: ["t0", "t1", "t2"],
+        arcs: .pre(from: "p0", to: "t0", labeled: 1),
+        .post(from: "t0", to: "p1", labeled: 1),
+        .pre(from: "p1", to: "t1", labeled: 1),
+        .pre(from: "p2", to: "t2", labeled: 1),
+        .post(from: "t1", to: "p2", labeled: 1),
+        .post(from: "t2", to: "p1", labeled: 1)
+      )
+  
+      let ctl = CTL(formula: .EF(.isFireable("t0")), net: net)
+      print(ctl.eval())
+      
+//      let marking1 = Marking(["p0": 1, "p1": 0, "p2": 0], net: net)
+//      let marking2 = Marking(["p0": 0, "p1": 1, "p2": 0], net: net)
+//      let marking3 = Marking(["p0": 0, "p1": 0, "p2": 1], net: net)
+//
+//      let ps1 = PS(value: ([marking1], []), net: net)
+//      let ps2 = PS(value: ([marking2], []), net: net)
+//      let ps3 = PS(value: ([marking3], []), net: net)
+//
+//      let sps = SPS(values: [ps1, ps2, ps3])
+//      let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
+//
+//      let r = spsAll.subtract(sps)
+//      print(spsAll.subtract(r))
+      
+      
+    }
+  
+  func testThesis2() {
+    let net = PetriNet(
+      places: ["p0", "p1", "p2", "p3", "p4"],
+      transitions: ["t0", "t1", "t3", "t4"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .pre(from: "p2", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p3", labeled: 1),
+      .pre(from: "p1", to: "t1", labeled: 1),
+      .pre(from: "p2", to: "t1", labeled: 1),
+      .post(from: "t1", to: "p4", labeled: 1),
+      .pre(from: "p3", to: "t3", labeled: 1),
+      .post(from: "t3", to: "p0", labeled: 1),
+      .post(from: "t3", to: "p2", labeled: 1),
+      .pre(from: "p4", to: "t4", labeled: 1),
+      .post(from: "t4", to: "p1", labeled: 1),
+      .post(from: "t4", to: "p2", labeled: 1),
+      capacity: ["p0": 5, "p1": 5, "p2": 5, "p3": 5, "p4": 5]
+    )
+
+    let ctl = CTL(formula: .not(.EF(.and(.isFireable("t3"), .isFireable("t4")))), net: net)
+    print(ctl.eval())
+    
+//      let marking1 = Marking(["p0": 1, "p1": 0, "p2": 0], net: net)
+//      let marking2 = Marking(["p0": 0, "p1": 1, "p2": 0], net: net)
+//      let marking3 = Marking(["p0": 0, "p1": 0, "p2": 1], net: net)
+//
+//      let ps1 = PS(value: ([marking1], []), net: net)
+//      let ps2 = PS(value: ([marking2], []), net: net)
+//      let ps3 = PS(value: ([marking3], []), net: net)
+//
+//      let sps = SPS(values: [ps1, ps2, ps3])
+//      let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
+//
+//      let r = spsAll.subtract(sps)
+//      print(spsAll.subtract(r))
+    
+    
+  }
+  
 }
