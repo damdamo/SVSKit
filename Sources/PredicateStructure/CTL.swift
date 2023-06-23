@@ -6,23 +6,41 @@ public struct CTL {
   /// CTL formula
   let formula: Formula
   /// Related Petri net
-  let net: PetriNet
+  private static var netStatic: PetriNet? = nil
   /// Option to decide how to compute AX, either by using the negation (¬ EX ¬) when set to true, or by subtracting the current solution to the whole state ( {({(0, 0, ...)}, {})} \ sps) set to false.
   /// Set to false
-  let rewrited: Bool
+  private static var rewritedStatic: Bool = false
   /// Option to decide if the simplification function should be called during execution. It removes redundancy in sps and ps.
   /// Set to true
-  let simplified: Bool
+  private static var simplifiedStatic: Bool = true
   /// Option to print the state number in fixpoint loop.
   /// Set to false
-  let debug: Bool
+  private static var debugStatic: Bool = false
+  
+  public var net: PetriNet {
+    return CTL.netStatic!
+  }
+  
+  var rewrited: Bool {
+    return CTL.rewritedStatic
+  }
+  var simplified: Bool {
+    return CTL.simplifiedStatic
+  }
+  var debug: Bool {
+    return CTL.debugStatic
+  }
   
   public init(formula: Formula, net: PetriNet, rewrited: Bool = false, simplified: Bool = true, debug: Bool = false) {
     self.formula = formula
-    self.net = net
-    self.rewrited = rewrited
-    self.simplified = simplified
-    self.debug = debug
+    CTL.netStatic = net
+    CTL.rewritedStatic = rewrited
+    CTL.simplifiedStatic = simplified
+    CTL.debugStatic = debug
+  }
+  
+  private init(formula: Formula) {
+    self.formula = formula
   }
     
   /// Enum that lists the accepted operators for a cardinality formula
@@ -168,43 +186,43 @@ public struct CTL {
     case .false:
       res = []
     case .and(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
+      let ctl2 = CTL(formula: formula2)
       res = ctl1.eval().intersection(ctl2.eval())
     case .or(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
+      let ctl2 = CTL(formula: formula2)
       res = ctl1.eval().union(ctl2.eval())
     case .not(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula)
       res = ctl1.eval().not()
     case .deadlock:
       res = SPS.deadlock(net: net)
     case .EX(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula)
       res = ctl1.eval().revert()
     case .AX(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula)
       res = ctl1.eval().revertTilde(rewrited: rewrited)
     case .EF(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula)
       res = ctl1.evalEF()
     case .AF(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula)
       res = ctl1.evalAF()
     case .EG(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula)
       res = ctl1.evalEG()
     case .AG(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula)
       res = ctl1.evalAG()
     case .EU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
+      let ctl2 = CTL(formula: formula2)
       res = ctl1.evalEU(ctl2)
     case .AU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
+      let ctl2 = CTL(formula: formula2)
       res = ctl1.evalAU(ctl2)
     }
     
@@ -418,7 +436,7 @@ public struct CTL {
   /// for Efficient Model Checking of Petri Nets from Frederik Bønneland & al. .
   /// - Returns: The reduced CTL
   public func queryReduction() -> CTL {
-    return CTL(formula: queryReduction(formula), net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+    return CTL(formula: queryReduction(formula))
   }
   
   
@@ -663,23 +681,23 @@ extension CTL {
     case .false:
       return false
     case .and(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       let evalCTL1 = ctl1.eval(marking: marking)
       if evalCTL1 == false {
         return false
       }
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2)
       return ctl2.eval(marking: marking)
     case .or(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       let evalCTL1 = ctl1.eval(marking: marking)
       if evalCTL1 == true {
         return true
       }
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2)
       return (ctl2.eval(marking: marking))
     case .not(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       return ctl1.eval().not().contains(marking: marking)
     case .deadlock:
       return SPS.deadlock(net: net).contains(marking: marking)
@@ -687,33 +705,33 @@ extension CTL {
       if SPS.deadlock(net: net).contains(marking: marking) {
         return false
       }
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       return ctl1.eval().revert().contains(marking: marking)
     case .AX(let formula1):
       if SPS.deadlock(net: net).contains(marking: marking) {
         return true
       }
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       return ctl1.eval().revertTilde(rewrited: rewrited).contains(marking: marking)
     case .EF(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       return ctl1.evalEF(marking: marking)
     case .AF(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       return ctl1.evalAF(marking: marking)
     case .EG(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       return ctl1.evalEG(marking: marking)
     case .AG(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
       return ctl1.evalAG(marking: marking)
     case .EU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
+      let ctl2 = CTL(formula: formula2)
       return ctl1.evalEU(ctl2, marking: marking)
     case .AU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1)
+      let ctl2 = CTL(formula: formula2)
       return ctl1.evalAU(ctl2, marking: marking)
     }
     

@@ -249,13 +249,15 @@ final class CTLTests: XCTestCase {
     let ctlFormula3: CTL = CTL(formula: .AG(.not(.isFireable("t0"))), net: net)
     let ctlFormula4: CTL = CTL(formula: .AG(.not(.isFireable("t2"))), net: net)
     let ctlFormula5: CTL = CTL(formula: .AX(.or(.isFireable("t0"), .isFireable("t2"))), net: net, rewrited: false)
+    let evalFormula5 = ctlFormula5.eval()
     let ctlFormula6: CTL = CTL(formula: .AX(.or(.isFireable("t0"), .isFireable("t2"))), net: net, rewrited: true)
+    let evalFormula6 = ctlFormula6.eval()
     
     XCTAssertEqual(ctlFormula1.eval(), ctlFormula1.eval())
     XCTAssertEqual(ctlFormula2.eval(), ctlFormula2.eval())
     XCTAssertTrue(ctlFormula3.eval().isEquiv(ctlFormula3.eval()))
     XCTAssertTrue(ctlFormula4.eval().isEquiv(ctlFormula4.eval()))
-    XCTAssertTrue(ctlFormula5.eval().isEquiv(ctlFormula6.eval()))
+    XCTAssertTrue(evalFormula5.isEquiv(evalFormula6))
   }
   
   func testCTLAXDiff2() {
