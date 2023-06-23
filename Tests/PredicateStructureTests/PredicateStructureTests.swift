@@ -509,7 +509,7 @@ final class PredicateStructureTests: XCTestCase {
     
     let ps4 = PS(value: ([m2],[m4]), net: net)
     let ps5 = PS(value: ([m1],[m5, m6]), net: net)
-    let ps5p = PS(value: ([m1],[m5]), net: net)
+    let ps5p = PS(value: ([m1],[m5,m6]), net: net)
     
     let expectedSPS1 = SPS(values: [ps3, ps4, ps5])
     
