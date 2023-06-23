@@ -59,6 +59,80 @@ public struct Marking {
     }
     return true
   }
+  
+  /// convMax, for convergence maximal, is a function to compute a singleton containing a marking where each value is the maximum of all places for a given place.
+  /// This is the convergent point such as all marking of markings are included in this convergent marking.
+  /// - Parameter markings: The marking set
+  /// - Returns: The singleton that contains one marking where each place takes the maximum between all markings.
+  public static func convMax(markings: Set<Marking>, net: PetriNet) -> Set<Marking> {
+    if markings.isEmpty {
+      return []
+    }
+    
+    var dicMarking: [String: Int] = [:]
+    for marking in markings {
+      for place in net.places {
+        if let m = dicMarking[place] {
+          if m < marking[place]! {
+            dicMarking[place] = marking[place]
+          }
+        } else {
+          dicMarking[place] = marking[place]
+        }
+      }
+    }
+    return [Marking(dicMarking, net: net)]
+  }
+  
+  /// convMin, for convergence minimal, is a function to compute a singleton containing a marking where each value is the minimum of all places for a given place.
+  /// This is the convergent point such as the convergent marking is included in all the other markings.
+  /// - Parameter markings: The marking set
+  /// - Returns: The singleton that contains one marking where each place takes the minimum between all markings.
+  public static func convMin(markings: Set<Marking>, net: PetriNet) -> Set<Marking> {
+    if markings.isEmpty {
+      return []
+    }
+    
+    var dicMarking: [String: Int] = [:]
+    for marking in markings {
+      for place in net.places {
+        if let m = dicMarking[place] {
+          if marking[place]! < m {
+            dicMarking[place] = marking[place]
+          }
+        } else {
+          dicMarking[place] = marking[place]
+        }
+      }
+    }
+    return [Marking(dicMarking, net: net)]
+  }
+  
+  /// minSet for minimum set is a function that removes all markings that could be redundant, i.e. a marking that is already included in another one.
+  /// It would mean that the greater marking is already contained in lower one. Thus, we keep only the lowest marking when some of them are included in each other.
+  /// - Parameter markings: The marking set
+  /// - Returns: The minimal set of markings with no inclusion between all of them.
+  public static func minSet(markings: Set<Marking>) -> Set<Marking> {
+    if markings.isEmpty {
+      return []
+    }
+    
+    // Extract markings that are included in other ones
+    var invalidMarkings: Set<Marking> = []
+    for marking1 in markings {
+      for marking2 in markings {
+        if marking1 != marking2 {
+          if marking2 <= marking1 {
+            invalidMarkings.insert(marking1)
+            break
+          }
+        }
+      }
+    }
+    
+    // The result is the subtraction between the original markings and thus that are already included
+    return markings.subtracting(invalidMarkings)
+  }
 }
 
 extension Marking: Equatable {

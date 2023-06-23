@@ -9,23 +9,16 @@ public struct SPS {
     self.values = values
   }
   
+//  private func ndls(ps: PS, sps: SPS) -> SPS {
+//    let (a,b) = ps.value
+//    let qa = PS.convMax(markings: a, net: <#T##PetriNet#>)
+//    return []
+//  }
+  
   /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the union is applied
   /// - Returns: The result of the union.
-//  public func union(_ sps: SPS) -> SPS {
-//    if self.isEmpty {
-//      return sps
-//    } else if sps.isEmpty{
-//      return self
-//    }
-//    let ps = self.values.first!
-//    var union = self.values.union(sps.values)
-//    if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
-//      union.remove(PS(value: ps.emptyValue, net: ps.net))
-//    }
-//    return SPS(values: union)
-//  }
   public func union(_ sps: SPS, isCanonical: Bool = true) -> SPS {
     if self.isEmpty {
       return sps
@@ -123,17 +116,8 @@ public struct SPS {
     if self.isEmpty {
       return self
     }
-    var res = SPS(values: [])
-    if let firstPs = self.first {
-      let negSPS = firstPs.not()
-      var spsWithoutFirst = self.values
-      spsWithoutFirst.remove(firstPs)
-      let rTemp = SPS(values: spsWithoutFirst).not()
-      for ps in negSPS {
-        res = res.union(ps.distribute(sps: rTemp))
-      }
-    }
-    return res
+    // The singleton containing the predicate structure that represents all markings subtract to the current sps
+    return SPS(values: [PS(value: self.first!.allValue, net: self.first!.net)]).subtract(self)
   }
   
   // All mergeable markings with ps
@@ -163,10 +147,10 @@ public struct SPS {
   ///   - sps: The right set of predicate structures
   /// - Returns: True if it is included, false otherwise
   public func isIncluded(_ sps: SPS) -> Bool {
+    if self == [] {
+      return true
+    }
     if sps == [] {
-      if self == [] {
-        return true
-      }
       return false
     }
     return self.subtract(sps) == []

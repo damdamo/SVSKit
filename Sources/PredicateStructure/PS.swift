@@ -14,14 +14,31 @@ public struct PS {
   /// The couple that represents the predicate structure
   public let value: (inc: Set<Marking>, exc: Set<Marking>)
   /// The related Petri net
-  public let net: PetriNet
+  private static var netStatic: PetriNet? = nil
+  
+  public var net: PetriNet {
+    return PS.netStatic!
+  }
     
   public var emptyValue: (inc: Set<Marking>, exc: Set<Marking>) {
     return ([net.zeroMarking()],[net.zeroMarking()])
   }
   
+  public var allValue: (inc: Set<Marking>, exc: Set<Marking>) {
+    return ([net.zeroMarking()], [])
+  }
+  
+  private init(value: (inc: Set<Marking>, exc: Set<Marking>)) {
+    if value.inc.isEmpty {
+      let couple = (Set([PS.netStatic!.zeroMarking()]), value.exc)
+      self.value = couple
+    } else {
+      self.value = value
+    }
+  }
+  
   public init(value: (inc: Set<Marking>, exc: Set<Marking>), net: PetriNet) {
-    self.net = net
+    PS.netStatic = net
     
     // If `inc` is an empty set, we replace it by the zero marking, containing 0 for all places
     // It corresponds to the marking accepting all markings.
@@ -52,48 +69,18 @@ public struct PS {
   /// - Returns: Returns the negation of the predicate structure
   public func not() -> SPS {
     if self.isEmpty() {
-      return [PS(value: ([net.zeroMarking()], []), net: net)]
+      return [PS(value: ([net.zeroMarking()], []))]
     }
     
     var sps: Set<PS> = []
     for el in value.inc {
       // .ps([], [el])
-      sps.insert(PS(value: ([net.zeroMarking()], [el]) , net: net))
+      sps.insert(PS(value: ([net.zeroMarking()], [el])))
     }
     for el in value.exc {
-      sps.insert(PS(value: ([el], []) , net: net))
+      sps.insert(PS(value: ([el], [])))
     }
     return SPS(values: sps)
-  }
-  
-  /// Change the target marking using the source marking, by using the source marking as a lower bound for each place. If a place of a target marking is lower than this lower bound, its value is changed to be equal to the lower bound. Otherwise, nothing is changed.
-  /// - Parameters:
-  ///   - sourceMarking: The reference marking
-  ///   - targetMarking: The marking to be changed if necessary
-  ///   - net: The current Petri net
-  /// - Returns: A new marking containing the modified target marking
-  public static func normaliseMarking(sourceMarking: Marking, targetMarking: Marking, net: PetriNet) -> Marking {
-    var marking = targetMarking
-    for place in net.places {
-      if sourceMarking[place]! > targetMarking[place]! {
-        marking[place]! = sourceMarking[place]!
-      }
-    }
-    return marking
-  }
-  
-  /// Change the target markings using the source marking, by using the source marking as a lower bound for each place. If a place of a target marking is lower than this lower bound, its value is changed to be equal to the lower bound. Otherwise, nothing is changed.
-  /// - Parameters:
-  ///   - sourceMarking: The reference marking
-  ///   - targetMarkings: The markings to be changed if necessary
-  ///   - net: The current Petri net
-  /// - Returns: A new set of markings containing the changed target markings
-  public static func normaliseMarkings(sourceMarking: Marking, targetMarkings: Set<Marking>, net: PetriNet) -> Set<Marking> {
-    var markingSet: Set<Marking> = []
-    for marking in targetMarkings {
-      markingSet.insert(PS.normaliseMarking(sourceMarking: sourceMarking, targetMarking: marking, net: net))
-    }
-    return markingSet
   }
   
   // nes: Normalise excluding set
@@ -104,12 +91,12 @@ public struct PS {
     for qb in self.value.exc {
       markingTemp = qb
       for qa in self.value.inc {
-        markingTemp = PS.convMax(markings: [qa, markingTemp], net: net).first!
+        markingTemp = Marking.convMax(markings: [qa, markingTemp], net: net).first!
       }
       excludingSet.insert(markingTemp)
     }
     
-    return PS(value: (self.value.inc, excludingSet), net: net)
+    return PS(value: (self.value.inc, excludingSet))
   }
   
   // mes: minimum excluding set
@@ -134,81 +121,7 @@ public struct PS {
     
     let newExcludingMarkings = ps.value.exc.subtracting(invalidMarkings)
     // The result is the subtraction between the original markings and thus that are already included
-    return PS(value: (ps.value.inc, newExcludingMarkings), net: net)
-  }
-  
-  /// convMax, for convergence maximal, is a function to compute a singleton containing a marking where each value is the maximum of all places for a given place.
-  /// This is the convergent point such as all marking of markings are included in this convergent marking.
-  /// - Parameter markings: The marking set
-  /// - Returns: The singleton that contains one marking where each place takes the maximum between all markings.
-  public static func convMax(markings: Set<Marking>, net: PetriNet) -> Set<Marking> {
-    if markings.isEmpty {
-      return []
-    }
-    
-    var dicMarking: [PlaceType: Int] = [:]
-    for marking in markings {
-      for place in net.places {
-        if let m = dicMarking[place] {
-          if m < marking[place]! {
-            dicMarking[place] = marking[place]
-          }
-        } else {
-          dicMarking[place] = marking[place]
-        }
-      }
-    }
-    return [Marking(dicMarking, net: net)]
-  }
-  
-  /// convMin, for convergence minimal, is a function to compute a singleton containing a marking where each value is the minimum of all places for a given place.
-  /// This is the convergent point such as the convergent marking is included in all the other markings.
-  /// - Parameter markings: The marking set
-  /// - Returns: The singleton that contains one marking where each place takes the minimum between all markings.
-  public static func convMin(markings: Set<Marking>, net: PetriNet) -> Set<Marking> {
-    if markings.isEmpty {
-      return []
-    }
-    
-    var dicMarking: [PlaceType: Int] = [:]
-    for marking in markings {
-      for place in net.places {
-        if let m = dicMarking[place] {
-          if marking[place]! < m {
-            dicMarking[place] = marking[place]
-          }
-        } else {
-          dicMarking[place] = marking[place]
-        }
-      }
-    }
-    return [Marking(dicMarking, net: net)]
-  }
-  
-  /// minSet for minimum set is a function that removes all markings that could be redundant, i.e. a marking that is already included in another one.
-  /// It would mean that the greater marking is already contained in lower one. Thus, we keep only the lowest marking when some of them are included in each other.
-  /// - Parameter markings: The marking set
-  /// - Returns: The minimal set of markings with no inclusion between all of them.
-  public func minSet(markings: Set<Marking>) -> Set<Marking> {
-    if markings.isEmpty {
-      return []
-    }
-    
-    // Extract markings that are included in other ones
-    var invalidMarkings: Set<Marking> = []
-    for marking1 in markings {
-      for marking2 in markings {
-        if marking1 != marking2 {
-          if marking2 <= marking1 {
-            invalidMarkings.insert(marking1)
-            break
-          }
-        }
-      }
-    }
-    
-    // The result is the subtraction between the original markings and thus that are already included
-    return markings.subtracting(invalidMarkings)
+    return PS(value: (ps.value.inc, newExcludingMarkings))
   }
   
   /// Returns the canonical form of a predicate structure. Let suppose (a,b) in PS
@@ -216,11 +129,11 @@ public struct PS {
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
   /// - Returns: The canonical form of the predicate structure.
   public func canonised() -> PS {
-    let convInclude = PS.convMax(markings: value.inc, net: net)
-    let mesPS = PS(value: (convInclude, self.value.exc), net: net).mes()
+    let convInclude = Marking.convMax(markings: value.inc, net: net)
+    let mesPS = PS(value: (convInclude, self.value.exc)).mes()
     if mesPS.isEmpty() {
       // In (a,b) ∈ PS, if a marking in b is included in a, it returns the empty predicate structure
-      return PS(value: emptyValue, net: net)
+      return PS(value: emptyValue)
     }
     return mesPS
   }
@@ -310,7 +223,7 @@ public struct PS {
       markingTemp = marking
     }
     
-    return PS(value: ([marking], bMarkings), net: net)
+    return PS(value: ([marking], bMarkings))
   }
   
   /// Encode a set of markings into a set of predicate structures.
@@ -365,19 +278,19 @@ public struct PS {
     let b = nesPS1.value.exc
     let c = nesPS2.value.inc
     let d = nesPS2.value.exc
-    let qa = PS.convMax(markings: a, net: net).first!
-    let qc = PS.convMax(markings: c, net: net).first!
+    let qa = Marking.convMax(markings: a, net: net).first!
+    let qc = Marking.convMax(markings: c, net: net).first!
     
     if b.contains(qc) {
       if d.isEmpty {
-        return [PS(value: (a, []), net: net).mes()]
+        return [PS(value: (a, [])).mes()]
       }
-      return [PS(value: (a, b.subtracting([qc]).union(d)), net: net).mes()]
+      return [PS(value: (a, b.subtracting([qc]).union(d))).mes()]
     } else if d.contains(qa) {
       if b.isEmpty {
-        return [PS(value: (c, []), net: net).mes()]
+        return [PS(value: (c, [])).mes()]
       }
-      return [PS(value: (c, d.subtracting([qa]).union(b)), net: net).mes()]
+      return [PS(value: (c, d.subtracting([qa]).union(b))).mes()]
     }
     return [self, ps]
   }
@@ -421,7 +334,7 @@ public struct PS {
         }
       }
     }
-    return PS(value: (aTemp, bTemp), net: net)
+    return PS(value: (aTemp, bTemp))
   }
   
   /// General revert operation where all transitions are applied
@@ -505,7 +418,7 @@ public struct PS {
 
     var res: Set<PS> = []
 
-    var ps1 = PS(value: (a, c.union(b)), net: net)
+    var ps1 = PS(value: (a, c.union(b)))
     if isCanonical {
       ps1 = ps1.canonised()
     }
@@ -514,7 +427,7 @@ public struct PS {
     for marking in d {
       var newA = a
       newA.insert(marking)
-      ps1 = PS(value: (newA,b), net: net)
+      ps1 = PS(value: (newA,b))
       if isCanonical {
         ps1 = ps1.canonised()
       }
@@ -530,44 +443,7 @@ public struct PS {
     }
     return SPS(values: res)
   }
-//  public func subtract(_ ps: PS, isCanonical: Bool = true) -> SPS {
-//    if self == ps || self.value == emptyValue {
-//      return []
-//    } else if ps.value == emptyValue {
-//      return SPS(values: [self])
-//    }
-//
-//    let intersect = self.intersection(ps)
-//    if intersect.value == emptyValue {
-//      return [self]
-//    }
-//
-//    let a = self.value.inc
-//    let b = self.value.exc
-//    let c = intersect.value.inc
-//    let d = intersect.value.exc
-//
-//    var res: Set<PS> = []
-//
-//    let ps1 = PS(value: (a, c.union(b)), net: net).canonised()
-//    res = res.union(SPS(values: [ps1]))
-//
-//    for marking in d {
-//      var newA = a
-//      newA.insert(marking)
-//      let ps = PS(value: (newA,b), net: net).canonised()
-//      res.insert(ps)
-//    }
-//
-//    if isCanonical {
-//      for ps in res {
-//        if ps.isEmpty() {
-//          res.remove(ps)
-//        }
-//      }
-//    }
-//    return SPS(values: res)
-//  }
+
   
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
   /// - Parameter sps: The set of predicate structures to subtract

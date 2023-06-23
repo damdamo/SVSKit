@@ -73,7 +73,19 @@ final class CTLTests: XCTestCase {
     let ctlFormula = CTL(formula: .EF(.and(.isFireable("t4"), .isFireable("t5"))), net: net)
     let sps = ctlFormula.eval()
 
-    XCTAssertTrue(equivSPS.isEquiv(sps.simplified()))
+    let e = equivSPS
+    let s = sps//.simplified()
+    
+    XCTAssertTrue(e.isEquiv(sps))
+    print(e)
+    print("-------------")
+    print(s)
+    print("-------------")
+    print(e.isIncluded(s))
+    print(e.subtract(s))
+    print("-------------")
+    print(s.isIncluded(e))
+    print(s.subtract(e))
   }
 
   func testCTLEval1() {
