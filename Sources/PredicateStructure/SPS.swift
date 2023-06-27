@@ -86,14 +86,12 @@ public struct SPS {
   
   /// Lowest predicate structure, containing the singleton marking with the lowest marking using the total function order leq from marking.
   private func lowPs(net: PetriNet) -> PS {
-    
-    var psTemp: PS = PS(value: ([net.zeroMarking()], [net.zeroMarking()]), net: net)
-    
+        
     if self == [] {
-      return psTemp
+      return PS(value: ([net.zeroMarking()], [net.zeroMarking()]), net: net)
     }
     
-    psTemp = self.first!
+    var psTemp = self.first!
     let sps = SPS(values: self.values.subtracting([psTemp]))
     
     for ps in sps {
@@ -134,7 +132,7 @@ public struct SPS {
             let reducedPS: PS = PS(value: (a, b.union(qMax)), net: ps.net).mes()
             
             let ndlsSPSReduced: SPS = SPS(values: ndlsSps.values.subtracting([psp]))
-            let addTemp = ndlsSPSReduced.add(reducedPS)
+            let addTemp = ndlsSPSReduced.add(reducedPS, canonicityLevel: canonicityLevel)
             
             let newPSMerged: SPS = psp.merge(PS(value: (qMax, b), net: ps.net))
             let spsWithoutNdls: Set<PS> = self.values.subtracting(ndlsSps.values)
@@ -146,7 +144,7 @@ public struct SPS {
             if ndlsSps == [] && ndusSps != [] {
               res = SPS(values: spsWithoutNdus.values.union([ps]))
             } else {
-              res = spsWithoutNdus.add(ps)
+              res = spsWithoutNdus.add(ps, canonicityLevel: canonicityLevel)
             }
             for psp in ndusSps {
               res = res.add(psp, canonicityLevel: canonicityLevel)
@@ -185,8 +183,9 @@ public struct SPS {
     
     let selfWithoutPS = SPS(values: self.values.subtracting([ps]))
     let addPsToSps = sps.add(ps, canonicityLevel: canonicityLevel)
-    print(addPsToSps)
-    return selfWithoutPS.union(addPsToSps)
+//    print("OKKKKK")
+//    print(addPsToSps)
+    return selfWithoutPS.union(addPsToSps, canonicityLevel: canonicityLevel)
   }
 //  public func union(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
 //    if self.isEmpty {
