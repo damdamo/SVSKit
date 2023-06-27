@@ -61,7 +61,7 @@ final class PredicateStructureTests: XCTestCase {
     let ps2 = PS(value: ([marking3], [marking4]), net: net)
 
     XCTAssertEqual(SPS(values: [ps1]).union([PS(value: ps1.emptyValue, net: net)], canonicityLevel: .full), [ps1])
-    XCTAssertEqual(SPS(values: [ps1]).intersection([ps2], canonicityLevel: .full), [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)])
+    XCTAssertEqual(SPS(values: [ps1]).intersection([ps2], canonicityLevel: .none), [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)])
 
     let ps3 = PS(value: ([marking2], [marking3]), net: net)
 
@@ -70,7 +70,7 @@ final class PredicateStructureTests: XCTestCase {
       PS(value: ([marking3, marking2], [marking3, marking4]), net: net),
     ]
     
-    XCTAssertEqual(SPS(values: [ps1,ps2]).intersection([ps3], canonicityLevel: .full), expectedSPS)
+    XCTAssertEqual(SPS(values: [ps1,ps2]).intersection([ps3], canonicityLevel: .none), expectedSPS)
   }
 
   func testSPS2() {
