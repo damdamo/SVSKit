@@ -789,34 +789,86 @@ final class PredicateStructureTests: XCTestCase {
 //    print(sps4.not().isEquiv(spsAll.subtract(sps4)))
 //  }
   
-    func testCanonicalSPS() {
-      let net = PetriNet(
-        places: ["p0", "p1", "p2"],
-        transitions: ["t0"],
-        arcs: .pre(from: "p0", to: "t0", labeled: 1),
-        .post(from: "t0", to: "p1", labeled: 1),
-        capacity: ["p0": 10, "p1": 10, "p2": 10]
-      )
+  func testUnion2() {
+//  p1: {
+//   ([[p0: 0, p1: 0]], [[p0: 0, p1: 1], [p0: 1, p1: 0]]),
+//   ([[p0: 0, p1: 2]], [])
+//  }
+//  p2: {
+//   ([[p0: 1, p1: 0]], []),
+//   ([[p0: 0, p1: 2]], [[p0: 1, p1: 2]])
+//  }
+//  p3: {
+//   ([[p0: 1, p1: 0]], []),
+//   ([[p0: 0, p1: 2]], [[p0: 1, p1: 2]])
+//  }
+    
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    let m1 = Marking(["p0": 0, "p1": 2], net: net)
+    let m2 = Marking(["p0": 1, "p1": 2], net: net)
+    
+    let m3 = Marking(["p0": 1, "p1": 2], net: net)
+    let m4 = Marking(["p0": 0, "p1": 1], net: net)
+    let m5 = Marking(["p0": 1, "p1": 0], net: net)
+    let m6 = Marking(["p0": 0, "p1": 0], net: net)
+    
+    let ps1 = PS(value: ([m6], [m4, m5]), net: net)
+    let ps2 = PS(value: ([m1], []), net: net)
+    
+    let sps1 = SPS(values: [ps1, ps2])
+    
+    let ps3 = PS(value: ([m5], []), net: net)
+    let ps4 = PS(value: ([m1], [m3]), net: net)
+    
+//    let sps2 = SPS(values: [ps3, ps4])
+    let sps2 = SPS(values: [ps3])
+    
+//    print(sps1.union(sps2, canonicityLevel: .semi))
+    
+//    print(sps2)
+//    print(ps1)
+//    print("----------")
+//    print(sps2.add(ps1, canonicityLevel: .semi))
+//    print(sps2.add(ps1, canonicityLevel: .semi).add(ps2, canonicityLevel: .semi))
+    
+    print(ps3)
+    print(ps1)
+    print(ps3.merge(ps1))
+  }
   
-      let marking1 = Marking(["p0": 3, "p1": 1,  "p2": 2], net: net)
-      let marking2 = Marking(["p0": 3, "p1": 4,  "p2": 4], net: net)
-      let marking3 = Marking(["p0": 3, "p1": 9,  "p2": 2], net: net)
-      let marking4 = Marking(["p0": 1, "p1": 3,  "p2": 3], net: net)
-      let marking5 = Marking(["p0": 3, "p1": 3,  "p2": 3], net: net)
-      let marking6 = Marking(["p0": 3, "p1": 9,  "p2": 3], net: net)
-      
-      
-  
-      let ps1 = PS(value: ([marking1],[marking2, marking3]), net: net)
-      let ps2 = PS(value: ([marking4],[marking5]), net: net)
-      
-      let ps3 = PS(value: ([marking1],[marking5, marking3]), net: net)
-      let ps4 = PS(value: ([marking4],[marking2, marking6]), net: net)
-      
-      let sps1 = SPS(values: [ps1, ps2])
-      let sps2 = SPS(values: [ps3, ps4])
-      print(sps1.isEquiv(sps2))
-      
-    }
+  func testCanonicalSPS() {
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1),
+      capacity: ["p0": 10, "p1": 10, "p2": 10]
+    )
+
+    let marking1 = Marking(["p0": 3, "p1": 1,  "p2": 2], net: net)
+    let marking2 = Marking(["p0": 3, "p1": 4,  "p2": 4], net: net)
+    let marking3 = Marking(["p0": 3, "p1": 9,  "p2": 2], net: net)
+    let marking4 = Marking(["p0": 1, "p1": 3,  "p2": 3], net: net)
+    let marking5 = Marking(["p0": 3, "p1": 3,  "p2": 3], net: net)
+    let marking6 = Marking(["p0": 3, "p1": 9,  "p2": 3], net: net)
+    
+    
+
+    let ps1 = PS(value: ([marking1],[marking2, marking3]), net: net)
+    let ps2 = PS(value: ([marking4],[marking5]), net: net)
+    
+    let ps3 = PS(value: ([marking1],[marking5, marking3]), net: net)
+    let ps4 = PS(value: ([marking4],[marking2, marking6]), net: net)
+    
+    let sps1 = SPS(values: [ps1, ps2])
+    let sps2 = SPS(values: [ps3, ps4])
+    print(sps1.isEquiv(sps2))
+    
+  }
   
 }

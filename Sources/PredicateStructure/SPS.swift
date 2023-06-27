@@ -184,6 +184,7 @@ public struct SPS {
     }
     
     let ps = self.values.first!
+    print(ps)
     
     if canonicityLevel == .none {
       var union = self.values.union(sps.values)

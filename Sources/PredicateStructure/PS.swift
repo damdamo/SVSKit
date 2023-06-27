@@ -281,14 +281,8 @@ public struct PS {
     let qc = Marking.convMax(markings: c, net: net).first!
     
     if b.contains(qc) {
-      if d.isEmpty {
-        return [PS(value: (a, [])).mes()]
-      }
       return [PS(value: (a, b.subtracting([qc]).union(d))).mes()]
     } else if d.contains(qa) {
-      if b.isEmpty {
-        return [PS(value: (c, [])).mes()]
-      }
       return [PS(value: (c, d.subtracting([qa]).union(b))).mes()]
     }
     return [self, ps]

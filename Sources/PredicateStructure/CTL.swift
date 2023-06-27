@@ -355,7 +355,16 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      print("res before: \(res)")
+      let p1 = res.revertTilde(canonicityLevel: canonicityLevel)
+      let p2 = res.revert(canonicityLevel: canonicityLevel)
+      let p3 = p1.union(p2, canonicityLevel: canonicityLevel)
+      print("p1: \(p1)")
+      print("p2: \(p2)")
+      print("p3: \(p2)")
+      res = phi.intersection(p3, canonicityLevel: canonicityLevel)
+//      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      print("res after: \(res)")
       if simplified {
         res = res.simplified()
       }
