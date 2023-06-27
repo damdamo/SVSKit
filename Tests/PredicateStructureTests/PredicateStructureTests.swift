@@ -60,8 +60,8 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS(value: ([marking1], [marking2]), net: net)
     let ps2 = PS(value: ([marking3], [marking4]), net: net)
 
-    XCTAssertEqual(SPS(values: [ps1]).union([PS(value: ps1.emptyValue, net: net)]), [ps1])
-    XCTAssertEqual(SPS(values: [ps1]).intersection([ps2], canonicityLevel: .none), [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)])
+    XCTAssertEqual(SPS(values: [ps1]).union([PS(value: ps1.emptyValue, net: net)], canonicityLevel: .full), [ps1])
+    XCTAssertEqual(SPS(values: [ps1]).intersection([ps2], canonicityLevel: .full), [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)])
 
     let ps3 = PS(value: ([marking2], [marking3]), net: net)
 
@@ -70,7 +70,7 @@ final class PredicateStructureTests: XCTestCase {
       PS(value: ([marking3, marking2], [marking3, marking4]), net: net),
     ]
     
-    XCTAssertEqual(SPS(values: [ps1,ps2]).intersection([ps3], canonicityLevel: .none), expectedSPS)
+    XCTAssertEqual(SPS(values: [ps1,ps2]).intersection([ps3], canonicityLevel: .full), expectedSPS)
   }
 
   func testSPS2() {
@@ -87,7 +87,7 @@ final class PredicateStructureTests: XCTestCase {
     let sps: SPS = [PS(value: ([marking1], [marking2]), net: net), PS(value: ([marking3], [marking4]), net: net)]
     let expectedSPS: SPS = [PS(value: ([net.zeroMarking()], [marking1, marking3]), net: net), PS(value: ([marking4], []), net: net)]
 
-    XCTAssertEqual(sps.not(), expectedSPS)
+    XCTAssertEqual(sps.not(canonicityLevel: .full), expectedSPS)
   }
 
   func testSPSObservator() {
@@ -303,10 +303,10 @@ final class PredicateStructureTests: XCTestCase {
     let ps3 = PS(value: ([m1],[m5]), net: net)
     let ps1p = PS(value: ([m1p],[m2p]), net: net)
     
-    XCTAssertEqual(ps1.subtract(ps1), [])
+    XCTAssertEqual(ps1.subtract(ps1, canonicityLevel: .full), [])
     // ({(2,3)}, {(0,8)}) - ({(0,6)}, {(3,3)}) = {({(2,3)}, {(2,6)}), ({(3,6)}, {(3,8)})}
-    XCTAssertEqual(ps1.subtract(ps2), SPS(values: [ps3, ps1p]))
-    XCTAssertEqual(ps1.subtract([ps2]), SPS(values: [ps3, ps1p]))
+    XCTAssertEqual(ps1.subtract(ps2, canonicityLevel: .full), SPS(values: [ps3, ps1p]))
+    XCTAssertEqual(ps1.subtract([ps2], canonicityLevel: .full), SPS(values: [ps3, ps1p]))
     
     let m6 = Marking(["p0": 1, "p1": 2], net: net)
     let m7 = Marking(["p0": 8, "p1": 8], net: net)
@@ -318,10 +318,10 @@ final class PredicateStructureTests: XCTestCase {
     let ps7 = PS(value: ([m7],[]), net: net)
     
     // ({(1,2)}, {}) - ({(0,6)}, {(8,8)}) = {({(1,2)}, {(1,6)}), ({(8,8)}, {})}
-    XCTAssertEqual(ps4.subtract(ps5), SPS(values: [ps6,ps7]))
-    XCTAssertEqual(ps4.subtract([ps5]), SPS(values: [ps6,ps7]))
+    XCTAssertEqual(ps4.subtract(ps5, canonicityLevel: .full), SPS(values: [ps6,ps7]))
+    XCTAssertEqual(ps4.subtract([ps5], canonicityLevel: .full), SPS(values: [ps6,ps7]))
     // ({(1,2)}, {}) - ({(0,6)}, {}) = {({(1,2)}, {(1,6)})}
-    XCTAssertEqual(ps4.subtract(ps5p), SPS(values: [ps6]))
+    XCTAssertEqual(ps4.subtract(ps5p, canonicityLevel: .full), SPS(values: [ps6]))
     
     let m9 = Marking(["p0": 0, "p1": 4], net: net)
     let m10 = Marking(["p0": 5, "p1": 3], net: net)
@@ -335,11 +335,11 @@ final class PredicateStructureTests: XCTestCase {
     
     
     // ({(1,2)}, {(0,4)}) - ({(1,1)}, {(5,3)}) = {({(5,3)}, {(5,4)})}
-    XCTAssertEqual(ps8.subtract(ps9), [ps10])
+    XCTAssertEqual(ps8.subtract(ps9, canonicityLevel: .full), [ps10])
     
     let ps11 = PS(value: ([m10],[]), net: net)
     // ({(1,2)}, {(0,4)}) - {({(1,1)}, {(5,3)}), ({(5,3)}, {})} = {}
-    XCTAssertEqual(ps8.subtract([ps9,ps11]), [])
+    XCTAssertEqual(ps8.subtract([ps9,ps11], canonicityLevel: .full), [])
     
     let m13 = Marking(["p0": 5, "p1": 5], net: net)
     let m14 = Marking(["p0": 10, "p1": 10], net: net)
@@ -351,7 +351,7 @@ final class PredicateStructureTests: XCTestCase {
     let ps13 = PS(value: ([m15],[m16]), net: net)
     let ps14 = PS(value: ([m17],[]), net: net)
     let ps15 = PS(value: ([m16],[m17]), net: net)
-    XCTAssertEqual(ps12.subtract([ps13, ps14]), [ps15])
+    XCTAssertEqual(ps12.subtract([ps13, ps14], canonicityLevel: .full), [ps15])
   }
   
   func testSubtraction2() {
@@ -370,7 +370,7 @@ final class PredicateStructureTests: XCTestCase {
     let ps2 = PS(value: ([],[m1,m2]), net: net)
     
     // ({}, {(2,0,0)}) - ({}, {(2,0,0), (0,5,1)}) = {}
-    XCTAssertEqual(ps2.subtract(ps1), [])
+    XCTAssertEqual(ps2.subtract(ps1, canonicityLevel: .full), [])
     
     // {([[p0: 8, p1: 9, p2: 0]], [[p0: 8, p1: 9, p2: 1]]), ([[p0: 4, p1: 6, p2: 0]], [[p0: 4, p1: 6, p2: 1]])} - ([[p0: 4, p1: 6, p2: 0]], [[p0: 4, p1: 6, p2: 1]])
     let m3 = Marking(["p0": 8, "p1": 9, "p2": 0], net: net)
@@ -411,7 +411,7 @@ final class PredicateStructureTests: XCTestCase {
     // {({(0,3)}, {}), ({(1,1)}, {})} - {({(0,4)}, {}), ({(1,2)}, {}), ({(2,1)}, {})}
     // =
     // {({(0,3)}, {}), ({(1,1)}, {})} ∩ ¬({({(0,4)}, {}), ({(1,2)}, {}), ({(2,1)}, {})})
-    XCTAssertEqual(sps1.subtract(sps2), sps1.intersection(sps2.not()))
+    XCTAssertEqual(sps1.subtract(sps2, canonicityLevel: .full), sps1.intersection(sps2.not(canonicityLevel: .full), canonicityLevel: .full))
     
     let m6 = Marking(["p0": 10, "p1": 10], net: net)
     let m7 = Marking(["p0": 5, "p1": 0], net: net)
@@ -427,7 +427,7 @@ final class PredicateStructureTests: XCTestCase {
     let sps5 = SPS(values: [ps8,ps9])
     
     // ({}, {(10,10)}) - ({}, {(5,0),(0,5)})
-    XCTAssertEqual(sps3.subtract(sps4), sps5)
+    XCTAssertEqual(sps3.subtract(sps4, canonicityLevel: .full), sps5)
   }
     
   func testMergePS() {
@@ -502,8 +502,8 @@ final class PredicateStructureTests: XCTestCase {
     let sps2 = SPS(values: [ps2])
     let sps3 = SPS(values: [ps1, ps2])
     
-    XCTAssertEqual(sps1.union(sps2), sps3)
-    XCTAssertEqual(sps2.union(sps1), sps3)
+    XCTAssertEqual(sps1.union(sps2, canonicityLevel: .full), sps3)
+    XCTAssertEqual(sps2.union(sps1, canonicityLevel: .full), sps3)
     
 //    let m3 = Marking(["p0": 9, "p1": 9], net: net)
 //    let m4 = Marking(["p0": 10, "p1": 10], net: net)
@@ -574,7 +574,7 @@ final class PredicateStructureTests: XCTestCase {
     let sps5 = SPS(values: [ps7])
 
     let expectedSPS2 = SPS(values: [ps8])
-    XCTAssertEqual(expectedSPS2, sps4.union(sps5))
+    XCTAssertEqual(expectedSPS2, sps4.union(sps5, canonicityLevel: .full))
     
     let ps9 = PS(value: ([m7],[m9]), net: net)
     let ps10 = PS(value: ([m8],[m10]), net: net)
@@ -584,7 +584,7 @@ final class PredicateStructureTests: XCTestCase {
 
     let expectedSPS3 = SPS(values: [ps9, ps10])
     
-    XCTAssertEqual(expectedSPS3, sps6.union(sps7))
+    XCTAssertEqual(expectedSPS3, sps6.union(sps7, canonicityLevel: .full))
   }
   
 //  func testThesis() {

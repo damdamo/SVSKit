@@ -7,9 +7,6 @@ public struct CTL {
   let formula: Formula
   /// Related Petri net
   private static var netStatic: PetriNet? = nil
-  /// Option to decide how to compute AX, either by using the negation (¬ EX ¬) when set to true, or by subtracting the current solution to the whole state ( {({(0, 0, ...)}, {})} \ sps) set to false.
-  /// Set to false
-  private static var rewritedStatic: Bool = false
   /// Option to decide if the simplification function should be called during execution. It removes redundancy in sps and ps.
   /// Set to true
   private static var simplifiedStatic: Bool = true
@@ -17,13 +14,12 @@ public struct CTL {
   /// Set to false
   private static var debugStatic: Bool = false
   
+  private var canonicityLevel: CanonicityLevel = .semi
+  
   public var net: PetriNet {
     return CTL.netStatic!
   }
-  
-  var rewrited: Bool {
-    return CTL.rewritedStatic
-  }
+
   var simplified: Bool {
     return CTL.simplifiedStatic
   }
@@ -31,12 +27,13 @@ public struct CTL {
     return CTL.debugStatic
   }
   
-  public init(formula: Formula, net: PetriNet, rewrited: Bool = false, simplified: Bool = true, debug: Bool = false) {
+  public init(formula: Formula, net: PetriNet, canonicityLevel: CanonicityLevel, simplified: Bool = true, debug: Bool = false) {
     self.formula = formula
     CTL.netStatic = net
-    CTL.rewritedStatic = rewrited
     CTL.simplifiedStatic = simplified
     CTL.debugStatic = debug
+    
+    self.canonicityLevel = canonicityLevel
   }
   
   private init(formula: Formula) {
@@ -188,22 +185,22 @@ public struct CTL {
     case .and(let formula1, let formula2):
       let ctl1 = CTL(formula: formula1)
       let ctl2 = CTL(formula: formula2)
-      res = ctl1.eval().intersection(ctl2.eval())
+      res = ctl1.eval().intersection(ctl2.eval(), canonicityLevel: canonicityLevel)
     case .or(let formula1, let formula2):
       let ctl1 = CTL(formula: formula1)
       let ctl2 = CTL(formula: formula2)
-      res = ctl1.eval().union(ctl2.eval())
+      res = ctl1.eval().union(ctl2.eval(), canonicityLevel: canonicityLevel)
     case .not(let formula):
       let ctl1 = CTL(formula: formula)
-      res = ctl1.eval().not()
+      res = ctl1.eval().not(canonicityLevel: canonicityLevel)
     case .deadlock:
       res = SPS.deadlock(net: net)
     case .EX(let formula):
       let ctl1 = CTL(formula: formula)
-      res = ctl1.eval().revert()
+      res = ctl1.eval().revert(canonicityLevel: canonicityLevel)
     case .AX(let formula):
       let ctl1 = CTL(formula: formula)
-      res = ctl1.eval().revertTilde(rewrited: rewrited)
+      res = ctl1.eval().revertTilde(canonicityLevel: canonicityLevel)
     case .EF(let formula):
       let ctl1 = CTL(formula: formula)
       res = ctl1.evalEF()
@@ -238,7 +235,7 @@ public struct CTL {
   func evalCardinality() -> SPS {
     switch formula {
     case .intExpr(e1: .value(_), operator: _, e2: .value(_)):
-      return CTL(formula: .true, net: net, rewrited: rewrited, simplified: simplified).eval()
+      return CTL(formula: .true, net: net, canonicityLevel: canonicityLevel, simplified: simplified).eval()
     case .intExpr(e1: .tokenCount(_), operator: _, e2: .tokenCount(_)):
       fatalError("The tool does not manage a cardinality comparison between places")
     case .intExpr(e1: let e1, operator: .leq, e2: let e2):
@@ -317,7 +314,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.union(res.revert())
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -337,7 +334,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -357,7 +354,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
+      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -377,7 +374,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.intersection(res.revertTilde(rewrited: rewrited))
+      res = phi.intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -399,7 +396,7 @@ public struct CTL {
     var resTemp: SPS
     repeat {
       resTemp = res
-      res = psi.union(phi.intersection(res.revert()))
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -421,7 +418,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = psi.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -698,7 +695,7 @@ extension CTL {
       return (ctl2.eval(marking: marking))
     case .not(let formula1):
       let ctl1 = CTL(formula: formula1)
-      return ctl1.eval().not().contains(marking: marking)
+      return ctl1.eval().not(canonicityLevel: canonicityLevel).contains(marking: marking)
     case .deadlock:
       return SPS.deadlock(net: net).contains(marking: marking)
     case .EX(let formula1):
@@ -706,13 +703,13 @@ extension CTL {
         return false
       }
       let ctl1 = CTL(formula: formula1)
-      return ctl1.eval().revert().contains(marking: marking)
+      return ctl1.eval().revert(canonicityLevel: canonicityLevel).contains(marking: marking)
     case .AX(let formula1):
       if SPS.deadlock(net: net).contains(marking: marking) {
         return true
       }
       let ctl1 = CTL(formula: formula1)
-      return ctl1.eval().revertTilde(rewrited: rewrited).contains(marking: marking)
+      return ctl1.eval().revertTilde(canonicityLevel: canonicityLevel).contains(marking: marking)
     case .EF(let formula1):
       let ctl1 = CTL(formula: formula1)
       return ctl1.evalEF(marking: marking)
@@ -752,7 +749,7 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = phi.union(res.revert())
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
 
       if simplified {
         res = res.simplified()
@@ -781,7 +778,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = phi.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -807,7 +804,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = phi.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
+      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -833,7 +830,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = phi.intersection(res.revertTilde(rewrited: rewrited))
+      res = phi.intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -869,7 +866,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = psi.union(phi.intersection(res.revert()))
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -905,7 +902,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = psi.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -929,7 +926,7 @@ extension CTL: CustomStringConvertible {
     var res: String = ""
     res.append("CTL formula: \(formula.description)\n")
     res.append("Options: \n")
-    res.append("  Rewrited: \(rewrited)\n")
+    res.append("  Canonicity level: \(canonicityLevel)\n")
     res.append("  Simplified: \(simplified)\n")
     res.append("  Debug: \(debug)")
     return res

@@ -5,6 +5,18 @@ public struct SPS {
   /// The set of predicate structures
   public let values: Set<PS>
   
+//  /// Canonicity level
+//  private static var canonicityLevelStatic: CanonicityLevel = .semi
+//
+//  public var canonicityLevel: CanonicityLevel {
+//    return SPS.canonicityLevelStatic
+//  }
+  
+//  public init(values: Set<PS>, canonicityLevel: CanonicityLevel = .full) {
+//    self.values = values
+//    SPS.canonicityLevelStatic = canonicityLevel
+//  }
+  
   public init(values: Set<PS>) {
     self.values = values
   }
@@ -105,7 +117,7 @@ public struct SPS {
     return psTemp
   }
   
-  public func add(_ ps: PS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
+  public func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
     if self == [] {
       return SPS(values: [ps])
     }
@@ -116,7 +128,7 @@ public struct SPS {
     
     let spsSingleton = SPS(values: [ps])
     
-    if spsSingleton.intersection(self, canonicityLevel: .semi) == [] {
+    if spsSingleton.intersection(self, canonicityLevel: canonicityLevel) == [] {
       let mergeableSPS: SPS = self.mergeable(ps)
       if mergeableSPS == [] {
         if canonicityLevel == .full {
@@ -156,7 +168,7 @@ public struct SPS {
       let psp = mergeableSPS.lowPs(net: ps.net)
       return SPS(values: ps.merge(psp).values.union(self.values.subtracting([psp])))
     }
-    let spsMinusPs: SPS = self.subtract(spsSingleton)
+    let spsMinusPs: SPS = self.subtract(spsSingleton, canonicityLevel: canonicityLevel)
     return spsMinusPs.add(ps, canonicityLevel: canonicityLevel)
   }
   
@@ -164,7 +176,7 @@ public struct SPS {
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the union is applied
   /// - Returns: The result of the union.
-  public func union(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
+  public func union(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
     if self.isEmpty {
       return sps
     } else if sps.isEmpty{
@@ -235,7 +247,7 @@ public struct SPS {
   ///   - sps: The set of predicate structures on which the intersection is applied
   ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
   /// - Returns: The result of the intersection.
-  public func intersection(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
+  public func intersection(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
     if self.isEmpty || sps.isEmpty {
       return []
     }
@@ -265,7 +277,7 @@ public struct SPS {
   /// Subtract two sets of predicate structures
   /// - Parameter sps: The set of predicate structures to subtract
   /// - Returns: The resulting set of predicate structures
-  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
+  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
     if self == sps || self.isEmpty {
       return []
     } else if sps.isEmpty {
@@ -273,15 +285,10 @@ public struct SPS {
     }
     
     var res: Set<PS> = []
-    var isCanonical: Bool = true
-    
-    if canonicityLevel == .none {
-      isCanonical = false
-    }
     
     for ps1 in self {
       if ps1.canonised().value != ps1.emptyValue {
-        res = res.union(ps1.subtract(sps, isCanonical: isCanonical).values)
+        res = res.union(ps1.subtract(sps, canonicityLevel: canonicityLevel).values)
 //        res = res.union(ps1.subtract(sps, isCanonical: isCanonical))
       }
     }
@@ -291,12 +298,12 @@ public struct SPS {
   
   /// Compute the negation of a set of predicate structures. This is the result of a combination of all elements inside a predicate structure with each element of the other predicate structures. E.g.: notSPS({([q1], [q2]), ([q3], [q4]), ([q5], [q6])}) = {([],[q1,q3,q5]), ([q6],[q1,q3]), ([q4],[q1,q5]), ([q4,q6],[q1]), ([q2],[q3,q5]), ([q2, q6],[q3]), ([q2, q4],[q5]), ([q2, q4,q6],[])}
   /// - Returns: The negation of a set of predicate structures
-  public func not() -> SPS {
+  public func not(canonicityLevel: CanonicityLevel) -> SPS {
     if self.isEmpty {
       return self
     }
     // The singleton containing the predicate structure that represents all markings subtract to the current sps
-    return SPS(values: [PS(value: self.first!.allValue, net: self.first!.net)]).subtract(self)
+    return SPS(values: [PS(value: self.first!.allValue, net: self.first!.net)]).subtract(self, canonicityLevel: canonicityLevel)
   }
   
   // All mergeable markings with ps
@@ -332,7 +339,7 @@ public struct SPS {
     if sps == [] {
       return false
     }
-    return self.subtract(sps) == []
+    return self.subtract(sps, canonicityLevel: .semi) == []
   }
   
   /// Are two sets of predicate structures equivalent ?
@@ -364,33 +371,31 @@ public struct SPS {
   
   /// Compute the revert function on all markings of each predicate structures
   /// - Returns: A new set of predicate structures after the revert application
-  public func revert() -> SPS {
+  public func revert(canonicityLevel: CanonicityLevel) -> SPS {
     var res: SPS = []
     for ps in self {
-      res = res.union(ps.revert())
+      res = res.union(ps.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
     }
     return res
   }
   
   /// An extension of the revert function that represents AX in CTL logic.
   /// - Returns: A new set of predicate structures
-  public func revertTilde(rewrited: Bool) -> SPS {
+  public func revertTilde(canonicityLevel: CanonicityLevel) -> SPS {
     
     if self.values.isEmpty {
       return []
     }
     
     // AX Φ ≡ ¬ EX ¬ Φ
-    if rewrited {
-      return self.not().revert().not()
-    }
+    return self.not(canonicityLevel: canonicityLevel).revert(canonicityLevel: canonicityLevel).not(canonicityLevel: canonicityLevel)
     
-    // The trick is to take the predicate structure containing all markings, and to apply the subtraction with the current sps to get the negation.
-    let net = self.values.first!.net
-    let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
-    let applyNot = spsAll.subtract(self)
-    let applyRevert = applyNot.revert()
-    return spsAll.subtract(applyRevert)
+//    // The trick is to take the predicate structure containing all markings, and to apply the subtraction with the current sps to get the negation.
+//    let net = self.values.first!.net
+//    let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
+//    let applyNot = spsAll.subtract(self)
+//    let applyRevert = applyNot.revert()
+//    return spsAll.subtract(applyRevert)
   }
   
   /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:
@@ -480,7 +485,7 @@ public struct SPS {
   /// Create a set of predicate structures to represent all markings such as no transition are fireable.
   /// - Parameter net: The Petri net
   /// - Returns: The corresponding set of predicate structures
-  public static func deadlock(net: PetriNet) -> SPS {
+  public static func deadlock(net: PetriNet, canonicityLevel: CanonicityLevel = .semi) -> SPS {
     var markings: Set<Marking> = []
     for transition in net.transitions {
       markings.insert(net.inputMarkingForATransition(transition: transition))
