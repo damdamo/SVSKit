@@ -17,10 +17,10 @@ final class MarkingTests: XCTestCase {
     let marking2 = Marking(["p1": 1, "p2": 42, "p3": 2], net: net)
     let marking3 = Marking(["p1": 4, "p2": 5, "p3": 9], net: net)
     
-    XCTAssertTrue(Marking.leq(lhs: marking2, rhs: marking1))
-    XCTAssertFalse(Marking.leq(lhs: marking1, rhs: marking2))
-    XCTAssertTrue(Marking.leq(lhs: marking1, rhs: marking3))
-    XCTAssertTrue(Marking.leq(lhs: marking1, rhs: marking1))
+    XCTAssertTrue(marking2.leq(marking1))
+    XCTAssertFalse(marking1.leq(marking2))
+    XCTAssertTrue(marking1.leq(marking3))
+    XCTAssertTrue(marking1.leq(marking1))
     }
   
 }

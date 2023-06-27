@@ -46,14 +46,14 @@ public struct Marking {
   }
   
   /// <= and leq are different. <= is a comparable operator to know if a marking is included in another one. leq is a function to give an order to all markings, even if they are not comparable.
-  public static func leq(lhs: Marking, rhs: Marking) -> Bool {
-    if lhs == rhs {
+  public func leq(_ rhs: Marking) -> Bool {
+    if self == rhs {
       return true
     }
-    for (key, _) in lhs.storage.sorted(by: {$0.key < $1.key}) {
-      if lhs[key]! < rhs[key]! {
+    for (key, _) in self.storage.sorted(by: {$0.key < $1.key}) {
+      if self[key]! < rhs[key]! {
         return true
-      } else if rhs[key]! < lhs[key]! {
+      } else if rhs[key]! < self[key]! {
         return false
       }
     }
@@ -67,6 +67,10 @@ public struct Marking {
   public static func convMax(markings: Set<Marking>, net: PetriNet) -> Set<Marking> {
     if markings.isEmpty {
       return []
+    }
+    
+    if markings.count == 1 {
+      return markings
     }
     
     var dicMarking: [String: Int] = [:]
@@ -133,6 +137,7 @@ public struct Marking {
     // The result is the subtraction between the original markings and thus that are already included
     return markings.subtracting(invalidMarkings)
   }
+  
 }
 
 extension Marking: Equatable {
@@ -183,6 +188,10 @@ extension Marking: Comparable {
       }
     }
     return true
+  }
+  
+  public static func comparable(m1: Marking, m2: Marking) -> Bool {
+    return (m1 <= m2) || (m2 <= m1)
   }
   
 }

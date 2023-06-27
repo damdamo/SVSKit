@@ -61,7 +61,7 @@ final class PredicateStructureTests: XCTestCase {
     let ps2 = PS(value: ([marking3], [marking4]), net: net)
 
     XCTAssertEqual(SPS(values: [ps1]).union([PS(value: ps1.emptyValue, net: net)]), [ps1])
-    XCTAssertEqual(SPS(values: [ps1]).intersection([ps2], isCanonical: false), [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)])
+    XCTAssertEqual(SPS(values: [ps1]).intersection([ps2], canonicityLevel: .none), [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)])
 
     let ps3 = PS(value: ([marking2], [marking3]), net: net)
 
@@ -70,7 +70,7 @@ final class PredicateStructureTests: XCTestCase {
       PS(value: ([marking3, marking2], [marking3, marking4]), net: net),
     ]
     
-    XCTAssertEqual(SPS(values: [ps1,ps2]).intersection([ps3], isCanonical: false), expectedSPS)
+    XCTAssertEqual(SPS(values: [ps1,ps2]).intersection([ps3], canonicityLevel: .none), expectedSPS)
   }
 
   func testSPS2() {
@@ -483,6 +483,40 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertTrue(ps4.isEmpty())
   }
   
+  func testUnion() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    let m1 = Marking(["p0": 5, "p1": 5], net: net)
+    let m2 = Marking(["p0": 7, "p1": 7], net: net)
+    let m3 = Marking(["p0": 9, "p1": 9], net: net)
+    let m4 = Marking(["p0": 10, "p1": 10], net: net)
+//    let m5 =  Marking(["p0": 7, "p1": 3], net: net)
+    
+    let ps1 = PS(value: ([m1],[m2]), net: net)
+    let ps2 = PS(value: ([m3],[m4]), net: net)
+    let sps1 = SPS(values: [ps1])
+    let sps2 = SPS(values: [ps2])
+    let sps3 = SPS(values: [ps1, ps2])
+    
+    XCTAssertEqual(sps1.union(sps2), sps3)
+    XCTAssertEqual(sps2.union(sps1), sps3)
+    
+//    let m3 = Marking(["p0": 9, "p1": 9], net: net)
+//    let m4 = Marking(["p0": 10, "p1": 10], net: net)
+    
+//    let ps3 = PS(value: ([m3],[]), net: net)
+//    let ps4 = PS(value: ([m4],[]), net: net)
+//    let ps5 = PS(value: ([m5],[]), net: net)
+//    XCTAssertEqual(sps1.ndls(ps: ps1), [])
+//    print(sps1.lowPs(net: net))
+    
+//    let sps1 = SPS(values: [ps1,ps2])
+  }
+  
   func testCanonical() {
     let net = PetriNet(
       places: ["p0", "p1", "p2"],
@@ -523,8 +557,8 @@ final class PredicateStructureTests: XCTestCase {
     
     let expectedSPS1p = SPS(values: [ps3, ps4, ps5p])
     
-    XCTAssertEqual(expectedSPS1, sps1.union(sps2.union(sps3)))
-    XCTAssertEqual(expectedSPS1p, sps1p.union(sps2p.union(sps3p)))
+    XCTAssertEqual(expectedSPS1, sps1.union(sps2.union(sps3, canonicityLevel: .full), canonicityLevel: .full))
+    XCTAssertEqual(expectedSPS1p, sps1p.union(sps2p.union(sps3p, canonicityLevel: .full), canonicityLevel: .full))
     
     
     let m7 = Marking(["p0": 2, "p1": 2, "p2": 2], net: net)

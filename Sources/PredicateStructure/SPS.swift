@@ -9,74 +9,248 @@ public struct SPS {
     self.values = values
   }
   
-//  private func ndls(ps: PS, sps: SPS) -> SPS {
-//    let (a,b) = ps.value
-//    let qa = PS.convMax(markings: a, net: <#T##PetriNet#>)
-//    return []
-//  }
+  
+  private func ndls(ps: PS) -> SPS {
+    let (a,b) = ps.value
+    let qa = Marking.convMax(markings: a, net: ps.net).first!
+    var res: Set<PS> = []
+    var t: Bool
+    
+    for psp in self {
+      t = true
+      let (c,d) = psp.value
+      let qc = Marking.convMax(markings: c, net: ps.net).first!
+      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net).first!
+      if !Marking.comparable(m1: qa, m2: qc) {
+        if !(qa.leq(qc)){
+          for qb in b {
+            if qb <= qMax {
+              t = false
+              break
+            }
+          }
+          
+          if t {
+            if d == [] {
+              res.insert(psp)
+            }
+            for qd in d {
+              if qMax <= qd {
+                res.insert(psp)
+                break
+              }
+            }
+          }
+        }
+      }
+    }
+    return SPS(values: res)
+  }
+  
+  private func ndus(ps: PS) -> SPS {
+    let (a,b) = ps.value
+    let qa = Marking.convMax(markings: a, net: ps.net).first!
+    var res: Set<PS> = []
+    var t: Bool
+    
+    for psp in self {
+      t = true
+      let (c,d) = psp.value
+      let qc = Marking.convMax(markings: c, net: ps.net).first!
+      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net).first!
+      if !Marking.comparable(m1: qa, m2: qc) {
+        if !(qc.leq(qa)){
+          for qd in d {
+            if qd <= qMax {
+              t = false
+              break
+            }
+          }
+          
+          if t {
+            if b == [] {
+              res.insert(psp)
+            }
+            for qb in b {
+              if qMax <= qb {
+                res.insert(psp)
+                break
+              }
+            }
+          }
+        }
+      }
+    }
+    return SPS(values: res)
+  }
+  
+  /// Lowest predicate structure, containing the singleton marking with the lowest marking using the total function order leq from marking.
+  private func lowPs(net: PetriNet) -> PS {
+    
+    var psTemp: PS = PS(value: ([net.zeroMarking()], [net.zeroMarking()]), net: net)
+    
+    if self == [] {
+      return psTemp
+    }
+    
+    psTemp = self.first!
+    let sps = SPS(values: self.values.subtracting([psTemp]))
+    
+    for ps in sps {
+      let qat = Marking.convMax(markings: psTemp.value.inc, net: net).first!
+      let qa = Marking.convMax(markings: ps.value.inc, net: net).first!
+      if !qat.leq(qa) {
+        psTemp = ps
+      }
+    }
+    
+    return psTemp
+  }
+  
+  public func add(_ ps: PS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
+    if self == [] {
+      return SPS(values: [ps])
+    }
+    
+    if canonicityLevel == .none {
+      return SPS(values: self.values.union([ps]))
+    }
+    
+    let spsSingleton = SPS(values: [ps])
+    
+    if spsSingleton.intersection(self, canonicityLevel: .semi) == [] {
+      let mergeableSPS: SPS = self.mergeable(ps)
+      if mergeableSPS == [] {
+        if canonicityLevel == .full {
+          let ndlsSps = self.ndls(ps: ps)
+          let ndusSps = self.ndus(ps: ps)
+          if ndlsSps == [] && ndusSps == [] {
+            return SPS(values: self.values.union([ps]))
+          } else if ndlsSps != [] && ndusSps == [] {
+            let (a,b) = ps.value
+            let psp: PS = ndlsSps.lowPs(net: ps.net)
+            let (c,_) = psp.value
+            let qMax: Set<Marking> = Marking.convMax(markings: a.union(c), net: ps.net)
+            let reducedPS: PS = PS(value: (a, b.union(qMax)), net: ps.net).mes()
+            
+            let ndlsSPSReduced: SPS = SPS(values: ndlsSps.values.subtracting([psp]))
+            let addTemp = ndlsSPSReduced.add(reducedPS)
+            
+            let newPSMerged: SPS = psp.merge(PS(value: (qMax, b), net: ps.net))
+            let spsWithoutNdls: Set<PS> = self.values.subtracting(ndlsSps.values)
+
+            return SPS(values: addTemp.values.union(newPSMerged.values).union(spsWithoutNdls))
+          } else {
+            let spsWithoutNdus: SPS = SPS(values: self.values.subtracting(ndusSps.values))
+            var res: SPS = []
+            if ndlsSps == [] && ndusSps != [] {
+              res = SPS(values: spsWithoutNdus.values.union([ps]))
+            } else {
+              res = spsWithoutNdus.add(ps)
+            }
+            for psp in ndusSps {
+              res = res.add(psp, canonicityLevel: canonicityLevel)
+            }
+          }
+        }
+        return SPS(values: self.values.union([ps]))
+      }
+      let psp = mergeableSPS.lowPs(net: ps.net)
+      return SPS(values: ps.merge(psp).values.union(self.values.subtracting([psp])))
+    }
+    let spsMinusPs: SPS = self.subtract(spsSingleton)
+    return spsMinusPs.add(ps, canonicityLevel: canonicityLevel)
+  }
   
   /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the union is applied
   /// - Returns: The result of the union.
-  public func union(_ sps: SPS, isCanonical: Bool = true) -> SPS {
+  public func union(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
     if self.isEmpty {
       return sps
     } else if sps.isEmpty{
       return self
     }
-
-    if isCanonical {
-      let firstSelf = self.values.first!
-      let restSelf = SPS(values: self.values.subtracting([firstSelf]))
-      if self.intersection(sps, isCanonical: isCanonical).isEmpty {
-        let mergeablePS = sps.mergeable(firstSelf)
-        if mergeablePS.isEmpty {
-          let newSPS = SPS(values: sps.values.union([firstSelf]))
-          return restSelf.union(newSPS, isCanonical: isCanonical)
-        }
-        let extractPSToMerge = mergeablePS.sorted(by: {(ps1, ps2) -> Bool in
-          let markingIncPs1 = ps1.value.inc.first!
-          let markingIncPs2 = ps2.value.inc.first!
-          return Marking.leq(lhs: markingIncPs1, rhs: markingIncPs2)
-        }).first!
-        
-        let mergePS: SPS = firstSelf.merge(extractPSToMerge)
-        let restSPS = SPS(values: sps.values.subtracting([extractPSToMerge]))
-        
-        return restSelf.union(mergePS.union(restSPS), isCanonical: isCanonical)
-      }
-      let spsSingleton = SPS(values: [firstSelf])
-      let qa = firstSelf.value.inc.first!
-      let spsLower = SPS(values: Set(sps.filter({!(Marking.leq(lhs: qa, rhs: $0.value.inc.first!))})))
-      let spsWithoutLower = SPS(values: sps.values.subtracting(spsLower.values))
-      let newSPS = SPS(values: spsWithoutLower.subtract(spsSingleton, isCanonical: isCanonical).values.union(spsLower.values))
-      return restSelf.union(spsSingleton.subtract(spsLower, isCanonical: isCanonical), isCanonical: isCanonical).union(newSPS)
-    }
-
+    
     let ps = self.values.first!
-    var union = self.values.union(sps.values)
-    if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
-      union.remove(PS(value: ps.emptyValue, net: ps.net))
+    
+    if canonicityLevel == .none {
+      var union = self.values.union(sps.values)
+      if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
+        union.remove(PS(value: ps.emptyValue, net: ps.net))
+      }
+      return SPS(values: union)
     }
-    return SPS(values: union)
+    
+    let selfWithoutPS = SPS(values: self.values.subtracting([ps]))
+    let addPsToSps = sps.add(ps, canonicityLevel: canonicityLevel)
+    print(addPsToSps)
+    return selfWithoutPS.union(addPsToSps)
   }
+//  public func union(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
+//    if self.isEmpty {
+//      return sps
+//    } else if sps.isEmpty{
+//      return self
+//    }
+//
+//    if canonicityLevel != .none {
+//      let firstSelf = self.values.first!
+//      let restSelf = SPS(values: self.values.subtracting([firstSelf]))
+//      if self.intersection(sps, canonicityLevel: canonicityLevel).isEmpty {
+//        let mergeablePS = sps.mergeable(firstSelf)
+//        if mergeablePS.isEmpty {
+//          let newSPS = SPS(values: sps.values.union([firstSelf]))
+//          return restSelf.union(newSPS, canonicityLevel: canonicityLevel)
+//        }
+//        let extractPSToMerge = mergeablePS.sorted(by: {(ps1, ps2) -> Bool in
+//          let markingIncPs1 = ps1.value.inc.first!
+//          let markingIncPs2 = ps2.value.inc.first!
+//          return markingIncPs1.leq(markingIncPs2)
+//        }).first!
+//
+//        let mergePS: SPS = firstSelf.merge(extractPSToMerge)
+//        let restSPS = SPS(values: sps.values.subtracting([extractPSToMerge]))
+//
+//        return restSelf.union(mergePS.union(restSPS), canonicityLevel: canonicityLevel)
+//      }
+//      let spsSingleton = SPS(values: [firstSelf])
+//      let qa = firstSelf.value.inc.first!
+//      let spsLower = SPS(values: Set(sps.filter({!(qa.leq($0.value.inc.first!))})))
+//      let spsWithoutLower = SPS(values: sps.values.subtracting(spsLower.values))
+//      let newSPS = SPS(values: spsWithoutLower.subtract(spsSingleton, canonicityLevel: canonicityLevel).values.union(spsLower.values))
+//      return restSelf.union(spsSingleton.subtract(spsLower, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel).union(newSPS)
+//    }
+//
+//    let ps = self.values.first!
+//    var union = self.values.union(sps.values)
+//    if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
+//      union.remove(PS(value: ps.emptyValue, net: ps.net))
+//    }
+//    return SPS(values: union)
+//  }
   
   /// Apply the intersection between two sets of predicate structures.
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the intersection is applied
   ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
   /// - Returns: The result of the intersection.
-  public func intersection(_ sps: SPS, isCanonical: Bool = true) -> SPS {
+  public func intersection(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
     if self.isEmpty || sps.isEmpty {
       return []
+    }
+    
+    var isCanonical = true
+    if canonicityLevel == .none {
+      isCanonical = false
     }
     
     var res: Set<PS> = []
     for ps1 in self {
       for ps2 in sps {
         let intersect = ps1.intersection(ps2, isCanonical: isCanonical)
-        if isCanonical {
+        if canonicityLevel != .none {
           if !intersect.isEmpty() {
             res.insert(intersect)
           }
@@ -92,7 +266,7 @@ public struct SPS {
   /// Subtract two sets of predicate structures
   /// - Parameter sps: The set of predicate structures to subtract
   /// - Returns: The resulting set of predicate structures
-  public func subtract(_ sps: SPS, isCanonical: Bool = true) -> SPS {
+  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
     if self == sps || self.isEmpty {
       return []
     } else if sps.isEmpty {
@@ -100,6 +274,12 @@ public struct SPS {
     }
     
     var res: Set<PS> = []
+    var isCanonical: Bool = true
+    
+    if canonicityLevel == .none {
+      isCanonical = false
+    }
+    
     for ps1 in self {
       if ps1.canonised().value != ps1.emptyValue {
         res = res.union(ps1.subtract(sps, isCanonical: isCanonical).values)
