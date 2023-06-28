@@ -166,8 +166,26 @@ public struct SPS {
         return SPS(values: self.values.union([ps]))
       }
       let psp = mergeableSPS.lowPs(net: ps.net)
-      return SPS(values: ps.merge(psp).values.union(self.values.subtracting([psp])))
+      let mergedPart = ps.merge(psp).first!
+//      print("------------------------")
+//      print("MERGED")
+//      print("self: \(self)")
+//      print("ps: \(ps)")
+//      print("Merged part: \(mergedPart)")
+//      print("Result: \(SPS(values: mergedPart.values.union(self.values.subtracting([psp]))))")
+//      print("------------------------")
+      
+//      return SPS(values: mergedPart.values.union(self.values.subtracting([psp])))
+      return SPS(values: self.values.subtracting([psp])).add(mergedPart, canonicityLevel: canonicityLevel)
+//      return SPS(values: self.values.union([ps]))
+
     }
+//    print("------------------------")
+//    print("INTERSECT")
+//    print("self: \(self)")
+//    print("ps: \(ps)")
+//    print("Result: \(self.subtract(spsSingleton, canonicityLevel: canonicityLevel))")
+//    print("------------------------")
     let spsMinusPs: SPS = self.subtract(spsSingleton, canonicityLevel: canonicityLevel)
     return spsMinusPs.add(ps, canonicityLevel: canonicityLevel)
   }
@@ -184,7 +202,6 @@ public struct SPS {
     }
     
     let ps = self.values.first!
-    print(ps)
     
     if canonicityLevel == .none {
       var union = self.values.union(sps.values)
@@ -193,11 +210,8 @@ public struct SPS {
       }
       return SPS(values: union)
     }
-    
     let selfWithoutPS = SPS(values: self.values.subtracting([ps]))
     let addPsToSps = sps.add(ps, canonicityLevel: canonicityLevel)
-//    print("OKKKKK")
-//    print(addPsToSps)
     return selfWithoutPS.union(addPsToSps, canonicityLevel: canonicityLevel)
   }
 //  public func union(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
@@ -253,15 +267,10 @@ public struct SPS {
       return []
     }
     
-    var isCanonical = true
-    if canonicityLevel == .none {
-      isCanonical = false
-    }
-    
     var res: Set<PS> = []
     for ps1 in self {
       for ps2 in sps {
-        let intersect = ps1.intersection(ps2, isCanonical: isCanonical)
+        let intersect = ps1.intersection(ps2, canonicityLevel: canonicityLevel)
         if canonicityLevel != .none {
           if !intersect.isEmpty() {
             res.insert(intersect)
@@ -287,9 +296,9 @@ public struct SPS {
     
     var res: Set<PS> = []
     
-    for ps1 in self {
-      if ps1.canonised().value != ps1.emptyValue {
-        res = res.union(ps1.subtract(sps, canonicityLevel: canonicityLevel).values)
+    for ps in self {
+      if ps.canonised().value != ps.emptyValue {
+        res = res.union(ps.subtract(sps, canonicityLevel: canonicityLevel).values)
 //        res = res.union(ps1.subtract(sps, isCanonical: isCanonical))
       }
     }

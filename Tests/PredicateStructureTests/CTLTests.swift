@@ -70,22 +70,12 @@ final class CTLTests: XCTestCase {
     let equivSPS: SPS = [ps1, ps2, ps3, ps4, ps5, ps6]
 
     // Compute all markings that breaks the mutual exclusion
-    let ctlFormula = CTL(formula: .EF(.and(.isFireable("t4"), .isFireable("t5"))), net: net, canonicityLevel: .full)
+    let ctlFormula = CTL(formula: .EF(.and(.isFireable("t4"), .isFireable("t5"))), net: net, canonicityLevel: .semi)
     let sps = ctlFormula.eval()
 
     let e = equivSPS
-    let s = sps//.simplified()
-//
-//    XCTAssertTrue(e.isEquiv(sps))
-//    print(e)
-//    print("-------------")
-//    print(s)
-//    print("-------------")
-//    print(e.isIncluded(s))
-//    print(e.subtract(s))
-//    print("-------------")
-//    print(s.isIncluded(e))
-//    print(s.subtract(e))
+    let s = sps.simplified()
+    XCTAssertTrue(e.isEquiv(sps))
   }
 
   func testCTLEval1() {

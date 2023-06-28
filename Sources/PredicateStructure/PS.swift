@@ -264,9 +264,15 @@ public struct PS {
   /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
   public func merge(_ ps: PS) -> SPS {
     
-    if self.value == self.emptyValue {
+//    if self.value == self.emptyValue {
+//      return [ps]
+//    } else if ps.value == self.emptyValue {
+//      return [self]
+//    }
+    
+    if self.isIncluded(ps) {
       return [ps]
-    } else if ps.value == self.emptyValue {
+    } else if ps.isIncluded(self) {
       return [self]
     }
     
@@ -279,12 +285,36 @@ public struct PS {
     let d = nesPS2.value.exc
     let qa = Marking.convMax(markings: a, net: net).first!
     let qc = Marking.convMax(markings: c, net: net).first!
+//    for qb in b {
+//      if qc <= qb && qa <= qc {
+//        return [PS(value: (a, b.subtracting([qb]).union(d))).mes()]
+//      }
+//    }
+//
+//    for qd in d {
+//      if qa <= qd && qc <= qa {
+//        return [PS(value: (c, d.subtracting([qd]).union(b))).mes()]
+//      }
+//    }
+    
+//    if b.contains(qc) {
+//      return [PS(value: (a, b.subtracting([qc]).union(d))).mes()]
+//    } else if d.contains(qa) {
+//      return [PS(value: (c, d.subtracting([qa]).union(b))).mes()]
+//    }
     
     if b.contains(qc) {
-      return [PS(value: (a, b.subtracting([qc]).union(d))).mes()]
+      let newPS = PS(value: (a, b.subtracting([qc]).union(d))).mes()
+      if ps.isIncluded(newPS) {
+        return [newPS]
+      }
     } else if d.contains(qa) {
-      return [PS(value: (c, d.subtracting([qa]).union(b))).mes()]
+      let newPS = PS(value: (c, d.subtracting([qa]).union(b))).mes()
+      if self.isIncluded(newPS) {
+        return [newPS]
+      }
     }
+    
     return [self, ps]
   }
   
@@ -347,7 +377,7 @@ public struct PS {
   ///   - ps: The second predicate structure to intersect
   ///   - isCanonical: A boolean to specifiy if each predicate structure is canonised during the process.
   /// - Returns: The result of the intersection
-  public func intersection(_ ps: PS, isCanonical: Bool = true) -> PS {
+  public func intersection(_ ps: PS, canonicityLevel: CanonicityLevel) -> PS {
     
     if self.value == emptyValue {
       return self
@@ -355,7 +385,7 @@ public struct PS {
       return ps
     }
     
-    if isCanonical {
+    if canonicityLevel != .none {
       return PS(value: (self.value.inc.union(ps.value.inc), self.value.exc.union(ps.value.exc))).canonised()
     }
     return PS(value: (self.value.inc.union(ps.value.inc), self.value.exc.union(ps.value.exc)))
@@ -388,13 +418,13 @@ public struct PS {
   /// - Parameter ps: The ps to subtract
   /// - Returns: A sps containing no value of ps
   public func subtract(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
-    if self == ps || self.value == emptyValue {
+    if self == ps || self.isEmpty() {
       return []
-    } else if ps.value == emptyValue {
+    } else if ps.isEmpty() {
       return SPS(values: [self])
     }
     
-    if self.intersection(ps).isEmpty() {
+    if self.intersection(ps, canonicityLevel: canonicityLevel).isEmpty() {
       return SPS(values: [self])
     }
 

@@ -446,6 +446,12 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS(value: ([m1],[m3]), net: net)
     let ps2 = PS(value: ([m2],[m4]), net: net)
     XCTAssertEqual(ps1.merge(ps2), [ps1, ps2])
+    
+    print("------------------")
+    print(SPS(values: [ps1, ps2]).subtract(ps1.merge(ps2), canonicityLevel: .semi))
+    print(ps1.merge(ps2).subtract(SPS(values: [ps1, ps2]), canonicityLevel: .semi))
+    print("------------------")
+    
     XCTAssertFalse(ps1.mergeable(ps2))
     
     let ps3 = PS(value: ([m3],[m4]), net: net)
@@ -839,6 +845,42 @@ final class PredicateStructureTests: XCTestCase {
     print(ps3)
     print(ps1)
     print(ps3.merge(ps1))
+  }
+  
+  func testUnion3() {
+//    {
+//     ([[p0: 0, p1: 1]], []),
+//     ([[p0: 1, p1: 0]], [[p0: 1, p1: 1]])
+//    }
+//    {
+//     ([[p0: 0, p1: 0]], [[p0: 1, p1: 0]]),
+//     ([[p0: 1, p1: 1]], [])
+//    }
+//    {
+//     ([[p0: 0, p1: 0]], [[p0: 1, p1: 1]])
+//    }
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    let m1 = Marking(["p0": 0, "p1": 1], net: net)
+    let m2 = Marking(["p0": 1, "p1": 0], net: net)
+    let m3 = Marking(["p0": 1, "p1": 1], net: net)
+    let m4 = Marking(["p0": 0, "p1": 0], net: net)
+    
+    let ps1 = PS(value: ([m1], []), net: net)
+    let ps2 = PS(value: ([m2], [m3]), net: net)
+    
+    let sps1 = SPS(values: [ps1, ps2])
+    
+    let ps3 = PS(value: ([m4], [m2]), net: net)
+    let ps4 = PS(value: ([m3], []), net: net)
+    
+    let sps2 = SPS(values: [ps3, ps4])
+    
+    print(sps1.union(sps2, canonicityLevel: .semi))
   }
   
   func testCanonicalSPS() {
