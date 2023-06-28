@@ -74,19 +74,21 @@ final class ListExampleTests: XCTestCase {
     s.reset()
 
     var answers: [String: Bool] = [:]
+    var times: [String: String] = [:]
     for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
-      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, debug: false).queryReduction()
+      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true).queryReduction()
       print("-------------------------------")
       print(key)
-      print(ctlReduced)
       s.reset()
       answers[key] = ctlReduced.eval(marking: marking1)
+      print(answers[key]!)
+      times[key] = s.elapsed.humanFormat
       print(s.elapsed.humanFormat)
       print("-------------------------------")
     }
 
     for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
-      print("Formula \(key) is: \(b)")
+      print("Formula \(key) is: \(b) (\(times[key]!))")
     }
 
     print(s.elapsed.humanFormat)

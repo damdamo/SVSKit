@@ -214,48 +214,6 @@ public struct SPS {
     let addPsToSps = sps.add(ps, canonicityLevel: canonicityLevel)
     return selfWithoutPS.union(addPsToSps, canonicityLevel: canonicityLevel)
   }
-//  public func union(_ sps: SPS, canonicityLevel: CanonicityLevel = .semi) -> SPS {
-//    if self.isEmpty {
-//      return sps
-//    } else if sps.isEmpty{
-//      return self
-//    }
-//
-//    if canonicityLevel != .none {
-//      let firstSelf = self.values.first!
-//      let restSelf = SPS(values: self.values.subtracting([firstSelf]))
-//      if self.intersection(sps, canonicityLevel: canonicityLevel).isEmpty {
-//        let mergeablePS = sps.mergeable(firstSelf)
-//        if mergeablePS.isEmpty {
-//          let newSPS = SPS(values: sps.values.union([firstSelf]))
-//          return restSelf.union(newSPS, canonicityLevel: canonicityLevel)
-//        }
-//        let extractPSToMerge = mergeablePS.sorted(by: {(ps1, ps2) -> Bool in
-//          let markingIncPs1 = ps1.value.inc.first!
-//          let markingIncPs2 = ps2.value.inc.first!
-//          return markingIncPs1.leq(markingIncPs2)
-//        }).first!
-//
-//        let mergePS: SPS = firstSelf.merge(extractPSToMerge)
-//        let restSPS = SPS(values: sps.values.subtracting([extractPSToMerge]))
-//
-//        return restSelf.union(mergePS.union(restSPS), canonicityLevel: canonicityLevel)
-//      }
-//      let spsSingleton = SPS(values: [firstSelf])
-//      let qa = firstSelf.value.inc.first!
-//      let spsLower = SPS(values: Set(sps.filter({!(qa.leq($0.value.inc.first!))})))
-//      let spsWithoutLower = SPS(values: sps.values.subtracting(spsLower.values))
-//      let newSPS = SPS(values: spsWithoutLower.subtract(spsSingleton, canonicityLevel: canonicityLevel).values.union(spsLower.values))
-//      return restSelf.union(spsSingleton.subtract(spsLower, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel).union(newSPS)
-//    }
-//
-//    let ps = self.values.first!
-//    var union = self.values.union(sps.values)
-//    if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
-//      union.remove(PS(value: ps.emptyValue, net: ps.net))
-//    }
-//    return SPS(values: union)
-//  }
   
   /// Apply the intersection between two sets of predicate structures.
   /// - Parameters:
