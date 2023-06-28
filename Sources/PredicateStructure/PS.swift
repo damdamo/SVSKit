@@ -377,7 +377,7 @@ public struct PS {
   ///   - ps: The second predicate structure to intersect
   ///   - isCanonical: A boolean to specifiy if each predicate structure is canonised during the process.
   /// - Returns: The result of the intersection
-  public func intersection(_ ps: PS, canonicityLevel: CanonicityLevel) -> PS {
+  public func intersection(_ ps: PS) -> PS {
     
     if self.value == emptyValue {
       return self
@@ -385,11 +385,7 @@ public struct PS {
       return ps
     }
     
-    if canonicityLevel != .none {
-      return PS(value: (self.value.inc.union(ps.value.inc), self.value.exc.union(ps.value.exc))).canonised()
-    }
-    return PS(value: (self.value.inc.union(ps.value.inc), self.value.exc.union(ps.value.exc)))
-
+    return PS(value: (self.value.inc.union(ps.value.inc), self.value.exc.union(ps.value.exc))).canonised()
   }
   
   /// To know if a marking belongs to a predicate structure
@@ -417,14 +413,14 @@ public struct PS {
   /// Subtract two PS, by removing all markings for the right PS into the left PS
   /// - Parameter ps: The ps to subtract
   /// - Returns: A sps containing no value of ps
-  public func subtract(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
+  public func subtract(_ ps: PS) -> SPS {
     if self == ps || self.isEmpty() {
       return []
     } else if ps.isEmpty() {
       return SPS(values: [self])
     }
     
-    if self.intersection(ps, canonicityLevel: canonicityLevel).isEmpty() {
+    if self.intersection(ps).isEmpty() {
       return SPS(values: [self])
     }
 
@@ -441,29 +437,23 @@ public struct PS {
 
     var res: Set<PS> = []
 
-    var ps1 = PS(value: (a, c.union(b)))
-    if canonicityLevel != .none {
-      ps1 = ps1.canonised()
-    }
+    var ps1 = PS(value: (a, c.union(b))).canonised()
+    
     res = res.union(SPS(values: [ps1]))
 
     for marking in d {
       var newA = a
       newA.insert(marking)
-      ps1 = PS(value: (newA,b))
-      if canonicityLevel != .none {
-        ps1 = ps1.canonised()
-      }
+      ps1 = PS(value: (newA,b)).canonised()
       res.insert(ps1)
     }
     
-    if canonicityLevel != .none {
-      for ps in res {
-        if ps.isEmpty() {
-          res.remove(ps)
-        }
+    for ps in res {
+      if ps.isEmpty() {
+        res.remove(ps)
       }
     }
+    
     return SPS(values: res)
   }
 
@@ -471,24 +461,24 @@ public struct PS {
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
   /// - Parameter sps: The set of predicate structures to subtract
   /// - Returns: A set of predicate structures where all elements of sps have been removed from ps
-  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
-    var res: SPS = [self]
-    var spsTemp: SPS
+  public func subtract(_ sps: SPS) -> SPS {
+    var res: Set<PS> = [self]
+    var spsTemp: Set<PS>
     for ps in sps {
       spsTemp = []
       for psTemp in res {
-        spsTemp = spsTemp.union(psTemp.subtract(ps, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        spsTemp = spsTemp.union(psTemp.subtract(ps))
       }
       res = spsTemp
     }
-    return res
+    return SPS(values: res)
   }
   
   /// Is a predicate structure included in another one ?
   /// - Parameter ps: The predicate structure to check if self is contained
   /// - Returns: True if it is contained, false otherwise.
   public func isIncluded(_ ps: PS) -> Bool {
-    return self.subtract(ps, canonicityLevel: .semi) == []
+    return self.subtract(ps) == []
   }
   
   /// Count the number of markings that composes the predicate structure.

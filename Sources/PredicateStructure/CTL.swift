@@ -186,14 +186,14 @@ public struct CTL {
     case .and(let formula1, let formula2):
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
-      res = ctl1.eval().intersection(ctl2.eval(), canonicityLevel: canonicityLevel)
+      res = ctl1.eval().intersection(ctl2.eval())
     case .or(let formula1, let formula2):
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       res = ctl1.eval().union(ctl2.eval(), canonicityLevel: canonicityLevel)
     case .not(let formula):
       let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
-      res = ctl1.eval().not(canonicityLevel: canonicityLevel)
+      res = ctl1.eval().not()
     case .deadlock:
       res = SPS.deadlock(net: net)
     case .EX(let formula):
@@ -335,7 +335,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel)), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -355,7 +355,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel))
       if simplified {
         res = res.simplified()
       }
@@ -375,7 +375,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = phi.intersection(res.revertTilde(canonicityLevel: canonicityLevel))
       if simplified {
         res = res.simplified()
       }
@@ -397,7 +397,7 @@ public struct CTL {
     var resTemp: SPS
     repeat {
       resTemp = res
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel)), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -419,7 +419,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel))), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -696,7 +696,7 @@ extension CTL {
       return (ctl2.eval(marking: marking))
     case .not(let formula1):
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
-      return ctl1.eval().not(canonicityLevel: canonicityLevel).contains(marking: marking)
+      return ctl1.eval().not().contains(marking: marking)
     case .deadlock:
       return SPS.deadlock(net: net).contains(marking: marking)
     case .EX(let formula1):
@@ -779,7 +779,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel)), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -805,7 +805,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel))
       if simplified {
         res = res.simplified()
       }
@@ -831,7 +831,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = phi.intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = phi.intersection(res.revertTilde(canonicityLevel: canonicityLevel))
       if simplified {
         res = res.simplified()
       }
@@ -867,7 +867,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel)), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -903,7 +903,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(canonicityLevel: canonicityLevel))), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }

@@ -13,7 +13,7 @@ final class ListExampleTests: XCTestCase {
     //     Hence, if the marking belong to the predicate structure at any point of the iterations, we can return an early answer.
     //     The additional optimisation happens when eval is called with the given marking
     let ctl1 = CTL(formula: .EU(.isFireable("GetB"), .isFireable("RBag")), net: net1, canonicityLevel: .semi)
-    let ctl2 = CTL(formula: .not(.AF(.not(.EF(.isFireable("GetB"))))), net: net1, canonicityLevel: .none, debug: true)
+    let ctl2 = CTL(formula: .not(.AF(.not(.EF(.isFireable("GetB"))))), net: net1, canonicityLevel: .semi, debug: true)
     XCTAssertFalse(ctl1.eval(marking: marking1))
     print(s.elapsed.humanFormat)
     s.reset()
@@ -63,34 +63,34 @@ final class ListExampleTests: XCTestCase {
 //
 //  }
 
-//  func testERK() {
-//    let parserPN = PnmlParser()
-//    var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
-//    var s = Stopwatch()
-//
-//    let parserCTL = CTLParser()
-//    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
-//
-//    s.reset()
-//
-//    var answers: [String: Bool] = [:]
-//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
-//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, debug: false).queryReduction()
-//      print("-------------------------------")
-//      print(key)
-//      print(ctlReduced)
-//      s.reset()
-//      answers[key] = ctlReduced.eval(marking: marking1)
-//      print(s.elapsed.humanFormat)
-//      print("-------------------------------")
-//    }
-//
-//    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
-//      print("Formula \(key) is: \(b)")
-//    }
-//
-//    print(s.elapsed.humanFormat)
-//  }
+  func testERK() {
+    let parserPN = PnmlParser()
+    var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+    var s = Stopwatch()
+
+    let parserCTL = CTLParser()
+    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
+
+    s.reset()
+
+    var answers: [String: Bool] = [:]
+    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, debug: false).queryReduction()
+      print("-------------------------------")
+      print(key)
+      print(ctlReduced)
+      s.reset()
+      answers[key] = ctlReduced.eval(marking: marking1)
+      print(s.elapsed.humanFormat)
+      print("-------------------------------")
+    }
+
+    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
+      print("Formula \(key) is: \(b)")
+    }
+
+    print(s.elapsed.humanFormat)
+  }
   
   //           0123456789012345
   // Expected: FTFTTTFTTFFFFTTF
