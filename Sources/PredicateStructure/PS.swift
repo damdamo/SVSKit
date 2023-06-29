@@ -79,7 +79,7 @@ public struct PS {
     for el in value.exc {
       sps.insert(PS(value: ([el], [])))
     }
-    return SPS(values: sps)
+    return SPS(values: sps, net: net)
   }
   
   // nes: Normalise excluding set
@@ -233,7 +233,7 @@ public struct PS {
     for marking in markingSet {
       sps.insert(encodeMarking(marking))
     }
-    return SPS(values: sps).simplified()
+    return SPS(values: sps, net: net).simplified()
   }
   
   /// Try to merge two predicate structures if there are comparable.
@@ -276,8 +276,8 @@ public struct PS {
   }
   
   public func mergeable(_ ps: PS) -> Bool {
-    if self.merge(ps) == SPS(values: [self, ps]) {
-      return false
+    if self.merge(ps) == SPS(values: [self, ps], net: net) {
+        return false
     }
     return true
   }
@@ -374,11 +374,11 @@ public struct PS {
     if self == ps || self.isEmpty() {
       return []
     } else if ps.isEmpty() {
-      return SPS(values: [self])
+      return SPS(values: [self], net: net)
     }
 
     if self.intersection(ps).isEmpty() {
-      return SPS(values: [self])
+      return SPS(values: [self], net: net)
     }
 
     let a = self.value.inc
@@ -396,7 +396,7 @@ public struct PS {
 
     var ps1 = PS(value: (a, c.union(b))).canonised()
 
-    res = res.union(SPS(values: [ps1]))
+    res = res.union(SPS(values: [ps1], net: net))
 
     for marking in d {
       var newA = a
@@ -411,7 +411,7 @@ public struct PS {
       }
     }
 
-    return SPS(values: res)
+    return SPS(values: res, net: net)
   }
   
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
@@ -427,7 +427,7 @@ public struct PS {
       }
       res = spsTemp
     }
-    return SPS(values: res)
+    return SPS(values: res, net: net)
   }
   
   /// Is a predicate structure included in another one ?

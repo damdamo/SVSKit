@@ -322,7 +322,7 @@ public struct CTL {
       if debug {
         print("Predicate structure number during EF evaluation: \(res.count)")
       }
-    } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+    } while !SPS(values: Set(res.filter({!resTemp.contains($0)})), net: net).isIncluded(resTemp)
     return res
   }
   
@@ -758,7 +758,7 @@ extension CTL {
       if debug {
         print("Predicate structure number during EF evaluation: \(res.count)")
       }
-    } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+    } while !SPS(values: Set(res.filter({!resTemp.contains($0)})), net: net).isIncluded(resTemp)
     return res.contains(marking: marking)
   }
   

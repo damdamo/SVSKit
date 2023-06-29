@@ -5,20 +5,20 @@ public struct SPS {
   /// The set of predicate structures
   public let values: Set<PS>
   
-//  /// Canonicity level
-//  private static var canonicityLevelStatic: CanonicityLevel = .semi
-//
-//  public var canonicityLevel: CanonicityLevel {
-//    return SPS.canonicityLevelStatic
-//  }
+  /// The related Petri net
+  private static var netStatic: PetriNet? = nil
   
-//  public init(values: Set<PS>, canonicityLevel: CanonicityLevel = .full) {
-//    self.values = values
-//    SPS.canonicityLevelStatic = canonicityLevel
-//  }
+  public var net: PetriNet {
+    return SPS.netStatic!
+  }
   
-  public init(values: Set<PS>) {
+  private init(values: Set<PS>) {
     self.values = values
+  }
+  
+  public init(values: Set<PS>, net: PetriNet) {
+    self.values = values
+    SPS.netStatic = net
   }
   
   
@@ -247,7 +247,7 @@ public struct SPS {
   /// - Returns: The negation of a set of predicate structures
   public func not() -> SPS {
     if self.isEmpty {
-      return self
+      return SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
     }
     // The singleton containing the predicate structure that represents all markings subtract to the current sps
     return SPS(values: [PS(value: self.first!.allValue, net: self.first!.net)]).subtract(self)
@@ -336,6 +336,11 @@ public struct SPS {
     
     // AX Φ ≡ ¬ EX ¬ Φ
     return self.not().revert(canonicityLevel: canonicityLevel).not()
+//    let net = self.values.first!.net
+//    let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
+//    let applyNot = spsAll.subtract(self)
+//    let applyRevert = applyNot.revert(canonicityLevel: canonicityLevel)
+//    return spsAll.subtract(applyRevert)
   }
   
   /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:
