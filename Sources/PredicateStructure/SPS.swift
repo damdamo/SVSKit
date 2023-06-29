@@ -167,25 +167,8 @@ public struct SPS {
       }
       let psp = mergeableSPS.lowPs(net: ps.net)
       let mergedPart = ps.merge(psp).first!
-//      print("------------------------")
-//      print("MERGED")
-//      print("self: \(self)")
-//      print("ps: \(ps)")
-//      print("Merged part: \(mergedPart)")
-//      print("Result: \(SPS(values: mergedPart.values.union(self.values.subtracting([psp]))))")
-//      print("------------------------")
-      
-//      return SPS(values: mergedPart.values.union(self.values.subtracting([psp])))
       return SPS(values: self.values.subtracting([psp])).add(mergedPart, canonicityLevel: canonicityLevel)
-//      return SPS(values: self.values.union([ps]))
-
     }
-//    print("------------------------")
-//    print("INTERSECT")
-//    print("self: \(self)")
-//    print("ps: \(ps)")
-//    print("Result: \(self.subtract(spsSingleton, canonicityLevel: canonicityLevel))")
-//    print("------------------------")
     let spsMinusPs: SPS = self.subtract(spsSingleton)
     return spsMinusPs.add(ps, canonicityLevel: canonicityLevel)
   }
@@ -353,13 +336,6 @@ public struct SPS {
     
     // AX Φ ≡ ¬ EX ¬ Φ
     return self.not().revert(canonicityLevel: canonicityLevel).not()
-    
-//    // The trick is to take the predicate structure containing all markings, and to apply the subtraction with the current sps to get the negation.
-//    let net = self.values.first!.net
-//    let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
-//    let applyNot = spsAll.subtract(self)
-//    let applyRevert = applyNot.revert()
-//    return spsAll.subtract(applyRevert)
   }
   
   /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:
@@ -377,7 +353,7 @@ public struct SPS {
     if self.isEmpty {
       return self
     }
-    
+
     var mergedSet: Set<PS> = []
     var setTemp1: Set<PS> = []
     var setTemp2: Set<PS> = []
@@ -385,18 +361,18 @@ public struct SPS {
     var psFirst: PS
     var psFirstTemp: PS
     var b: Bool
-    
+
     for ps in self {
       let can = ps.canonised()
       if can.value != can.emptyValue {
         setTemp1.insert(can)
       }
     }
-    
+
     if setTemp1 == [] {
       return []
     }
-    
+
     while !setTemp1.isEmpty {
       b = true
       let firstPS = setTemp1.first!
@@ -413,7 +389,7 @@ public struct SPS {
         setTemp2.insert(firstPS)
       }
     }
-            
+
     while !setTemp2.isEmpty {
       psFirst = setTemp2.first!
       psFirstTemp = psFirst
@@ -441,10 +417,31 @@ public struct SPS {
         reducedSPS.remove(firstPS)
       }
     }
-    
+
     return SPS(values: reducedSPS)
-    
+
   }
+  
+//  public func simplified() -> SPS {
+//    if self.isEmpty {
+//      return self
+//    }
+//
+//    var sps = self
+//    var res: Set<PS> = []
+//
+//
+//    while sps != [] {
+//      let first = sps.first!
+//      let spsWithoutFirst = SPS(values: sps.values.subtracting([first]))
+//      if !SPS(values: [first]).isIncluded(spsWithoutFirst) {
+//        res.insert(first)
+//      }
+//      sps = spsWithoutFirst
+//    }
+//
+//    return SPS(values: res)
+//  }
   
   /// Create a set of predicate structures to represent all markings such as no transition are fireable.
   /// - Parameter net: The Petri net
@@ -532,29 +529,3 @@ extension SPS: CustomStringConvertible {
   }
   
 }
-
-//// --------------------------------------------------------------------------------------
-//// Alternative version of the intersection for SPS in a functional way
-//// --------------------------------------------------------------------------------------
-//  public func intersection(_ sps: SPS, isCanonical: Bool = true) -> SPS {
-//    if self.isEmpty || sps.isEmpty {
-//      return []
-//    }
-//
-//    if self.values.count == 1 {
-//      let firstValue = sps.values.first!
-//      let restSPS = SPS(values: sps.values.subtracting([firstValue]))
-//      let intersect = self.first!.intersection(firstValue, isCanonical: isCanonical)
-//      if isCanonical {
-//        if intersect.isEmpty() {
-//          return self.intersection(restSPS, isCanonical: isCanonical)
-//        }
-//      }
-//      return SPS(values: [intersect]).union(self.intersection(restSPS, isCanonical: isCanonical))
-//    }
-//
-//    let firstValue = self.values.first!
-//    let restSPS = SPS(values: self.values.subtracting([firstValue]))
-//
-//    return SPS(values: [firstValue]).intersection(sps, isCanonical: isCanonical).union(restSPS.intersection(sps, isCanonical: isCanonical))
-//  }

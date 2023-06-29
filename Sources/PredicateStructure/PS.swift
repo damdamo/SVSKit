@@ -236,26 +236,6 @@ public struct PS {
     return SPS(values: sps).simplified()
   }
   
-//  /// Product between a predicate structure and a set of predicate structures: ps * {ps1, ..., psn} = (ps ∩ ps1) ∪ ... ∪ (ps ∩ psn)
-//  /// - Parameters:
-//  ///   - sps: The set of predicate structures
-//  /// - Returns: The product between both parameters
-//  func distribute(sps: SPS) -> SPS {
-//    if let first = sps.first {
-//      if self.value != emptyValue  {
-//        var rest = sps.values
-//        rest.remove(first)
-//        if rest == [] {
-//          return SPS(values: [self]).intersection([first])
-//        }
-//        return SPS(values: [self]).intersection([first]).union(self.distribute(sps: SPS(values: rest)))
-//      }
-//      return []
-//    }
-//    return [self]
-//  }
-  
-  
   /// Try to merge two predicate structures if there are comparable.
   /// The principle is similar to intervals, where the goal is to reunified intervals if they can be merged.
   /// Otherwise, nothing is changed.
@@ -263,46 +243,23 @@ public struct PS {
   ///   - ps: The second predicate structure
   /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
   public func merge(_ ps: PS) -> SPS {
-    
-//    if self.value == self.emptyValue {
-//      return [ps]
-//    } else if ps.value == self.emptyValue {
-//      return [self]
-//    }
-    
+
     if self.isIncluded(ps) {
       return [ps]
     } else if ps.isIncluded(self) {
       return [self]
     }
-    
+
     let nesPS1 = self.nes()
     let nesPS2 = ps.nes()
-    
+
     let a = nesPS1.value.inc
     let b = nesPS1.value.exc
     let c = nesPS2.value.inc
     let d = nesPS2.value.exc
     let qa = Marking.convMax(markings: a, net: net).first!
     let qc = Marking.convMax(markings: c, net: net).first!
-//    for qb in b {
-//      if qc <= qb && qa <= qc {
-//        return [PS(value: (a, b.subtracting([qb]).union(d))).mes()]
-//      }
-//    }
-//
-//    for qd in d {
-//      if qa <= qd && qc <= qa {
-//        return [PS(value: (c, d.subtracting([qd]).union(b))).mes()]
-//      }
-//    }
-    
-//    if b.contains(qc) {
-//      return [PS(value: (a, b.subtracting([qc]).union(d))).mes()]
-//    } else if d.contains(qa) {
-//      return [PS(value: (c, d.subtracting([qa]).union(b))).mes()]
-//    }
-    
+
     if b.contains(qc) {
       let newPS = PS(value: (a, b.subtracting([qc]).union(d))).mes()
       if ps.isIncluded(newPS) {
@@ -314,7 +271,7 @@ public struct PS {
         return [newPS]
       }
     }
-    
+
     return [self, ps]
   }
   
@@ -419,14 +376,14 @@ public struct PS {
     } else if ps.isEmpty() {
       return SPS(values: [self])
     }
-    
+
     if self.intersection(ps).isEmpty() {
       return SPS(values: [self])
     }
 
     let a = self.value.inc
     let b = self.value.exc
-    
+
     // Important to normalise the right predicate structure
     // We want to move some constraints of the right marking into the left marking.
     // If we do not normalise it, it means that we could remove values that we should not.
@@ -438,7 +395,7 @@ public struct PS {
     var res: Set<PS> = []
 
     var ps1 = PS(value: (a, c.union(b))).canonised()
-    
+
     res = res.union(SPS(values: [ps1]))
 
     for marking in d {
@@ -447,16 +404,15 @@ public struct PS {
       ps1 = PS(value: (newA,b)).canonised()
       res.insert(ps1)
     }
-    
+
     for ps in res {
       if ps.isEmpty() {
         res.remove(ps)
       }
     }
-    
+
     return SPS(values: res)
   }
-
   
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
   /// - Parameter sps: The set of predicate structures to subtract
