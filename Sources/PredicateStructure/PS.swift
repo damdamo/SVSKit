@@ -12,7 +12,7 @@ public struct PS {
   public typealias TransitionType = String
   
   /// The couple that represents the predicate structure
-  public let value: (inc: Set<Marking>, exc: Set<Marking>)
+  public let value: (inc: Marking, exc: Set<Marking>)
   /// The related Petri net
   private static var netStatic: PetriNet? = nil
   
@@ -20,30 +20,30 @@ public struct PS {
     return PS.netStatic!
   }
     
-  public var emptyValue: (inc: Set<Marking>, exc: Set<Marking>) {
-    return ([net.zeroMarking()],[net.zeroMarking()])
+  public var emptyValue: (inc: Marking, exc: Set<Marking>) {
+    return (net.zeroMarking(), [net.zeroMarking()])
   }
   
-  private init(value: (inc: Set<Marking>, exc: Set<Marking>)) {
-    if value.inc.isEmpty {
-      let couple = (Set([PS.netStatic!.zeroMarking()]), value.exc)
-      self.value = couple
-    } else {
-      self.value = value
-    }
+  private init(value: (inc: Marking, exc: Set<Marking>)) {
+    self.value = value
+  }
+  
+  public init(value: (inc: Marking, exc: Set<Marking>), net: PetriNet) {
+    PS.netStatic = net
+    self.value = value
   }
   
   public init(value: (inc: Set<Marking>, exc: Set<Marking>), net: PetriNet) {
     PS.netStatic = net
+
     // If `inc` is an empty set, we replace it by the zero marking, containing 0 for all places
     // It corresponds to the marking accepting all markings.
     if value.inc.isEmpty {
-      let couple = (Set([net.zeroMarking()]), value.exc)
+      let couple = (net.zeroMarking(), value.exc)
       self.value = couple
     } else {
-      self.value = value
+      self.value = (Marking.convMax(markings: value.inc, net: net), value.exc)
     }
-    
   }
   
   public func isEmpty() -> Bool {
@@ -51,11 +51,11 @@ public struct PS {
       if qb == net.zeroMarking() {
         return true
       }
-      for qa in value.inc {
-        if qb <= qa {
-          return true
-        }
+      
+      if qb <= self.value.inc {
+        return true
       }
+      
     }
     return false
   }
@@ -64,16 +64,13 @@ public struct PS {
   /// - Returns: Returns the negation of the predicate structure
   public func not() -> SPS {
     if self.isEmpty() {
-      return [PS(value: ([net.zeroMarking()], []))]
+      return [PS(value: (net.zeroMarking(), []))]
     }
     
     var sps: Set<PS> = []
-    for el in value.inc {
-      // .ps([], [el])
-      sps.insert(PS(value: ([net.zeroMarking()], [el])))
-    }
+    sps.insert(PS(value: (net.zeroMarking(), [self.value.inc])))
     for el in value.exc {
-      sps.insert(PS(value: ([el], [])))
+      sps.insert(PS(value: (el, [])))
     }
     return SPS(values: sps)
   }
@@ -82,12 +79,10 @@ public struct PS {
   public func nes() -> PS {
     var excludingSet: Set<Marking> = []
     var markingTemp: Marking
+    let qa = self.value.inc
     
     for qb in self.value.exc {
-      markingTemp = qb
-      for qa in self.value.inc {
-        markingTemp = Marking.convMax(markings: [qa, markingTemp], net: net).first!
-      }
+      markingTemp = Marking.convMax(markings: [qa, qb], net: net)
       excludingSet.insert(markingTemp)
     }
     
@@ -124,8 +119,7 @@ public struct PS {
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
   /// - Returns: The canonical form of the predicate structure.
   public func canonised() -> PS {
-    let convInclude = Marking.convMax(markings: value.inc, net: net)
-    let mesPS = PS(value: (convInclude, self.value.exc)).mes()
+    let mesPS = PS(value: (self.value.inc, self.value.exc)).mes()
     if mesPS.isEmpty() {
       // In (a,b) ∈ PS, if a marking in b is included in a, it returns the empty predicate structure
       return PS(value: emptyValue)
@@ -149,11 +143,7 @@ public struct PS {
     }
     // Create a dictionnary where the key is the place and whose values is a set of all possibles integers that can be taken
     let can = canonizedPS.value
-    if let _ = can.inc.first {
-      am = can.inc.first!
-    } else {
-      am = net.zeroMarking()
-    }
+    am = can.inc
     for place in net.places {
       lowerBound = am[place]!
       upperBound = net.capacity[place]!
@@ -218,7 +208,7 @@ public struct PS {
       markingTemp = marking
     }
     
-    return PS(value: ([marking], bMarkings))
+    return PS(value: (marking, bMarkings))
   }
   
   /// Encode a set of markings into a set of predicate structures.
@@ -249,20 +239,18 @@ public struct PS {
     let nesPS1 = self.nes()
     let nesPS2 = ps.nes()
 
-    let a = nesPS1.value.inc
+    let qa = nesPS1.value.inc
     let b = nesPS1.value.exc
-    let c = nesPS2.value.inc
+    let qc = nesPS2.value.inc
     let d = nesPS2.value.exc
-    let qa = Marking.convMax(markings: a, net: net).first!
-    let qc = Marking.convMax(markings: c, net: net).first!
 
     if b.contains(qc) {
-      let newPS = PS(value: (a, b.subtracting([qc]).union(d))).mes()
+      let newPS = PS(value: (qa, b.subtracting([qc]).union(d))).mes()
       if ps.isIncluded(newPS) {
         return [newPS]
       }
     } else if d.contains(qa) {
-      let newPS = PS(value: (c, d.subtracting([qa]).union(b))).mes()
+      let newPS = PS(value: (qc, d.subtracting([qa]).union(b))).mes()
       if self.isIncluded(newPS) {
         return [newPS]
       }
@@ -287,30 +275,21 @@ public struct PS {
       return self
     }
     
-    var aTemp: Set<Marking> = []
-    var bTemp: Set<Marking> = []
-    
-    if value.inc == [] {
-      aTemp = [net.inputMarkingForATransition(transition: transition)]
-    } else {
-      for marking in value.inc {
-        if let rev = net.revert(marking: marking, transition: transition) {
-          aTemp.insert(rev)
-        } else {
-          return nil
+    if let qaTemp = net.revert(marking: value.inc, transition: transition) {
+      var bTemp: Set<Marking> = []
+      
+      if value.exc == [] {
+        bTemp = []
+      } else {
+        for marking in value.exc {
+          if let rev = net.revert(marking: marking, transition: transition) {
+            bTemp.insert(rev)
+          }
         }
       }
+      return PS(value: (qaTemp, bTemp))
     }
-    if value.exc == [] {
-      bTemp = []
-    } else {
-      for marking in value.exc {
-        if let rev = net.revert(marking: marking, transition: transition) {
-          bTemp.insert(rev)
-        }
-      }
-    }
-    return PS(value: (aTemp, bTemp))
+    return nil
   }
   
   /// General revert operation where all transitions are applied
@@ -338,7 +317,7 @@ public struct PS {
       return ps
     }
     
-    let convMax = Marking.convMax(markings: self.value.inc.union(ps.value.inc), net: net)
+    let convMax = Marking.convMax(markings: [self.value.inc, ps.value.inc], net: net)
     
     if isCanonical {
       return PS(value: (convMax, self.value.exc.union(ps.value.exc))).canonised()
@@ -355,13 +334,13 @@ public struct PS {
       return false
     }
     
-    for m in value.inc {
-      if !(marking >= m) {
-        return false
-      }
+    let qa = self.value.inc
+    if !(marking >= qa) {
+      return false
     }
-    for m in value.exc {
-      if marking >= m {
+    
+    for qb in value.exc {
+      if marking >= qb {
         return false
       }
     }
@@ -383,7 +362,7 @@ public struct PS {
       return SPS(values: [self])
     }
 
-    let a = self.value.inc
+    let qa = self.value.inc
     let b = self.value.exc
 
     // Important to normalise the right predicate structure
@@ -391,20 +370,16 @@ public struct PS {
     // If we do not normalise it, it means that we could remove values that we should not.
     // For more information, look at the thesis document (operation nes).
     let nesPS = ps.nes()
-    let c = nesPS.value.inc
+    let qc = nesPS.value.inc
     let d = nesPS.value.exc
 
     var res: Set<PS> = []
 
-    var ps1 = PS(value: (a, c.union(b))).canonised()
-
-    res = res.union(SPS(values: [ps1]))
+    res.insert(PS(value: (qa, b.union([qc]))).canonised())
 
     for marking in d {
-      var newA = a
-      newA.insert(marking)
-      ps1 = PS(value: (newA,b)).canonised()
-      res.insert(ps1)
+      let newQa = Marking.convMax(markings: [qa, marking], net: net)
+      res.insert(PS(value: (newQa,b)).canonised())
     }
 
     for ps in res {
@@ -445,7 +420,7 @@ public struct PS {
     if self.value == emptyValue {
       return 0
     }
-    return value.inc.count + value.exc.count
+    return 1 + value.exc.count
   }
 
 }

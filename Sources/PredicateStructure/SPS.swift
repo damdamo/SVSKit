@@ -18,16 +18,14 @@ public struct SPS {
   
   
   private func ndls(ps: PS) -> SPS {
-    let (a,b) = ps.value
-    let qa = Marking.convMax(markings: a, net: ps.net).first!
+    let (qa,b) = ps.value
     var res: Set<PS> = []
     var t: Bool
     
     for psp in self {
       t = true
-      let (c,d) = psp.value
-      let qc = Marking.convMax(markings: c, net: ps.net).first!
-      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net).first!
+      let (qc,d) = psp.value
+      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
       if !Marking.comparable(m1: qa, m2: qc) {
         if !(qa.leq(qc)){
           for qb in b {
@@ -55,16 +53,14 @@ public struct SPS {
   }
   
   private func ndus(ps: PS) -> SPS {
-    let (a,b) = ps.value
-    let qa = Marking.convMax(markings: a, net: ps.net).first!
+    let (qa,b) = ps.value
     var res: Set<PS> = []
     var t: Bool
     
     for psp in self {
       t = true
-      let (c,d) = psp.value
-      let qc = Marking.convMax(markings: c, net: ps.net).first!
-      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net).first!
+      let (qc,d) = psp.value
+      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
       if !Marking.comparable(m1: qa, m2: qc) {
         if !(qc.leq(qa)){
           for qd in d {
@@ -102,8 +98,8 @@ public struct SPS {
     let sps = SPS(values: self.values.subtracting([psTemp]))
     
     for ps in sps {
-      let qat = Marking.convMax(markings: psTemp.value.inc, net: net).first!
-      let qa = Marking.convMax(markings: ps.value.inc, net: net).first!
+      let qat = psTemp.value.inc
+      let qa =  ps.value.inc
       if !qat.leq(qa) {
         psTemp = ps
       }
@@ -132,11 +128,11 @@ public struct SPS {
           if ndlsSps == [] && ndusSps == [] {
             return SPS(values: self.values.union([ps]))
           } else if ndlsSps != [] && ndusSps == [] {
-            let (a,b) = ps.value
+            let (qa,b) = ps.value
             let psp: PS = ndlsSps.lowPs(net: ps.net)
-            let (c,_) = psp.value
-            let qMax: Set<Marking> = Marking.convMax(markings: a.union(c), net: ps.net)
-            let reducedPS: PS = PS(value: (a, b.union(qMax)), net: ps.net).mes()
+            let (qc,_) = psp.value
+            let qMax: Marking = Marking.convMax(markings: [qa, qc], net: ps.net)
+            let reducedPS: PS = PS(value: ([qa], b.union([qMax])), net: ps.net).mes()
             
             let ndlsSPSReduced: SPS = SPS(values: ndlsSps.values.subtracting([psp]))
             let addTemp = ndlsSPSReduced.add(reducedPS, canonicityLevel: canonicityLevel)

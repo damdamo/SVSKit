@@ -19,7 +19,7 @@ final class PredicateStructureTests: XCTestCase {
     let expectedConvMin = Marking(["p1": 1, "p2": 5, "p3": 2], net: net)
     let psEmpty: PS = PS(value: ([net.zeroMarking()], [net.zeroMarking()]), net: net)
 
-    XCTAssertEqual(Marking.convMax(markings: [marking1, marking2], net: net), [expectedConvMax])
+    XCTAssertEqual(Marking.convMax(markings: [marking1, marking2], net: net), expectedConvMax)
     XCTAssertEqual(Marking.convMin(markings: [marking1, marking2], net: net), [expectedConvMin])
     
     let marking3 = Marking(["p1": 3, "p2": 5, "p3": 6], net: net)

@@ -64,13 +64,13 @@ public struct Marking {
   /// This is the convergent point such as all marking of markings are included in this convergent marking.
   /// - Parameter markings: The marking set
   /// - Returns: The singleton that contains one marking where each place takes the maximum between all markings.
-  public static func convMax(markings: Set<Marking>, net: PetriNet) -> Set<Marking> {
+  public static func convMax(markings: Set<Marking>, net: PetriNet) -> Marking {
     if markings.isEmpty {
-      return []
+      return net.zeroMarking()
     }
     
     if markings.count == 1 {
-      return markings
+      return markings.first!
     }
     
     var dicMarking: [String: Int] = [:]
@@ -85,7 +85,7 @@ public struct Marking {
         }
       }
     }
-    return [Marking(dicMarking, net: net)]
+    return Marking(dicMarking, net: net)
   }
   
   /// convMin, for convergence minimal, is a function to compute a singleton containing a marking where each value is the minimum of all places for a given place.

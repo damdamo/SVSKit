@@ -83,6 +83,7 @@ final class ListExampleTests: XCTestCase {
 //    print(s.elapsed.humanFormat)
 //  }
 //
+  
   func testERK() {
     let parserPN = PnmlParser()
     var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
