@@ -24,10 +24,6 @@ public struct PS {
     return ([net.zeroMarking()],[net.zeroMarking()])
   }
   
-  public var allValue: (inc: Set<Marking>, exc: Set<Marking>) {
-    return ([net.zeroMarking()], [])
-  }
-  
   private init(value: (inc: Set<Marking>, exc: Set<Marking>)) {
     if value.inc.isEmpty {
       let couple = (Set([PS.netStatic!.zeroMarking()]), value.exc)
@@ -79,7 +75,7 @@ public struct PS {
     for el in value.exc {
       sps.insert(PS(value: ([el], [])))
     }
-    return SPS(values: sps, net: net)
+    return SPS(values: sps)
   }
   
   // nes: Normalise excluding set
@@ -233,7 +229,7 @@ public struct PS {
     for marking in markingSet {
       sps.insert(encodeMarking(marking))
     }
-    return SPS(values: sps, net: net).simplified()
+    return SPS(values: sps).simplified()
   }
   
   /// Try to merge two predicate structures if there are comparable.
@@ -276,7 +272,7 @@ public struct PS {
   }
   
   public func mergeable(_ ps: PS) -> Bool {
-    if self.merge(ps) == SPS(values: [self, ps], net: net) {
+    if self.merge(ps) == SPS(values: [self, ps]) {
         return false
     }
     return true
@@ -334,7 +330,7 @@ public struct PS {
   ///   - ps: The second predicate structure to intersect
   ///   - isCanonical: A boolean to specifiy if each predicate structure is canonised during the process.
   /// - Returns: The result of the intersection
-  public func intersection(_ ps: PS) -> PS {
+  public func intersection(_ ps: PS, isCanonical: Bool) -> PS {
     
     if self.value == emptyValue {
       return self
@@ -342,7 +338,13 @@ public struct PS {
       return ps
     }
     
-    return PS(value: (self.value.inc.union(ps.value.inc), self.value.exc.union(ps.value.exc))).canonised()
+    let convMax = Marking.convMax(markings: self.value.inc.union(ps.value.inc), net: net)
+    
+    if isCanonical {
+      return PS(value: (convMax, self.value.exc.union(ps.value.exc))).canonised()
+    }
+    
+    return PS(value: (convMax, self.value.exc.union(ps.value.exc)))
   }
   
   /// To know if a marking belongs to a predicate structure
@@ -374,11 +376,11 @@ public struct PS {
     if self == ps || self.isEmpty() {
       return []
     } else if ps.isEmpty() {
-      return SPS(values: [self], net: net)
+      return SPS(values: [self])
     }
 
-    if self.intersection(ps).isEmpty() {
-      return SPS(values: [self], net: net)
+    if self.intersection(ps, isCanonical: false).isEmpty() {
+      return SPS(values: [self])
     }
 
     let a = self.value.inc
@@ -396,7 +398,7 @@ public struct PS {
 
     var ps1 = PS(value: (a, c.union(b))).canonised()
 
-    res = res.union(SPS(values: [ps1], net: net))
+    res = res.union(SPS(values: [ps1]))
 
     for marking in d {
       var newA = a
@@ -411,7 +413,7 @@ public struct PS {
       }
     }
 
-    return SPS(values: res, net: net)
+    return SPS(values: res)
   }
   
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
@@ -423,11 +425,11 @@ public struct PS {
     for ps in sps {
       spsTemp = []
       for psTemp in res {
-        spsTemp = spsTemp.union(psTemp.subtract(ps))
+        spsTemp = spsTemp.union(psTemp.subtract(ps).values)
       }
       res = spsTemp
     }
-    return SPS(values: res, net: net)
+    return SPS(values: res)
   }
   
   /// Is a predicate structure included in another one ?

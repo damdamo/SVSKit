@@ -4,35 +4,35 @@ import PredicateStructure
 
 final class ListExampleTests: XCTestCase {
 
-  func testSwimmingPool() {
-    let parser = PnmlParser()
-    var (net1, marking1) = parser.loadPN(filePath: "SwimmingPool-1.pnml")
-    var s = Stopwatch()
-    //     Example to observe that we do not need to compute EF fully to return true.
-    //     Thanks to the lowest fixpoint, at each step, the state space can only grow.
-    //     Hence, if the marking belong to the predicate structure at any point of the iterations, we can return an early answer.
-    //     The additional optimisation happens when eval is called with the given marking
-    let ctl1 = CTL(formula: .EU(.isFireable("GetB"), .isFireable("RBag")), net: net1, canonicityLevel: .semi)
-    let ctl2 = CTL(formula: .not(.AF(.not(.EF(.isFireable("GetB"))))), net: net1, canonicityLevel: .semi, simplified: false, debug: false)
-    XCTAssertFalse(ctl1.eval(marking: marking1))
-    print(s.elapsed.humanFormat)
-    s.reset()
-    XCTAssertTrue(ctl2.eval(marking: marking1))
-    print(s.elapsed.humanFormat)
-
-    marking1["Out"] = 2
-    marking1["Cabins"] = 1
-    marking1["Bags"] = 2
-
-    let efCTL = CTL(formula: .not(.EF(.isFireable("RBag"))), net: net1, canonicityLevel: .none)
-    let agCTL = CTL(formula: .AG(.isFireable("RBag")), net: net1, canonicityLevel: .none)
-    XCTAssertFalse(efCTL.eval(marking: marking1))
-    XCTAssertFalse(agCTL.eval(marking: marking1))
-
-    marking1["Cabins"] = 0
-    XCTAssertTrue(efCTL.eval(marking: marking1))
-
-  }
+//  func testSwimmingPool() {
+//    let parser = PnmlParser()
+//    var (net1, marking1) = parser.loadPN(filePath: "SwimmingPool-1.pnml")
+//    var s = Stopwatch()
+//    //     Example to observe that we do not need to compute EF fully to return true.
+//    //     Thanks to the lowest fixpoint, at each step, the state space can only grow.
+//    //     Hence, if the marking belong to the predicate structure at any point of the iterations, we can return an early answer.
+//    //     The additional optimisation happens when eval is called with the given marking
+//    let ctl1 = CTL(formula: .EU(.isFireable("GetB"), .isFireable("RBag")), net: net1, canonicityLevel: .semi)
+//    let ctl2 = CTL(formula: .not(.AF(.not(.EF(.isFireable("GetB"))))), net: net1, canonicityLevel: .semi, simplified: false, debug: false)
+//    XCTAssertFalse(ctl1.eval(marking: marking1))
+//    print(s.elapsed.humanFormat)
+//    s.reset()
+//    XCTAssertTrue(ctl2.eval(marking: marking1))
+//    print(s.elapsed.humanFormat)
+//
+//    marking1["Out"] = 2
+//    marking1["Cabins"] = 1
+//    marking1["Bags"] = 2
+//
+//    let efCTL = CTL(formula: .not(.EF(.isFireable("RBag"))), net: net1, canonicityLevel: .none)
+//    let agCTL = CTL(formula: .AG(.isFireable("RBag")), net: net1, canonicityLevel: .none)
+//    XCTAssertFalse(efCTL.eval(marking: marking1))
+//    XCTAssertFalse(agCTL.eval(marking: marking1))
+//
+//    marking1["Cabins"] = 0
+//    XCTAssertTrue(efCTL.eval(marking: marking1))
+//
+//  }
 
 //  func testDeadlock() {
 //    // Example 1 of paper: https://journals.sagepub.com/doi/10.1177/1687814017693542

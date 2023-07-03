@@ -6,19 +6,14 @@ public struct SPS {
   public let values: Set<PS>
   
   /// The related Petri net
-  private static var netStatic: PetriNet? = nil
+//  private static var netStatic: PetriNet? = nil
+//
+//  public var net: PetriNet {
+//    return SPS.netStatic!
+//  }
   
-  public var net: PetriNet {
-    return SPS.netStatic!
-  }
-  
-  private init(values: Set<PS>) {
+  public init(values: Set<PS>) {
     self.values = values
-  }
-  
-  public init(values: Set<PS>, net: PetriNet) {
-    self.values = values
-    SPS.netStatic = net
   }
   
   
@@ -211,7 +206,7 @@ public struct SPS {
     var res: Set<PS> = []
     for ps1 in self {
       for ps2 in sps {
-        let intersect = ps1.intersection(ps2)
+        let intersect = ps1.intersection(ps2, isCanonical: true)
         if !intersect.isEmpty() {
           res.insert(intersect)
         }
@@ -234,7 +229,7 @@ public struct SPS {
     var res: Set<PS> = []
     
     for ps in self {
-      if !ps.canonised().isEmpty() {
+      if !ps.isEmpty() {
         res = res.union(ps.subtract(sps).values)
 //        res = res.union(ps1.subtract(sps, isCanonical: isCanonical))
       }
@@ -245,12 +240,12 @@ public struct SPS {
   
   /// Compute the negation of a set of predicate structures. This is the result of a combination of all elements inside a predicate structure with each element of the other predicate structures. E.g.: notSPS({([q1], [q2]), ([q3], [q4]), ([q5], [q6])}) = {([],[q1,q3,q5]), ([q6],[q1,q3]), ([q4],[q1,q5]), ([q4,q6],[q1]), ([q2],[q3,q5]), ([q2, q6],[q3]), ([q2, q4],[q5]), ([q2, q4,q6],[])}
   /// - Returns: The negation of a set of predicate structures
-  public func not() -> SPS {
+  public func not(net: PetriNet) -> SPS {
     if self.isEmpty {
       return SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
     }
     // The singleton containing the predicate structure that represents all markings subtract to the current sps
-    return SPS(values: [PS(value: self.first!.allValue, net: self.first!.net)]).subtract(self)
+    return SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)]).subtract(self)
   }
   
   // All mergeable markings with ps
@@ -286,7 +281,14 @@ public struct SPS {
     if sps == [] {
       return false
     }
-    return self.subtract(sps) == []
+    
+    for ps in self {
+      if SPS(values: [ps]).subtract(sps) != [] {
+        return false
+      }
+    }
+    return true
+//    return self.subtract(sps) == []
   }
   
   /// Are two sets of predicate structures equivalent ?
@@ -328,14 +330,14 @@ public struct SPS {
   
   /// An extension of the revert function that represents AX in CTL logic.
   /// - Returns: A new set of predicate structures
-  public func revertTilde(canonicityLevel: CanonicityLevel) -> SPS {
+  public func revertTilde(net: PetriNet, canonicityLevel: CanonicityLevel) -> SPS {
     
     if self.values.isEmpty {
       return []
     }
     
     // AX Φ ≡ ¬ EX ¬ Φ
-    return self.not().revert(canonicityLevel: canonicityLevel).not()
+    return self.not(net: net).revert(canonicityLevel: canonicityLevel).not(net: net)
 //    let net = self.values.first!.net
 //    let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
 //    let applyNot = spsAll.subtract(self)
@@ -354,100 +356,128 @@ public struct SPS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-  public func simplified() -> SPS {
-    if self.isEmpty {
-      return self
-    }
-
-    var mergedSet: Set<PS> = []
-    var setTemp1: Set<PS> = []
-    var setTemp2: Set<PS> = []
-    var spsTemp: SPS = []
-    var psFirst: PS
-    var psFirstTemp: PS
-    var b: Bool
-
-    for ps in self {
-      let can = ps.canonised()
-      if can.value != can.emptyValue {
-        setTemp1.insert(can)
-      }
-    }
-
-    if setTemp1 == [] {
-      return []
-    }
-
-    while !setTemp1.isEmpty {
-      b = true
-      let firstPS = setTemp1.first!
-      setTemp1.remove(firstPS)
-      for ps in setTemp1 {
-        if ps.isIncluded(firstPS) {
-          setTemp1.remove(ps)
-        } else if firstPS.isIncluded(ps) {
-          b = false
-          break
-        }
-      }
-      if b {
-        setTemp2.insert(firstPS)
-      }
-    }
-
-    while !setTemp2.isEmpty {
-      psFirst = setTemp2.first!
-      psFirstTemp = psFirst
-      setTemp2.remove(psFirst)
-      for ps in setTemp2 {
-        spsTemp = psFirst.merge(ps)
-        if spsTemp.count == 1 {
-          psFirstTemp = spsTemp.first!
-          setTemp2.remove(ps)
-          setTemp2.insert(psFirstTemp)
-          break
-        }
-      }
-      if psFirst == psFirstTemp {
-        mergedSet.insert(psFirstTemp)
-      }
-    }
-
-    var reducedSPS: Set<PS> = mergedSet
-
-    while !mergedSet.isEmpty {
-      let firstPS = mergedSet.first!
-      mergedSet.remove(firstPS)
-      if SPS(values: [firstPS]).isIncluded(SPS(values: mergedSet)) {
-        reducedSPS.remove(firstPS)
-      }
-    }
-
-    return SPS(values: reducedSPS)
-
-  }
-  
 //  public func simplified() -> SPS {
 //    if self.isEmpty {
 //      return self
 //    }
 //
-//    var sps = self
-//    var res: Set<PS> = []
+//    var mergedSet: Set<PS> = []
+//    var setTemp1: Set<PS> = []
+//    var setTemp2: Set<PS> = []
+//    var spsTemp: SPS = []
+//    var psFirst: PS
+//    var psFirstTemp: PS
+//    var b: Bool
 //
-//
-//    while sps != [] {
-//      let first = sps.first!
-//      let spsWithoutFirst = SPS(values: sps.values.subtracting([first]))
-//      if !SPS(values: [first]).isIncluded(spsWithoutFirst) {
-//        res.insert(first)
+//    for ps in self {
+//      let can = ps.canonised()
+//      if can.value != can.emptyValue {
+//        setTemp1.insert(can)
 //      }
-//      sps = spsWithoutFirst
 //    }
 //
-//    return SPS(values: res)
+//    if setTemp1 == [] {
+//      return []
+//    }
+//
+//    while !setTemp1.isEmpty {
+//      b = true
+//      let firstPS = setTemp1.removeFirst()
+//      for ps in setTemp1 {
+//        if ps.isIncluded(firstPS) {
+//          setTemp1.remove(ps)
+//        } else if firstPS.isIncluded(ps) {
+//          b = false
+//          break
+//        }
+//      }
+//      if b {
+//        setTemp2.insert(firstPS)
+//      }
+//    }
+//
+//    while !setTemp2.isEmpty {
+//      psFirst = setTemp2.removeFirst()
+//      psFirstTemp = psFirst
+//      for ps in setTemp2 {
+//        spsTemp = psFirst.merge(ps)
+//        if spsTemp.count == 1 {
+//          psFirstTemp = spsTemp.first!
+//          setTemp2.remove(ps)
+//          setTemp2.insert(psFirstTemp)
+//          break
+//        }
+//      }
+//      if psFirst == psFirstTemp {
+//        mergedSet.insert(psFirstTemp)
+//      }
+//    }
+//
+//    var reducedSPS: Set<PS> = mergedSet
+//
+//    while !mergedSet.isEmpty {
+//      let firstPS = mergedSet.removeFirst()
+//      if SPS(values: [firstPS]).isIncluded(SPS(values: mergedSet)) {
+//        reducedSPS.remove(firstPS)
+//      }
+//    }
+//
+//    return SPS(values: reducedSPS)
+//
 //  }
   
+  public func simplified() -> SPS {
+    if self.isEmpty {
+      return self
+    }
+
+    var spsCanonised: Set<PS> = []
+    var spsReduced: Set<PS> = []
+    var spsMerged: Set<PS> = []
+    var spsTemp: SPS = []
+    var psFirst: PS
+    var psFirstTemp: PS
+
+    for ps in self {
+      let can = ps.canonised()
+      if can.value != can.emptyValue {
+        spsCanonised.insert(can)
+      }
+    }
+
+    if spsCanonised == [] {
+      return []
+    }
+    
+    spsReduced = spsCanonised
+    
+    while !spsCanonised.isEmpty {
+      let firstPS = spsCanonised.removeFirst()
+      if SPS(values: [firstPS]).isIncluded(SPS(values: spsCanonised)) {
+        spsReduced.remove(firstPS)
+      }
+    }
+
+    while !spsReduced.isEmpty {
+      psFirst = spsReduced.removeFirst()
+      psFirstTemp = psFirst
+      for ps in spsReduced {
+        spsTemp = psFirst.merge(ps)
+        if spsTemp.count == 1 {
+          psFirstTemp = spsTemp.first!
+          spsReduced.remove(ps)
+          spsReduced.insert(psFirstTemp)
+          break
+        }
+      }
+      if psFirst == psFirstTemp {
+        spsMerged.insert(psFirstTemp)
+      }
+    }
+    return SPS(values: spsMerged)
+  }
+  
+
   /// Create a set of predicate structures to represent all markings such as no transition are fireable.
   /// - Parameter net: The Petri net
   /// - Returns: The corresponding set of predicate structures
