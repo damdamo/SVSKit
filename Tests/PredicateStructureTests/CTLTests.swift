@@ -75,6 +75,9 @@ final class CTLTests: XCTestCase {
 
     let e = equivSPS
     let s = sps.simplified()
+    print(e)
+    print("------------")
+    print(sps)
     XCTAssertTrue(e.isEquiv(sps))
   }
 
@@ -110,6 +113,12 @@ final class CTLTests: XCTestCase {
     let simplifiedSPS1 = sps1.simplified()
     let simplifiedSPS2 = sps2.simplified()
     let simplifiedSPS3 = sps3.simplified()
+
+    let cf: CTL = CTL(formula: .EG(.isFireable("t2")), net: net, canonicityLevel: .semi)
+
+//    print(cf.eval())
+//    print(sps2)
+//    print(simplifiedSPS2)
 
     XCTAssertEqual(simplifiedSPS1, expectedRes)
     XCTAssertEqual(simplifiedSPS2, [])

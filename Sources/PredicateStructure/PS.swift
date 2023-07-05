@@ -48,10 +48,6 @@ public struct PS {
   
   public func isEmpty() -> Bool {
     for qb in value.exc {
-      if qb == net.zeroMarking() {
-        return true
-      }
-      
       if qb <= self.value.inc {
         return true
       }
@@ -94,7 +90,7 @@ public struct PS {
     if self.value == emptyValue {
       return self
     }
-    
+
     let ps = self.nes()
     // Extract markings that are included in other ones
     var invalidMarkings: Set<Marking> = []
@@ -108,7 +104,7 @@ public struct PS {
         }
       }
     }
-    
+
     let newExcludingMarkings = ps.value.exc.subtracting(invalidMarkings)
     // The result is the subtraction between the original markings and thus that are already included
     return PS(value: (ps.value.inc, newExcludingMarkings))
@@ -228,42 +224,105 @@ public struct PS {
   /// - Parameters:
   ///   - ps: The second predicate structure
   /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
+//  public func merge(_ ps: PS) -> SPS {
+//
+//    if !self.mergeable(ps) {
+//      return [self, ps]
+//    }
+//
+//    let (qa, b) = self.nes().value
+//    let (qc, d) = ps.nes().value
+//    var convMaxMarkingSet: Set<Marking> = []
+//
+//    if b.contains(qc) {
+//      let newPS = PS(value: (qa, b.subtracting([qc]).union(d))).mes()
+//      if ps.isIncluded(newPS) {
+//        return [newPS]
+//      }
+//    } else if d.contains(qa) {
+//      let newPS = PS(value: (qc, d.subtracting([qa]).union(b))).mes()
+//      if self.isIncluded(newPS) {
+//        return [newPS]
+//      }
+//    }
+//
+//    for qb in b {
+//      for qd in d {
+//        convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
+//      }
+//    }
+//
+//    let qMin = (qa <= qc) ? qa : qc
+//    let newPS = PS(value: (qMin, convMaxMarkingSet)).mes()
+//    return SPS(values: [newPS])
+//  }
   public func merge(_ ps: PS) -> SPS {
-
-    if self.isIncluded(ps) {
-      return [ps]
-    } else if ps.isIncluded(self) {
-      return [self]
+    
+    if !self.mergeable(ps) {
+      return [self, ps]
     }
 
-    let nesPS1 = self.nes()
-    let nesPS2 = ps.nes()
-
-    let qa = nesPS1.value.inc
-    let b = nesPS1.value.exc
-    let qc = nesPS2.value.inc
-    let d = nesPS2.value.exc
-
-    if b.contains(qc) {
-      let newPS = PS(value: (qa, b.subtracting([qc]).union(d))).mes()
-      if ps.isIncluded(newPS) {
-        return [newPS]
-      }
-    } else if d.contains(qa) {
-      let newPS = PS(value: (qc, d.subtracting([qa]).union(b))).mes()
-      if self.isIncluded(newPS) {
-        return [newPS]
+    var (qa, b) = self.nes().value
+    var (qc, d) = ps.nes().value
+    
+    if qc <= qa {
+      let temp = (qa, b)
+      (qa, b) = (qc, d)
+      (qc, d) = temp
+    }
+    
+    var comparableMarkings: Set<Marking> = []
+    var incomparableMarkings: Set<Marking> = []
+    var convMaxMarkingSet: Set<Marking> = []
+    
+    for qb in b {
+      if qc <= qb {
+        comparableMarkings.insert(qb)
+      } else {
+        incomparableMarkings.insert(qb)
+        convMaxMarkingSet.insert(qb)
       }
     }
-
-    return [self, ps]
+    
+    for marking in incomparableMarkings {
+      let convMax = Marking.convMax(markings: [marking, qc], net: net)
+      d.remove(convMax)
+    }
+    
+    for qb in comparableMarkings {
+      for qd in d {
+        convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
+      }
+    }
+    
+    let newPS = PS(value: (qa, convMaxMarkingSet)).mes()
+    return SPS(values: [newPS])
   }
   
   public func mergeable(_ ps: PS) -> Bool {
-    if self.merge(ps) == SPS(values: [self, ps]) {
-        return false
+        
+    var (qa, b) = self.nes().value
+    var (qc, d) = ps.nes().value
+    
+    if qc <= qa {
+      let temp = (qa, b)
+      (qa, b) = (qc, d)
+      (qc, d) = temp
     }
-    return true
+
+    if qa <= qc {
+      for qb in b {
+        if !(qc <= qb) {
+          let convMax = Marking.convMax(markings: [qb,qc], net: net)
+          if !d.contains(convMax) {
+            return false
+          }
+        }
+      }
+      return true
+    }
+    
+    return false
   }
   
   /// Compute the inverse of the fire operation for a given transition. It takes into account the current predicate structure where it consumes tokens for post arcs and produces new ones for pre arcs.
@@ -311,9 +370,9 @@ public struct PS {
   /// - Returns: The result of the intersection
   public func intersection(_ ps: PS, isCanonical: Bool) -> PS {
     
-    if self.value == emptyValue {
+    if self.isEmpty() {
       return self
-    } else if ps.value == emptyValue {
+    } else if ps.isEmpty() {
       return ps
     }
     
@@ -375,11 +434,11 @@ public struct PS {
 
     var res: Set<PS> = []
 
-    res.insert(PS(value: (qa, b.union([qc]))).canonised())
+    res.insert(PS(value: (qa, b.union([qc]))).mes())
 
     for marking in d {
       let newQa = Marking.convMax(markings: [qa, marking], net: net)
-      res.insert(PS(value: (newQa,b)).canonised())
+      res.insert(PS(value: (newQa,b)).nes())
     }
 
     for ps in res {

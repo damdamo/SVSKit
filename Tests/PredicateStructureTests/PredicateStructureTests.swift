@@ -60,7 +60,7 @@ final class PredicateStructureTests: XCTestCase {
     let ps1 = PS(value: ([marking1], [marking2]), net: net)
     let ps2 = PS(value: ([marking3], [marking4]), net: net)
 
-    XCTAssertEqual(SPS(values: [ps1]).union([PS(value: ps1.emptyValue, net: net)], canonicityLevel: .full), [ps1])
+//    XCTAssertEqual(SPS(values: [ps1]).union([PS(value: ps1.emptyValue, net: net)], canonicityLevel: .full), [ps1])
     
     let intersection = SPS(values: [ps1]).intersection([ps2])
 //    let expectedSPS: SPS = [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)]
@@ -241,13 +241,14 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(sps1.simplified(), sps2)
     XCTAssertEqual(ps1.merge(ps3), [ps1,ps3])
     
-//    let ps5 = PS(value: ([marking2], []), net: net)
-//    XCTAssertEqual(ps5.merge(ps3), [ps5])
+    let ps5 = PS(value: ([marking2], []), net: net)
+    XCTAssertEqual(ps5.merge(ps3), [ps5])
     
-//    let marking5 = Marking(["p0": 3, "p1": 3], net: net)
-//    let ps6 = PS(value: ([marking5], [marking4]), net: net)
-//    let ps7 = PS(value: ([marking1], [marking4]), net: net)
-//    XCTAssertEqual(ps6.merge(ps1), [ps7])
+    let marking5 = Marking(["p0": 3, "p1": 3], net: net)
+    let ps6 = PS(value: ([marking5], [marking4]), net: net)
+    let ps7 = PS(value: ([marking1], [marking4]), net: net)
+    print(ps6.mergeable(ps1))
+    XCTAssertEqual(ps6.merge(ps1), [ps7])
     
     let ps8 = PS(value: ([marking3], [marking2]), net: net)
     XCTAssertEqual(SPS(values: [ps8]).simplified(), [])
@@ -433,7 +434,7 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(sps3.subtract(sps4), sps5)
   }
     
-  func testMergePS() {
+  func testMergePS1() {
     let net = PetriNet(
       places: ["p0", "p1"],
       transitions: ["t0"],
@@ -445,17 +446,14 @@ final class PredicateStructureTests: XCTestCase {
     let m2 = Marking(["p0": 4, "p1": 4], net: net)
     let m3 = Marking(["p0": 8, "p1": 8], net: net)
     let m4 = Marking(["p0": 12, "p1": 7], net: net)
+    let m4bis = Marking(["p0": 12, "p1": 8], net: net)
     
     let ps1 = PS(value: ([m1],[m3]), net: net)
     let ps2 = PS(value: ([m2],[m4]), net: net)
-    XCTAssertEqual(ps1.merge(ps2), [ps1, ps2])
+    let psExpected = PS(value: ([m1],[m4bis]), net: net)
+    XCTAssertEqual(ps1.merge(ps2), [psExpected])
     
-    print("------------------")
-    print(SPS(values: [ps1, ps2]).subtract(ps1.merge(ps2)))
-    print(ps1.merge(ps2).subtract(SPS(values: [ps1, ps2])))
-    print("------------------")
-    
-    XCTAssertFalse(ps1.mergeable(ps2))
+    XCTAssertTrue(ps1.mergeable(ps2))
     
     let ps3 = PS(value: ([m3],[m4]), net: net)
     XCTAssertTrue(ps1.mergeable(ps3))
@@ -465,7 +463,35 @@ final class PredicateStructureTests: XCTestCase {
     let ps4 = PS(value: ([m3],[m5]), net: net)
     let sps1 = SPS(values: [ps1, ps2, ps3, ps4])
     
-    XCTAssertEqual(sps1.mergeable(ps1), SPS(values: [ps3,ps4]))
+    XCTAssertEqual(sps1.mergeable(ps1), SPS(values: [ps1, ps2, ps3, ps4]))
+  }
+  
+  func testMergePS2() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let m1 = Marking(["p0": 1, "p1": 3], net: net)
+    let m2 = Marking(["p0": 2, "p1": 3], net: net)
+    let m3 = Marking(["p0": 1, "p1": 4], net: net)
+    let m4 = Marking(["p0": 2, "p1": 4], net: net)
+    let m5 = Marking(["p0": 1, "p1": 5], net: net)
+    
+    let ps1 = PS(value: ([m1],[m2, m3]), net: net)
+    let ps2 = PS(value: ([m3],[m4, m5]), net: net)
+    let ps3 = PS(value: ([m1],[m2, m5]), net: net)
+    
+    let sps1 = SPS(values: [ps3])
+    XCTAssertEqual(ps1.merge(ps2), sps1)
+    
+    let m6 = Marking(["p0": 2, "p1": 5], net: net)
+    let ps4 = PS(value: ([m3],[m5, m6]), net: net)
+    let sps2 = SPS(values: [ps1, ps4])
+    
+    XCTAssertEqual(ps1.merge(ps4), sps2)
   }
 
   func testIsEmpty() {
@@ -613,7 +639,116 @@ final class PredicateStructureTests: XCTestCase {
     let ps2 = PS(value: ([m1],[m3]), net: net)
     
     XCTAssertEqual(ps1.mes(), ps2)
+  }
+  
+  func test1() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
     
+    let m1 = Marking(["p0": 1, "p1": 0], net: net)
+    let m2 = Marking(["p0": 0, "p1": 0], net: net)
+    let m3 = Marking(["p0": 0, "p1": 1], net: net)
+    let m4 = Marking(["p0": 1, "p1": 2], net: net)
+    
+    let ps1 = PS(value: ([m1],[m4]), net: net)
+    let ps2 = PS(value: ([m2],[m1,m3]), net: net)
+    let ps3 = PS(value: ([m2],[m4]), net: net)
+    
+//    ([p0: 1, p1: 0], [[p0: 1, p1: 2]])
+//    ([p0: 0, p1: 0], [[p0: 1, p1: 0], [p0: 0, p1: 1]])
+    
+    let sps1 = SPS(values: [ps1, ps2])
+    let sps2 = SPS(values: [ps3])
+    
+    print(sps1.isEquiv(sps2))
+    print(sps1.subtract(sps2))
+    print(sps2.subtract(sps1))
+    
+//    print(ps1)
+//    print(ps2)
+//
+//    print(ps1.mergeable(ps2))
+//
+//    let m4 = Marking(["p0": 3, "p1": 5], net: net)
+//    let m5 = Marking(["p0": 7, "p1": 8], net: net)
+//    let m6 = Marking(["p0": 6, "p1": 6], net: net)
+//    let m7 = Marking(["p0": 10, "p1": 6], net: net)
+//
+//    let ps3 = PS(value: ([m4],[m5]), net: net)
+//    let ps4 = PS(value: ([m6],[m7]), net: net)
+//
+//    let m = ps3.merge(ps4)
+//    print(m)
+//
+//    let sps1 = SPS(values: [ps3,ps4])
+//
+//    print(sps1.isEquiv(m))
+//
+//    print(sps1.contains(marking: Marking(["p0": 10, "p1": 8], net: net)))
+//    print(m.contains(marking: Marking(["p0": 10, "p1": 8], net: net)))
+    
+    
+  }
+  
+  func test2() {
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let m1 = Marking(["p0": 3, "p1": 5, "p2": 7], net: net)
+    let m2 = Marking(["p0": 10, "p1": 20, "p2": 10], net: net)
+    let m3 = Marking(["p0": 8, "p1": 28, "p2": 32], net: net)
+    let m4 = Marking(["p0": 7, "p1": 8, "p2": 8], net: net)
+    let m5 = Marking(["p0": 20, "p1": 20, "p2": 8], net: net)
+    let m6 = Marking(["p0": 10, "p1": 25, "p2": 16], net: net)
+    let m7 = Marking(["p0": 20, "p1": 20, "p2": 10], net: net)
+//    let m8 = Marking(["p0": 10, "p1": 25, "p2": 16], net: net)
+    
+    let ps1 = PS(value: ([m1],[m2,m3]), net: net)
+    let ps2 = PS(value: ([m4],[m5,m6]), net: net)
+    let ps3 = PS(value: ([m1],[m6,m7]), net: net)
+    
+    let sps1 = SPS(values: [ps1,ps2])
+    let sps2 = SPS(values: [ps3])
+    
+    print(sps1.isEquiv(sps2))
+    print(sps1.subtract(sps2))
+    print(sps2.subtract(sps1))
+    print("-------------------")
+    
+//    let sps3 = SPS(values: [ps1])
+//    let sps4 = SPS(values: [ps2])
+//    let sps5 = sps2.subtract(sps3)
+//    let sps6 = sps5.subtract(sps4)
+//    print("sps5: \(sps5)")
+//    print("-")
+//    print("sps4: \(sps4)")
+//    print("=")
+//    print("sps6: \(sps6)")
+//
+    
+    
+  }
+  
+  func testToo() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .post(from: "t0", to: "p1", labeled: 1)
+    )
+    
+    let m1 = Marking(["p0": 5, "p1": 4], net: net)
+    let m2 = Marking(["p0": 5, "p1": 5], net: net)
+    
+    print(m1 <= m2)
   }
   
 //  func testThesis() {

@@ -73,7 +73,7 @@ final class ListExampleTests: XCTestCase {
 //
 //    s.reset()
 //
-//    let key = "ERK-PT-000001-CTLFireability-05"
+//    let key = "ERK-PT-000001-CTLFireability-15"
 //    let formula = dicCTL[key]!
 //    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true).queryReduction()
 ////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
@@ -82,7 +82,7 @@ final class ListExampleTests: XCTestCase {
 //
 //    print(s.elapsed.humanFormat)
 //  }
-//
+
   
   func testERK() {
     let parserPN = PnmlParser()

@@ -111,6 +111,8 @@ public struct SPS {
   public func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
     if self == [] {
       return SPS(values: [ps])
+    } else if ps.isEmpty() {
+      return self
     }
     
     if canonicityLevel == .none {
@@ -271,20 +273,19 @@ public struct SPS {
   ///   - sps: The right set of predicate structures
   /// - Returns: True if it is included, false otherwise
   public func isIncluded(_ sps: SPS) -> Bool {
-    if self == [] {
+    if self.isEmpty {
       return true
     }
-    if sps == [] {
+    if sps.isEmpty {
       return false
     }
     
     for ps in self {
-      if SPS(values: [ps]).subtract(sps) != [] {
+      if !ps.subtract(sps).isEmpty {
         return false
       }
     }
     return true
-//    return self.subtract(sps) == []
   }
   
   /// Are two sets of predicate structures equivalent ?
@@ -352,76 +353,6 @@ public struct SPS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-//  public func simplified() -> SPS {
-//    if self.isEmpty {
-//      return self
-//    }
-//
-//    var mergedSet: Set<PS> = []
-//    var setTemp1: Set<PS> = []
-//    var setTemp2: Set<PS> = []
-//    var spsTemp: SPS = []
-//    var psFirst: PS
-//    var psFirstTemp: PS
-//    var b: Bool
-//
-//    for ps in self {
-//      let can = ps.canonised()
-//      if can.value != can.emptyValue {
-//        setTemp1.insert(can)
-//      }
-//    }
-//
-//    if setTemp1 == [] {
-//      return []
-//    }
-//
-//    while !setTemp1.isEmpty {
-//      b = true
-//      let firstPS = setTemp1.removeFirst()
-//      for ps in setTemp1 {
-//        if ps.isIncluded(firstPS) {
-//          setTemp1.remove(ps)
-//        } else if firstPS.isIncluded(ps) {
-//          b = false
-//          break
-//        }
-//      }
-//      if b {
-//        setTemp2.insert(firstPS)
-//      }
-//    }
-//
-//    while !setTemp2.isEmpty {
-//      psFirst = setTemp2.removeFirst()
-//      psFirstTemp = psFirst
-//      for ps in setTemp2 {
-//        spsTemp = psFirst.merge(ps)
-//        if spsTemp.count == 1 {
-//          psFirstTemp = spsTemp.first!
-//          setTemp2.remove(ps)
-//          setTemp2.insert(psFirstTemp)
-//          break
-//        }
-//      }
-//      if psFirst == psFirstTemp {
-//        mergedSet.insert(psFirstTemp)
-//      }
-//    }
-//
-//    var reducedSPS: Set<PS> = mergedSet
-//
-//    while !mergedSet.isEmpty {
-//      let firstPS = mergedSet.removeFirst()
-//      if SPS(values: [firstPS]).isIncluded(SPS(values: mergedSet)) {
-//        reducedSPS.remove(firstPS)
-//      }
-//    }
-//
-//    return SPS(values: reducedSPS)
-//
-//  }
-  
   public func simplified() -> SPS {
     if self.isEmpty {
       return self
@@ -436,21 +367,19 @@ public struct SPS {
 
     for ps in self {
       let can = ps.canonised()
-      if can.value != can.emptyValue {
+      if !can.isEmpty() {
         spsCanonised.insert(can)
       }
     }
 
-    if spsCanonised == [] {
+    if spsCanonised.isEmpty {
       return []
     }
-    
-    spsReduced = spsCanonised
-    
+
     while !spsCanonised.isEmpty {
       let firstPS = spsCanonised.removeFirst()
-      if SPS(values: [firstPS]).isIncluded(SPS(values: spsCanonised)) {
-        spsReduced.remove(firstPS)
+      if !SPS(values: [firstPS]).isIncluded(SPS(values: spsCanonised)) {
+        spsReduced.insert(firstPS)
       }
     }
 
@@ -472,6 +401,57 @@ public struct SPS {
     }
     return SPS(values: spsMerged)
   }
+  
+//  public func simplified() -> SPS {
+//    if self.isEmpty {
+//      return self
+//    }
+//
+//    var spsCanonised: Set<PS> = []
+//    var spsReduced: Set<PS> = []
+//    var spsMerged: Set<PS> = []
+//    var spsTemp: SPS = []
+//    var psFirst: PS
+//    var psFirstTemp: PS
+//
+//    for ps in self {
+//      let can = ps.canonised()
+//      if !can.isEmpty() {
+//        spsCanonised.insert(can)
+//      }
+//    }
+//
+//    if spsCanonised.isEmpty {
+//      return []
+//    }
+//
+//    while !spsCanonised.isEmpty {
+//      let firstPS = spsCanonised.removeFirst()
+//      if !SPS(values: [firstPS]).isIncluded(SPS(values: spsCanonised)) {
+//        spsReduced.insert(firstPS)
+//      }
+//    }
+//
+//    while !spsReduced.isEmpty {
+//      psFirst = spsReduced.removeFirst()
+//      psFirstTemp = psFirst
+//      for ps in spsReduced {
+//        if psFirst.mergeable(ps) {
+//          spsTemp = psFirst.merge(ps)
+//          if spsTemp.count == 1 {
+//            psFirstTemp = spsTemp.first!
+//            spsReduced.remove(ps)
+//            spsReduced.insert(psFirstTemp)
+//            break
+//          }
+//        }
+//      }
+//      if psFirst == psFirstTemp {
+//        spsMerged.insert(psFirstTemp)
+//      }
+//    }
+//    return SPS(values: spsMerged)
+//  }
   
 
   /// Create a set of predicate structures to represent all markings such as no transition are fireable.
