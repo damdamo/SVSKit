@@ -91,23 +91,14 @@ public struct PS {
       return self
     }
 
-    let ps = self.nes()
-    // Extract markings that are included in other ones
-    var invalidMarkings: Set<Marking> = []
-    for marking1 in ps.value.exc {
-      for marking2 in ps.value.exc {
-        if marking1 != marking2 {
-          if marking2 <= marking1 {
-            invalidMarkings.insert(marking1)
-            break
-          }
-        }
-      }
-    }
+    let (qa, b) = self.nes().value
+    
+    let newExcludingMarkings = b.filter({(qb) -> Bool in
+      !b.contains(where: {($0 != qb && $0 <= qb)})
+    })
 
-    let newExcludingMarkings = ps.value.exc.subtracting(invalidMarkings)
     // The result is the subtraction between the original markings and thus that are already included
-    return PS(value: (ps.value.inc, newExcludingMarkings))
+    return PS(value: (qa, newExcludingMarkings))
   }
   
   /// Returns the canonical form of a predicate structure. Let suppose (a,b) in PS
@@ -256,10 +247,12 @@ public struct PS {
 //    let newPS = PS(value: (qMin, convMaxMarkingSet)).mes()
 //    return SPS(values: [newPS])
 //  }
-  public func merge(_ ps: PS) -> SPS {
+  public func merge(_ ps: PS, mergeablePreviouslyComputed: Bool = false) -> SPS {
     
-    if !self.mergeable(ps) {
-      return [self, ps]
+    if !mergeablePreviouslyComputed {
+      if !self.mergeable(ps) {
+        return [self, ps]
+      }
     }
 
     var (qa, b) = self.nes().value
@@ -500,6 +493,6 @@ extension PS: CustomStringConvertible {
     if value == emptyValue {
       return "∅"
     }
-    return "(\(value.inc), \(value.exc))"
+    return "(\(value.inc), \(value.exc.sorted(by: {$0.leq($1)})))"
   }
 }

@@ -63,7 +63,7 @@ final class ListExampleTests: XCTestCase {
 //
 //  }
 
-//  func testERKCase5() {
+//  func testERKCase3() {
 //    let parserPN = PnmlParser()
 //    var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
 //    var s = Stopwatch()
@@ -73,9 +73,10 @@ final class ListExampleTests: XCTestCase {
 //
 //    s.reset()
 //
-//    let key = "ERK-PT-000001-CTLFireability-15"
+//    let key = "ERK-PT-000001-CTLFireability-03"
 //    let formula = dicCTL[key]!
-//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true).queryReduction()
+//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
+//    print(ctlReduced)
 ////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
 //
 //    print(ctlReduced.eval(marking: marking1))
@@ -84,36 +85,36 @@ final class ListExampleTests: XCTestCase {
 //  }
 
   
-  func testERK() {
-    let parserPN = PnmlParser()
-    var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
-    var s = Stopwatch()
-
-    let parserCTL = CTLParser()
-    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
-
-    s.reset()
-
-    var answers: [String: Bool] = [:]
-    var times: [String: String] = [:]
-    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
-      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true).queryReduction()
-      print("-------------------------------")
-      print(key)
-      s.reset()
-      answers[key] = ctlReduced.eval(marking: marking1)
-      print(answers[key]!)
-      times[key] = s.elapsed.humanFormat
-      print(s.elapsed.humanFormat)
-      print("-------------------------------")
-    }
-
-    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
-      print("Formula \(key) is: \(b) (\(times[key]!))")
-    }
-
-    print(s.elapsed.humanFormat)
-  }
+//  func testERK() {
+//    let parserPN = PnmlParser()
+//    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+//    var s = Stopwatch()
+//
+//    let parserCTL = CTLParser()
+//    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
+//
+//    s.reset()
+//
+//    var answers: [String: Bool] = [:]
+//    var times: [String: String] = [:]
+//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true).queryReduction()
+//      print("-------------------------------")
+//      print(key)
+//      s.reset()
+//      answers[key] = ctlReduced.eval(marking: marking1)
+//      print(answers[key]!)
+//      times[key] = s.elapsed.humanFormat
+//      print(s.elapsed.humanFormat)
+//      print("-------------------------------")
+//    }
+//
+//    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
+//      print("Formula \(key) is: \(b) (\(times[key]!))")
+//    }
+//
+//    print(s.elapsed.humanFormat)
+//  }
   
   //           0123456789012345
   // Expected: FTFTTTFTTFFFFTTF

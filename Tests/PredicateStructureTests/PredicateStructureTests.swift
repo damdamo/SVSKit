@@ -593,6 +593,9 @@ final class PredicateStructureTests: XCTestCase {
     let expectedSPS1p = SPS(values: [ps3, ps4, ps5p])
     
     XCTAssertEqual(expectedSPS1, sps1.union(sps2.union(sps3, canonicityLevel: .full), canonicityLevel: .full))
+    XCTAssertEqual(expectedSPS1, sps2.union(sps1.union(sps3, canonicityLevel: .full), canonicityLevel: .full))
+    XCTAssertEqual(expectedSPS1, sps3.union(sps1.union(sps2, canonicityLevel: .full), canonicityLevel: .full))
+    XCTAssertEqual(expectedSPS1, sps3.union(sps2.union(sps1, canonicityLevel: .full), canonicityLevel: .full))
     XCTAssertEqual(expectedSPS1p, sps1p.union(sps2p.union(sps3p, canonicityLevel: .full), canonicityLevel: .full))
     
     

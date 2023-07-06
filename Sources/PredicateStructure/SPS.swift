@@ -109,9 +109,13 @@ public struct SPS {
   }
   
   public func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
-    if self == [] {
+    if self.isEmpty {
       return SPS(values: [ps])
     } else if ps.isEmpty() {
+      return self
+    }
+    
+    if SPS(values: [ps]).isIncluded(self) {
       return self
     }
     
@@ -121,15 +125,15 @@ public struct SPS {
     
     let spsSingleton = SPS(values: [ps])
     
-    if spsSingleton.intersection(self) == [] {
+    if spsSingleton.intersection(self).isEmpty {
       let mergeableSPS: SPS = self.mergeable(ps)
-      if mergeableSPS == [] {
+      if mergeableSPS.isEmpty {
         if canonicityLevel == .full {
           let ndlsSps = self.ndls(ps: ps)
           let ndusSps = self.ndus(ps: ps)
-          if ndlsSps == [] && ndusSps == [] {
+          if ndlsSps.isEmpty && ndusSps.isEmpty {
             return SPS(values: self.values.union([ps]))
-          } else if ndlsSps != [] && ndusSps == [] {
+          } else if !ndlsSps.isEmpty && ndusSps.isEmpty {
             let (qa,b) = ps.value
             let psp: PS = ndlsSps.lowPs(net: ps.net)
             let (qc,_) = psp.value
@@ -146,7 +150,7 @@ public struct SPS {
           } else {
             let spsWithoutNdus: SPS = SPS(values: self.values.subtracting(ndusSps.values))
             var res: SPS = []
-            if ndlsSps == [] && ndusSps != [] {
+            if ndlsSps.isEmpty && !ndusSps.isEmpty {
               res = SPS(values: spsWithoutNdus.values.union([ps]))
             } else {
               res = spsWithoutNdus.add(ps, canonicityLevel: canonicityLevel)
@@ -154,12 +158,13 @@ public struct SPS {
             for psp in ndusSps {
               res = res.add(psp, canonicityLevel: canonicityLevel)
             }
+            return res
           }
         }
         return SPS(values: self.values.union([ps]))
       }
       let psp = mergeableSPS.lowPs(net: ps.net)
-      let mergedPart = ps.merge(psp).first!
+      let mergedPart = ps.merge(psp, mergeablePreviouslyComputed: true).first!
       return SPS(values: self.values.subtracting([psp])).add(mergedPart, canonicityLevel: canonicityLevel)
     }
     let spsMinusPs: SPS = self.subtract(spsSingleton)
@@ -229,7 +234,6 @@ public struct SPS {
     for ps in self {
       if !ps.isEmpty() {
         res = res.union(ps.subtract(sps).values)
-//        res = res.union(ps1.subtract(sps, isCanonical: isCanonical))
       }
     }
     return SPS(values: res)
@@ -353,55 +357,6 @@ public struct SPS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-  public func simplified() -> SPS {
-    if self.isEmpty {
-      return self
-    }
-
-    var spsCanonised: Set<PS> = []
-    var spsReduced: Set<PS> = []
-    var spsMerged: Set<PS> = []
-    var spsTemp: SPS = []
-    var psFirst: PS
-    var psFirstTemp: PS
-
-    for ps in self {
-      let can = ps.canonised()
-      if !can.isEmpty() {
-        spsCanonised.insert(can)
-      }
-    }
-
-    if spsCanonised.isEmpty {
-      return []
-    }
-
-    while !spsCanonised.isEmpty {
-      let firstPS = spsCanonised.removeFirst()
-      if !SPS(values: [firstPS]).isIncluded(SPS(values: spsCanonised)) {
-        spsReduced.insert(firstPS)
-      }
-    }
-
-    while !spsReduced.isEmpty {
-      psFirst = spsReduced.removeFirst()
-      psFirstTemp = psFirst
-      for ps in spsReduced {
-        spsTemp = psFirst.merge(ps)
-        if spsTemp.count == 1 {
-          psFirstTemp = spsTemp.first!
-          spsReduced.remove(ps)
-          spsReduced.insert(psFirstTemp)
-          break
-        }
-      }
-      if psFirst == psFirstTemp {
-        spsMerged.insert(psFirstTemp)
-      }
-    }
-    return SPS(values: spsMerged)
-  }
-  
 //  public func simplified() -> SPS {
 //    if self.isEmpty {
 //      return self
@@ -437,13 +392,11 @@ public struct SPS {
 //      psFirstTemp = psFirst
 //      for ps in spsReduced {
 //        if psFirst.mergeable(ps) {
-//          spsTemp = psFirst.merge(ps)
-//          if spsTemp.count == 1 {
-//            psFirstTemp = spsTemp.first!
-//            spsReduced.remove(ps)
-//            spsReduced.insert(psFirstTemp)
-//            break
-//          }
+//          spsTemp = psFirst.merge(ps, mergeablePreviouslyComputed: true)
+//          psFirstTemp = spsTemp.first!
+//          spsReduced.remove(ps)
+//          spsReduced.insert(psFirstTemp)
+//          break
 //        }
 //      }
 //      if psFirst == psFirstTemp {
@@ -452,6 +405,60 @@ public struct SPS {
 //    }
 //    return SPS(values: spsMerged)
 //  }
+  public func simplified() -> SPS {
+    if self.isEmpty {
+      return self
+    }
+
+    var spsCanonised: Set<PS> = []
+    var spsReduced: Set<PS> = []
+    var spsMerged: Set<PS> = []
+//    var spsTemp: SPS = []
+    var psFirst: PS
+    var psFirstTemp: PS
+
+    for ps in self {
+      let can = ps.canonised()
+      if !can.isEmpty() {
+        spsCanonised.insert(can)
+      }
+    }
+
+    if spsCanonised.isEmpty {
+      return []
+    }
+    
+//    print("Number of ps in spsCanonised: \(spsCanonised.count)")
+    
+    while !spsCanonised.isEmpty {
+      psFirst = spsCanonised.removeFirst()
+      psFirstTemp = psFirst
+      for ps in spsCanonised {
+        if psFirst.mergeable(ps) {
+          psFirstTemp = psFirst.merge(ps, mergeablePreviouslyComputed: true).first!
+          spsCanonised.remove(ps)
+          spsCanonised.insert(psFirstTemp)
+          break
+        }
+      }
+      if psFirst == psFirstTemp {
+        spsMerged.insert(psFirstTemp)
+      }
+    }
+    
+//    print("Number of ps in spsMerged: \(spsMerged.count)")
+
+    while !spsMerged.isEmpty {
+      let firstPS = spsMerged.removeFirst()
+      if !SPS(values: [firstPS]).isIncluded(SPS(values: spsMerged)) {
+        spsReduced.insert(firstPS)
+      }
+    }
+
+//    print("Number of ps in spsReduced: \(spsReduced.count)")
+    
+    return SPS(values: spsReduced)
+  }
   
 
   /// Create a set of predicate structures to represent all markings such as no transition are fireable.
@@ -531,7 +538,7 @@ extension SPS: CustomStringConvertible {
       return "{}"
     }
     var res: String = "{\n"
-    for ps in values {
+    for ps in values.sorted(by: {$0.value.inc.leq($1.value.inc)}) {
       res.append(" \(ps),\n")
     }
     res.removeLast(2)

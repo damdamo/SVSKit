@@ -34,9 +34,10 @@ final class CTLTests: XCTestCase {
     
     let expectedSPS: SPS = [ps1, ps2, ps3, ps4, ps5]
     
-    let ctlFormula = CTL(formula: .AX(.isFireable("t2")), net: net, canonicityLevel: .full, simplified: true)
+    let ctlFormula = CTL(formula: .AX(.isFireable("t2")), net: net, canonicityLevel: .full, simplified: false)
     let sps = ctlFormula.eval()
     
+    XCTAssertTrue(sps.isEquiv(expectedSPS))
   }
 
   
@@ -70,15 +71,18 @@ final class CTLTests: XCTestCase {
     let equivSPS: SPS = [ps1, ps2, ps3, ps4, ps5, ps6]
 
     // Compute all markings that breaks the mutual exclusion
-    let ctlFormula = CTL(formula: .EF(.and(.isFireable("t4"), .isFireable("t5"))), net: net, canonicityLevel: .semi)
+    let ctlFormula = CTL(formula: .EF(.and(.isFireable("t4"), .isFireable("t5"))), net: net, canonicityLevel: .full, simplified: false, debug: true)
     let sps = ctlFormula.eval()
 
     let e = equivSPS
-    let s = sps.simplified()
     print(e)
     print("------------")
     print(sps)
     XCTAssertTrue(e.isEquiv(sps))
+    print("-----------")
+    print(sps.simplified())
+    print(sps.count)
+    print(sps.simplified().count)
   }
 
   func testCTLEval1() {
@@ -351,5 +355,41 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-04"]!, expectedCTL1)
     XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-06"]!, expectedCTL2)
   }
+  
+//  func testCTLX() {
+//    // Following Petri net:
+//    //      1 p0
+//    //     -->
+//    // t0 ▭   o ---
+//    //     <--      \
+//    //      2       | 4
+//    //              ↓
+//    //           -> ▭ t1
+//    //        6 /   | 3
+//    //          |   /
+//    // t2 ▭ <-- o <-
+//    //    ↑   5 p1
+//    //    |
+//    //    o p2
+//    let net = PetriNet(
+//      places: ["p0", "p1", "p2"],
+//      transitions: ["t0", "t1", "t2"],
+//      arcs: //.pre(from: "p0", to: "t0", labeled: 2),
+//      .post(from: "t0", to: "p0", labeled: 1),
+//      .pre(from: "p0", to: "t1", labeled: 4),
+////      .pre(from: "p1", to: "t1", labeled: 6),
+//      .post(from: "t1", to: "p1", labeled: 3),
+//      .pre(from: "p1", to: "t2", labeled: 5),
+//      .pre(from: "p2", to: "t2", labeled: 1),
+//      capacity: ["p0": 10, "p1": 10, "p2": 10]
+//    )
+//
+//    let ctlFormula1 = CTL(formula: .EF(.isFireable("t2")), net: net, canonicityLevel: .full, simplified: false, debug: true)
+//
+//    print(ctlFormula1.eval())
+//
+//
+//  }
+
   
 }
