@@ -187,21 +187,40 @@ public struct CTL {
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       res = ctl1.eval().intersection(ctl2.eval())
+      if debug {
+        print("Predicate structure number after and: \(res.count)")
+      }
     case .or(let formula1, let formula2):
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       res = ctl1.eval().union(ctl2.eval(), canonicityLevel: canonicityLevel)
+      if debug {
+//        print("ctl1: \(ctl1)")
+//        print("ctl2: \(ctl2)")
+//        print("ctl1 count: \(ctl1.count())")
+//        print("ctl2 count: \(ctl2.count())")
+        print("Predicate structure number after or: \(res.count)")
+      }
     case .not(let formula):
       let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.eval().not(net: net)
+      if debug {
+        print("Predicate structure number after not: \(res.count)")
+      }
     case .deadlock:
       res = SPS.deadlock(net: net)
     case .EX(let formula):
       let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.eval().revert(canonicityLevel: canonicityLevel)
+      if debug {
+        print("Predicate structure number after EX: \(res.count)")
+      }
     case .AX(let formula):
       let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel)
+      if debug {
+        print("Predicate structure number after AX: \(res.count)")
+      }
     case .EF(let formula):
       let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.evalEF()

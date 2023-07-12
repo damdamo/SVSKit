@@ -251,6 +251,13 @@ public struct PS {
     
     if !mergeablePreviouslyComputed {
       if !self.mergeable(ps) {
+        let intersect = self.intersection(ps, isCanonical: true)
+        if !intersect.isEmpty() {
+          if self.value.inc.leq(ps.value.inc) {
+            return SPS(values: ps.subtract(intersect).values.union([self]))
+          }
+          return SPS(values: self.subtract(intersect).values.union([ps]))
+        }
         return [self, ps]
       }
     }

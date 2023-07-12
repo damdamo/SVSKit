@@ -75,7 +75,6 @@ final class CTLTests: XCTestCase {
     let sps = ctlFormula.eval()
 
     let e = equivSPS
-    print(e)
     print("------------")
     print(sps)
     XCTAssertTrue(e.isEquiv(sps))

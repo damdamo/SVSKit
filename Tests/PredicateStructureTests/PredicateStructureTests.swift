@@ -705,27 +705,19 @@ final class PredicateStructureTests: XCTestCase {
       .post(from: "t0", to: "p1", labeled: 1)
     )
     
-    let m1 = Marking(["p0": 3, "p1": 5, "p2": 7], net: net)
-    let m2 = Marking(["p0": 10, "p1": 20, "p2": 10], net: net)
-    let m3 = Marking(["p0": 8, "p1": 28, "p2": 32], net: net)
-    let m4 = Marking(["p0": 7, "p1": 8, "p2": 8], net: net)
-    let m5 = Marking(["p0": 20, "p1": 20, "p2": 8], net: net)
-    let m6 = Marking(["p0": 10, "p1": 25, "p2": 16], net: net)
-    let m7 = Marking(["p0": 20, "p1": 20, "p2": 10], net: net)
+    let m1 = Marking(["p0": 1, "p1": 5, "p2": 0], net: net)
+    let m2 = Marking(["p0": 1, "p1": 5, "p2": 7], net: net)
+    let m3 = Marking(["p0": 3, "p1": 5, "p2": 4], net: net)
+    let m4 = Marking(["p0": 3, "p1": 0, "p2": 7], net: net)
 //    let m8 = Marking(["p0": 10, "p1": 25, "p2": 16], net: net)
     
-    let ps1 = PS(value: ([m1],[m2,m3]), net: net)
-    let ps2 = PS(value: ([m4],[m5,m6]), net: net)
-    let ps3 = PS(value: ([m1],[m6,m7]), net: net)
-    
+    let ps1 = PS(value: ([m1],[m2]), net: net)
+    let ps2 = PS(value: ([m3],[m4]), net: net)
     let sps1 = SPS(values: [ps1,ps2])
-    let sps2 = SPS(values: [ps3])
     
-    print(sps1.isEquiv(sps2))
-    print(sps1.subtract(sps2))
-    print(sps2.subtract(sps1))
-    print("-------------------")
+    print(ps1.merge(ps2))
     
+    print(sps1.isEquiv(ps1.merge(ps2)))
 //    let sps3 = SPS(values: [ps1])
 //    let sps4 = SPS(values: [ps2])
 //    let sps5 = sps2.subtract(sps3)
@@ -742,16 +734,30 @@ final class PredicateStructureTests: XCTestCase {
   
   func testToo() {
     let net = PetriNet(
-      places: ["p0", "p1"],
+      places: ["p0", "p1", "p2"],
       transitions: ["t0"],
       arcs: .pre(from: "p0", to: "t0", labeled: 1),
       .post(from: "t0", to: "p1", labeled: 1)
     )
     
-    let m1 = Marking(["p0": 5, "p1": 4], net: net)
-    let m2 = Marking(["p0": 5, "p1": 5], net: net)
+    let m1 = Marking(["p0": 3, "p1": 5, "p2": 4], net: net)
+    let m2 = Marking(["p0": 1, "p1": 5, "p2": 0], net: net)
+    let m3 = Marking(["p0": 1, "p1": 5, "p2": 7], net: net)
+    let m4 = Marking(["p0": 3, "p1": 5, "p2": 4], net: net)
     
-    print(m1 <= m2)
+    let ps1 = PS(value: ([m1], []), net: net)
+    let ps2 = PS(value: ([m2], [m3,m4]), net: net)
+    
+    print(ps1.mergeable(ps2))
+    print(ps1.merge(ps2))
+    
+    let ps3 = PS(value: ([m2], [m3]), net: net)
+    
+    let sps1 = SPS(values: [ps1, ps2])
+    let sps2 = SPS(values: [ps3])
+    
+    print(sps1.subtract(sps2))
+    print(sps2.subtract(sps1))
   }
   
 //  func testThesis() {
