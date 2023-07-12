@@ -191,14 +191,14 @@ public struct CTL {
         print("Predicate structure number after and: \(res.count)")
       }
     case .or(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
-      res = ctl1.eval().union(ctl2.eval(), canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel).eval()
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel).eval()
+      res = ctl1.union(ctl2, canonicityLevel: canonicityLevel)
       if debug {
-//        print("ctl1: \(ctl1)")
-//        print("ctl2: \(ctl2)")
-//        print("ctl1 count: \(ctl1.count())")
-//        print("ctl2 count: \(ctl2.count())")
+        print("ctl1: \(formula1)")
+        print("ctl2: \(formula2)")
+        print("ctl1 count: \(ctl1.count)")
+        print("ctl2 count: \(ctl2.count)")
         print("Predicate structure number after or: \(res.count)")
       }
     case .not(let formula):

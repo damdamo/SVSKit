@@ -82,16 +82,16 @@ public struct SPS {
       return self
     }
     
-    if SPS(values: [ps]).isIncluded(self) {
+    let spsSingleton = SPS(values: [ps])
+
+    if spsSingleton.isIncluded(self) {
       return self
     }
     
     if canonicityLevel == .none {
       return SPS(values: self.values.union([ps]))
     }
-    
-    let spsSingleton = SPS(values: [ps])
-    
+        
     if spsSingleton.emptyIntersection(self) {
       let mergeableSPS: SPS = self.mergeable(ps)
       if mergeableSPS.isEmpty {
@@ -140,7 +140,7 @@ public struct SPS {
     let lowerPs = nonEmptySet.lowPs(net: ps.net)
     let merge = ps.merge(lowerPs)
     var res: SPS = self.subtract([lowerPs])
-    for psp in merge.sorted(by: {$0.value.inc <= $1.value.inc}) {
+    for psp in merge.sorted(by: {$1.value.inc <= $0.value.inc}) {
       res = res.add(psp, canonicityLevel: canonicityLevel)
     }
     return res
@@ -324,12 +324,13 @@ public struct SPS {
     }
     
     // AX Φ ≡ ¬ EX ¬ Φ
-    return self.not(net: net).revert(canonicityLevel: canonicityLevel).not(net: net)
-//    let net = self.values.first!.net
-//    let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
-//    let applyNot = spsAll.subtract(self)
-//    let applyRevert = applyNot.revert(canonicityLevel: canonicityLevel)
-//    return spsAll.subtract(applyRevert)
+    let step1 = self.not(net: net)
+    let step2 = step1.revert(canonicityLevel: canonicityLevel)
+    let step3 = step2.not(net: net)
+//    print("count step 1: \(step1.count)")
+//    print("count step 2: \(step2.count)")
+//    print("count step 3: \(step3.count)")
+    return step3
   }
   
   /// The function reduces a set of predicate structures such as there is no overlap/intersection and no direct connection between two predicates structures (e.g.: ([p0: 1, p1: 2], [p0: 5, p1: 5]) and ([p0: 5, p1: 5], [p0: 10, p1: 10]) is equivalent to ([p0: 1, p1: 2], [p0: 10, p1: 10]). However, it should be noted that there is no canonical form ! Depending on the set exploration of the SPS, some reductions can be done in a different order. Thus, the resulting sps can be different, but they are equivalent in term of marking representations. Here another example of such case:

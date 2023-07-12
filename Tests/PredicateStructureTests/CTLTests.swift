@@ -73,15 +73,17 @@ final class CTLTests: XCTestCase {
     // Compute all markings that breaks the mutual exclusion
     let ctlFormula = CTL(formula: .EF(.and(.isFireable("t4"), .isFireable("t5"))), net: net, canonicityLevel: .full, simplified: false, debug: true)
     let sps = ctlFormula.eval()
-
+    let sps2 = ctlFormula.eval()
+    
     let e = equivSPS
+    XCTAssertTrue(e.isEquiv(sps))
     print("------------")
     print(sps)
-    XCTAssertTrue(e.isEquiv(sps))
+    print(sps2)
     print("-----------")
-    print(sps.simplified())
     print(sps.count)
-    print(sps.simplified().count)
+    print(sps2.count)
+    print(sps == sps2)
   }
 
   func testCTLEval1() {

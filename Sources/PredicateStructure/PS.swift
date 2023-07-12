@@ -357,7 +357,9 @@ public struct PS {
     var res: SPS = []
     for transition in net.transitions {
       if let rev = self.revert(transition: transition)?.canonised() {
-        res = res.add(rev, canonicityLevel: canonicityLevel)
+        if !rev.isEmpty() {
+          res = res.add(rev, canonicityLevel: canonicityLevel)
+        }
       }
     }
     return res
