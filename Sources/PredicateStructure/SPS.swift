@@ -26,9 +26,9 @@ public struct SPS {
       let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
       if !Marking.comparable(m1: qa, m2: qc) {
         if !(qa.leq(qc)){
-//          if psp.mergeable(PS(value: (qMax, b), net: psp.net)) {
+          if psp.mergeable(PS(value: (qMax, b), net: psp.net)) {
             res.insert(psp)
-//          }
+          }
         }
       }
     }
@@ -44,9 +44,9 @@ public struct SPS {
       let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
       if !Marking.comparable(m1: qa, m2: qc) {
         if !(qc.leq(qa)){
-//          if psp.mergeable(PS(value: (qMax, b), net: psp.net)) {
+          if psp.mergeable(PS(value: (qMax, b), net: psp.net)) {
             res.insert(psp)
-//          }
+          }
         }
       }
     }
@@ -96,8 +96,8 @@ public struct SPS {
       let mergeableSPS: SPS = self.mergeable(ps)
       if mergeableSPS.isEmpty {
         if canonicityLevel == .full {
-          let ndlsSps = mergeableSPS.ndls(ps: ps)
-          let ndusSps = mergeableSPS.ndus(ps: ps)
+          let ndlsSps = self.ndls(ps: ps)
+          let ndusSps = self.ndus(ps: ps)
           if ndlsSps.isEmpty && ndusSps.isEmpty {
             return SPS(values: self.values.union([ps]))
           } else if !ndlsSps.isEmpty && ndusSps.isEmpty {
@@ -139,7 +139,7 @@ public struct SPS {
     let nonEmptySet = SPS(values: Set(self.filter({!$0.intersection(ps, isCanonical: false).isEmpty()})))
     let lowerPs = nonEmptySet.lowPs(net: ps.net)
     let merge = ps.merge(lowerPs)
-    var res: SPS = self.subtract([lowerPs])
+    var res: SPS = self.subtract([lowerPs], canonicityLevel: canonicityLevel)
     for psp in merge.sorted(by: {$1.value.inc <= $0.value.inc}) {
       res = res.add(psp, canonicityLevel: canonicityLevel)
     }
@@ -208,32 +208,40 @@ public struct SPS {
   /// Subtract two sets of predicate structures
   /// - Parameter sps: The set of predicate structures to subtract
   /// - Returns: The resulting set of predicate structures
-  public func subtract(_ sps: SPS) -> SPS {
+  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
     if self == sps || self.isEmpty {
       return []
     } else if sps.isEmpty {
       return self
     }
-    
-    var res: Set<PS> = []
-    
-    for ps in self {
-      if !ps.isEmpty() {
-        res = res.union(ps.subtract(sps).values)
-      }
-    }
-    return SPS(values: res)
-  }
 
-  
+//    if canonicityLevel == .none {
+      var res: Set<PS> = []
+      for ps in self {
+        if !ps.isEmpty() {
+          res = res.union(ps.subtract(sps, canonicityLevel: canonicityLevel).values)
+        }
+      }
+      return SPS(values: res)
+//    }
+    
+//    var res: SPS = []
+//    for ps in self {
+//      if !ps.isEmpty() {
+//        res = res.union(ps.subtract(sps, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+//      }
+//    }
+//    return res
+
+  }
   /// Compute the negation of a set of predicate structures. This is the result of a combination of all elements inside a predicate structure with each element of the other predicate structures. E.g.: notSPS({([q1], [q2]), ([q3], [q4]), ([q5], [q6])}) = {([],[q1,q3,q5]), ([q6],[q1,q3]), ([q4],[q1,q5]), ([q4,q6],[q1]), ([q2],[q3,q5]), ([q2, q6],[q3]), ([q2, q4],[q5]), ([q2, q4,q6],[])}
   /// - Returns: The negation of a set of predicate structures
-  public func not(net: PetriNet) -> SPS {
+  public func not(net: PetriNet, canonicityLevel: CanonicityLevel) -> SPS {
     if self.isEmpty {
       return SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
     }
     // The singleton containing the predicate structure that represents all markings subtract to the current sps
-    return SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)]).subtract(self)
+    return SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)]).subtract(self, canonicityLevel: canonicityLevel)
   }
   
   // All mergeable markings with ps
@@ -271,7 +279,7 @@ public struct SPS {
     }
     
     for ps in self {
-      if !ps.subtract(sps).isEmpty {
+      if !ps.subtract(sps, canonicityLevel: .none).isEmpty {
         return false
       }
     }
@@ -324,9 +332,9 @@ public struct SPS {
     }
     
     // AX Φ ≡ ¬ EX ¬ Φ
-    let step1 = self.not(net: net)
+    let step1 = self.not(net: net, canonicityLevel: canonicityLevel)
     let step2 = step1.revert(canonicityLevel: canonicityLevel)
-    let step3 = step2.not(net: net)
+    let step3 = step2.not(net: net, canonicityLevel: canonicityLevel)
 //    print("count step 1: \(step1.count)")
 //    print("count step 2: \(step2.count)")
 //    print("count step 3: \(step3.count)")

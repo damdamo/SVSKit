@@ -203,7 +203,7 @@ public struct CTL {
       }
     case .not(let formula):
       let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
-      res = ctl1.eval().not(net: net)
+      res = ctl1.eval().not(net: net, canonicityLevel: canonicityLevel)
       if debug {
         print("Predicate structure number after not: \(res.count)")
       }
@@ -715,7 +715,7 @@ extension CTL {
       return (ctl2.eval(marking: marking))
     case .not(let formula1):
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
-      return ctl1.eval().not(net: net).contains(marking: marking)
+      return ctl1.eval().not(net: net, canonicityLevel: canonicityLevel).contains(marking: marking)
     case .deadlock:
       return SPS.deadlock(net: net).contains(marking: marking)
     case .EX(let formula1):

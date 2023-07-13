@@ -63,26 +63,64 @@ final class ListExampleTests: XCTestCase {
 //
 //  }
 
-  func testERKCase3() {
+  func testERKCaseSpecific() {
     let parserPN = PnmlParser()
     var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
     var s = Stopwatch()
 
     let parserCTL = CTLParser()
-    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
 
     s.reset()
 
-    let key = "ERK-PT-000001-CTLFireability-03"
-    let formula = dicCTL[key]!
-    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
+    let ctlReduced: CTL = CTL(formula: .EF(.isFireable("r3")), net: net1, canonicityLevel: .full, debug: true).queryReduction()
     print(ctlReduced)
 //    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
 
-    print(ctlReduced.eval(marking: marking1))
-
-    print(s.elapsed.humanFormat)
+    let e1 = ctlReduced.eval()
+//    let e2 = ctlReduced.eval()
+//
+//    print("----------------------")
+//    print(e1)
+//    print("----------------------")
+//    print(e2)
+//    print("----------------------")
+//    print(SPS(values: e1.values.subtracting(e2.values)))
+//
+//    print(e1 == e2)
+//    print(e1.isEquiv(e2))
+    var oldT2: SPS = []
+    for _ in 0 ..< 10 {
+      let t1 = e1.not(net: net1, canonicityLevel: .full)
+      print("t1 count: \(t1.count)")
+      let t2 = t1.revert(canonicityLevel: .full)
+      print("t2 count: \(t2.count)")
+      print("t2 equal to old t2 ? \(t2 == oldT2)")
+      let t3 = t2.not(net: net1, canonicityLevel: .full)
+      print("t3 count: \(t3.count)")
+      oldT2 = t2
+    }
   }
+  
+//  func testERKCase3() {
+//    let parserPN = PnmlParser()
+//    var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+//    var s = Stopwatch()
+//
+//    let parserCTL = CTLParser()
+//    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
+//
+//    s.reset()
+//
+//    let key = "ERK-PT-000001-CTLFireability-03"
+//    let formula = dicCTL[key]!
+//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
+//    print(ctlReduced)
+////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
+//
+//    print(ctlReduced.eval(marking: marking1))
+//
+//    print(s.elapsed.humanFormat)
+//  }
 
   
 //  func testERK() {

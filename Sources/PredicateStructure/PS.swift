@@ -254,9 +254,9 @@ public struct PS {
         let intersect = self.intersection(ps, isCanonical: true)
         if !intersect.isEmpty() {
           if self.value.inc.leq(ps.value.inc) {
-            return SPS(values: ps.subtract(intersect).values.union([self]))
+            return SPS(values: ps.subtract(intersect, canonicityLevel: .full).values.union([self]))
           }
-          return SPS(values: self.subtract(intersect).values.union([ps]))
+          return SPS(values: self.subtract(intersect, canonicityLevel: .full).values.union([ps]))
         }
         return [self, ps]
       }
@@ -412,7 +412,7 @@ public struct PS {
   /// Subtract two PS, by removing all markings for the right PS into the left PS
   /// - Parameter ps: The ps to subtract
   /// - Returns: A sps containing no value of ps
-  public func subtract(_ ps: PS) -> SPS {
+  public func subtract(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
     if self == ps || self.isEmpty() {
       return []
     } else if ps.isEmpty() {
@@ -434,45 +434,75 @@ public struct PS {
     let qc = nesPS.value.inc
     let d = nesPS.value.exc
 
-    var res: Set<PS> = []
-
-    res.insert(PS(value: (qa, b.union([qc]))).mes())
-
-    for marking in d {
-      let newQa = Marking.convMax(markings: [qa, marking], net: net)
-      res.insert(PS(value: (newQa,b)).nes())
+    if canonicityLevel == .none {
+      var res: Set<PS> = []
+      let newPS = PS(value: (qa, b.union([qc]))).mes()
+      if !newPS.isEmpty() {
+        res.insert(newPS)
+      }
+      for marking in d {
+        let newQa = Marking.convMax(markings: [qa, marking], net: net)
+        let newPS = PS(value: (newQa,b)).nes()
+        if !newPS.isEmpty() {
+          res.insert(newPS)
+        }
+      }
+      return SPS(values: res)
     }
-
-    for ps in res {
-      if ps.isEmpty() {
-        res.remove(ps)
+    
+    var res: SPS = []
+    let newPS = PS(value: (qa, b.union([qc]))).mes()
+    if !newPS.isEmpty() {
+      res = res.add(newPS, canonicityLevel: canonicityLevel)
+    }
+    
+    var markingSetConstrained: Set<Marking> = b
+    for marking in d.sorted(by: {$0.leq($1)}) {
+      let newQa = Marking.convMax(markings: [qa, marking], net: net)
+      let newPS = PS(value: (newQa, markingSetConstrained)).mes()
+      if !newPS.isEmpty() {
+        markingSetConstrained.insert(marking)
+        res = res.add(newPS, canonicityLevel: canonicityLevel)
       }
     }
-
-    return SPS(values: res)
+    return res
   }
-  
+
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
   /// - Parameter sps: The set of predicate structures to subtract
   /// - Returns: A set of predicate structures where all elements of sps have been removed from ps
-  public func subtract(_ sps: SPS) -> SPS {
-    var res: Set<PS> = [self]
-    var spsTemp: Set<PS>
+  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
+    
+    if canonicityLevel == .none {
+      var res: Set<PS> = [self]
+      var spsTemp: Set<PS>
+      for ps in sps {
+        spsTemp = []
+        for psTemp in res {
+          spsTemp = spsTemp.union(psTemp.subtract(ps, canonicityLevel: canonicityLevel).values)
+        }
+        res = spsTemp
+      }
+      return SPS(values: res)
+    }
+    
+    var res: SPS = [self]
+    var spsTemp: SPS
     for ps in sps {
       spsTemp = []
       for psTemp in res {
-        spsTemp = spsTemp.union(psTemp.subtract(ps).values)
+        spsTemp = spsTemp.union(psTemp.subtract(ps, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       }
       res = spsTemp
     }
-    return SPS(values: res)
+    return res
   }
   
   /// Is a predicate structure included in another one ?
   /// - Parameter ps: The predicate structure to check if self is contained
   /// - Returns: True if it is contained, false otherwise.
   public func isIncluded(_ ps: PS) -> Bool {
-    return self.subtract(ps) == []
+    return self.subtract(ps, canonicityLevel: .none) == []
   }
   
   /// Count the number of markings that composes the predicate structure.
