@@ -195,10 +195,6 @@ public struct CTL {
       let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel).eval()
       res = ctl1.union(ctl2, canonicityLevel: canonicityLevel)
       if debug {
-        print("ctl1: \(formula1)")
-        print("ctl2: \(formula2)")
-        print("ctl1 count: \(ctl1.count)")
-        print("ctl2 count: \(ctl2.count)")
         print("Predicate structure number after or: \(res.count)")
       }
     case .not(let formula):

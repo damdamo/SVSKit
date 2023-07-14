@@ -215,38 +215,6 @@ public struct PS {
   /// - Parameters:
   ///   - ps: The second predicate structure
   /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
-//  public func merge(_ ps: PS) -> SPS {
-//
-//    if !self.mergeable(ps) {
-//      return [self, ps]
-//    }
-//
-//    let (qa, b) = self.nes().value
-//    let (qc, d) = ps.nes().value
-//    var convMaxMarkingSet: Set<Marking> = []
-//
-//    if b.contains(qc) {
-//      let newPS = PS(value: (qa, b.subtracting([qc]).union(d))).mes()
-//      if ps.isIncluded(newPS) {
-//        return [newPS]
-//      }
-//    } else if d.contains(qa) {
-//      let newPS = PS(value: (qc, d.subtracting([qa]).union(b))).mes()
-//      if self.isIncluded(newPS) {
-//        return [newPS]
-//      }
-//    }
-//
-//    for qb in b {
-//      for qd in d {
-//        convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
-//      }
-//    }
-//
-//    let qMin = (qa <= qc) ? qa : qc
-//    let newPS = PS(value: (qMin, convMaxMarkingSet)).mes()
-//    return SPS(values: [newPS])
-//  }
   public func merge(_ ps: PS, mergeablePreviouslyComputed: Bool = false) -> SPS {
     
     if !mergeablePreviouslyComputed {
@@ -451,9 +419,12 @@ public struct PS {
     }
     
     var res: SPS = []
+//    var res: Set<PS> = []
+
     let newPS = PS(value: (qa, b.union([qc]))).mes()
     if !newPS.isEmpty() {
       res = res.add(newPS, canonicityLevel: canonicityLevel)
+//      res.insert(newPS)
     }
     
     var markingSetConstrained: Set<Marking> = b
@@ -463,9 +434,12 @@ public struct PS {
       if !newPS.isEmpty() {
         markingSetConstrained.insert(marking)
         res = res.add(newPS, canonicityLevel: canonicityLevel)
+//        res.insert(newPS)
       }
     }
+//    return SPS(values: res)
     return res
+
   }
 
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.

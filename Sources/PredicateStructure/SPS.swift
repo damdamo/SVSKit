@@ -117,16 +117,35 @@ public struct SPS {
 
             return SPS(values: addTemp.values.union(newPSMerged.values).union(spsWithoutNdls))
           } else {
+//            let spsWithoutNdus: SPS = SPS(values: self.values.subtracting(ndusSps.values))
+//            var res: SPS = []
+//            if ndlsSps.isEmpty && !ndusSps.isEmpty {
+//              res = SPS(values: spsWithoutNdus.values.union([ps]))
+//            } else {
+//              res = spsWithoutNdus.add(ps, canonicityLevel: canonicityLevel)
+//            }
+//            for psp in ndusSps {
+//              res = res.add(psp, canonicityLevel: canonicityLevel)
+//            }
+//            return res
             let spsWithoutNdus: SPS = SPS(values: self.values.subtracting(ndusSps.values))
             var res: SPS = []
             if ndlsSps.isEmpty && !ndusSps.isEmpty {
-              res = SPS(values: spsWithoutNdus.values.union([ps]))
+              res = [ps]
+              for psp in ndusSps {
+                res = res.add(psp, canonicityLevel: canonicityLevel)
+              }
+              res = SPS(values: spsWithoutNdus.values.union(res.values))
             } else {
-              res = spsWithoutNdus.add(ps, canonicityLevel: canonicityLevel)
+              res = ndlsSps.add(ps, canonicityLevel: canonicityLevel)
+              for psp in ndusSps {
+                res = res.add(psp, canonicityLevel: canonicityLevel)
+              }
+              res = SPS(values: res.values.union(self.values.subtracting(ndlsSps.values.union(ndusSps.values))))
             }
-            for psp in ndusSps {
-              res = res.add(psp, canonicityLevel: canonicityLevel)
-            }
+//            for psp in ndusSps {
+//              res = res.add(psp, canonicityLevel: canonicityLevel)
+//            }
             return res
           }
         }
