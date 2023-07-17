@@ -269,8 +269,11 @@ public struct PS {
   
   public func mergeable(_ ps: PS) -> Bool {
         
-    var (qa, b) = self.nes().value
-    var (qc, d) = ps.nes().value
+//    var (qa, b) = self.nes().value
+//    var (qc, d) = ps.nes().value
+    // Be careful: We can avoid to use nes() because functions returns always canonical predicate structures
+    var (qa, b) = self.value
+    var (qc, d) = ps.value
     
     if qc <= qa {
       let temp = (qa, b)

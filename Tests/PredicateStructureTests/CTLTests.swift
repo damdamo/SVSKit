@@ -391,6 +391,54 @@ final class CTLTests: XCTestCase {
 //
 //
 //  }
+  
+  func testAXDiffTesto() {
+    // Following Petri net:
+    //      1 p0
+    //     -->
+    // t0 ▭   o ---
+    //     <--      \
+    //      2       | 4
+    //              ↓
+    //           -> ▭ t1
+    //        6 /   | 3
+    //          |   /
+    // t2 ▭ <-- o <-
+    //    ↑   5 p1
+    //    |
+    //    o p2
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 2),
+      .post(from: "t0", to: "p0", labeled: 1),
+      .pre(from: "p0", to: "t1", labeled: 4),
+      .pre(from: "p1", to: "t1", labeled: 6),
+      .post(from: "t1", to: "p1", labeled: 3),
+      .pre(from: "p1", to: "t2", labeled: 5),
+      .pre(from: "p2", to: "t2", labeled: 1),
+      capacity: ["p0": 10, "p1": 10, "p2": 10]
+    )
+    
+    let ctlFormula: CTL = CTL(formula: .or(.isFireable("t0"), .isFireable("t2")), net: net, canonicityLevel: .none)
+    let e1 = ctlFormula.eval()
+    
+    var oldT2: SPS = []
+    for _ in 0 ..< 10 {
+      let t1 = e1.not(net: net, canonicityLevel: .full)
+      print("t1 count: \(t1.count)")
+      let t2 = t1.revert(canonicityLevel: .full)
+      print("t2 count: \(t2.count)")
+      print("t2 equal to old t2 ? \(t2 == oldT2)")
+      print("t2:")
+      print(t2)
+      let t3 = t2.not(net: net, canonicityLevel: .full)
+      print("t3 count: \(t3.count)")
+      print("t3:")
+      print(t3)
+      oldT2 = t2
+    }
+  }
 
   
 }

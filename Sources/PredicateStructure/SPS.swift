@@ -335,6 +335,14 @@ public struct SPS {
   /// Compute the revert function on all markings of each predicate structures
   /// - Returns: A new set of predicate structures after the revert application
   public func revert(canonicityLevel: CanonicityLevel) -> SPS {
+    if canonicityLevel == .none {
+      var res: Set<PS> = []
+      for ps in self {
+        res = res.union(ps.revert(canonicityLevel: canonicityLevel).values)
+      }
+      return SPS(values: res)
+    }
+    
     var res: SPS = []
     for ps in self {
       res = res.union(ps.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
