@@ -17,7 +17,7 @@ public struct SPS {
   }
   
   
-  private func ndls(ps: PS) -> SPS {
+  public func ndls(ps: PS) -> SPS {
     let (qa,b) = ps.value
     var res: Set<PS> = []
     
@@ -35,16 +35,16 @@ public struct SPS {
     return SPS(values: res)
   }
   
-  private func ndus(ps: PS) -> SPS {
-    let (qa,b) = ps.value
+  public func ndus(ps: PS) -> SPS {
+    let (qa,_) = ps.value
     var res: Set<PS> = []
     
     for psp in self {
-      let (qc, _) = psp.value
+      let (qc, d) = psp.value
       let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
       if !Marking.comparable(m1: qa, m2: qc) {
         if !(qc.leq(qa)){
-          if psp.mergeable(PS(value: (qMax, b), net: psp.net)) {
+          if ps.mergeable(PS(value: (qMax, d), net: psp.net)) {
             res.insert(psp)
           }
         }
@@ -75,7 +75,7 @@ public struct SPS {
   }
   
   public func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
-    
+        
     if self.isEmpty {
       return SPS(values: [ps])
     } else if ps.isEmpty() {
