@@ -420,23 +420,30 @@ final class CTLTests: XCTestCase {
       capacity: ["p0": 10, "p1": 10, "p2": 10]
     )
     
-    let ctlFormula: CTL = CTL(formula: .or(.isFireable("t0"), .isFireable("t2")), net: net, canonicityLevel: .none)
-    let e1 = ctlFormula.eval()
+    let ctlFormula: CTL = CTL(formula: .AX(.or(.isFireable("t0"), .isFireable("t2"))), net: net, canonicityLevel: .full, debug: true)
     
+    let e1 = ctlFormula.eval()
+
     var oldT2: SPS = []
-    for _ in 0 ..< 10 {
+    var oldT3: SPS = []
+    for _ in 0 ..< 200 {
       let t1 = e1.not(net: net, canonicityLevel: .full)
       print("t1 count: \(t1.count)")
       let t2 = t1.revert(canonicityLevel: .full)
       print("t2 count: \(t2.count)")
       print("t2 equal to old t2 ? \(t2 == oldT2)")
-      print("t2:")
-      print(t2)
+      print("-------------------")
       let t3 = t2.not(net: net, canonicityLevel: .full)
+      print("-------------------")
       print("t3 count: \(t3.count)")
-      print("t3:")
-      print(t3)
+      print("t3 equal to old t3 ? \(t3 == oldT3)")
+      print("t3 is equiv to old t3 ? \(t3.isEquiv(oldT3))")
+      if t3 != oldT3 {
+        print("t3: \(t3)")
+        print("old t3: \(oldT3)")
+      }
       oldT2 = t2
+      oldT3 = t3
     }
   }
 

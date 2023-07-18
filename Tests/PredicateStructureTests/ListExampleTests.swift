@@ -111,9 +111,9 @@ final class ListExampleTests: XCTestCase {
 
     s.reset()
 
-    let key = "ERK-PT-000001-CTLFireability-03"
+    let key = "ERK-PT-000001-CTLFireability-15"
     let formula = dicCTL[key]!
-    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: false, debug: true).queryReduction()
+    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
     print(ctlReduced)
 //    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
 
@@ -136,7 +136,7 @@ final class ListExampleTests: XCTestCase {
     var answers: [String: Bool] = [:]
     var times: [String: String] = [:]
     for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
-      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true).queryReduction()
+      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
       print("-------------------------------")
       print(key)
       s.reset()

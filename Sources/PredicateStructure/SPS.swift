@@ -26,8 +26,11 @@ public struct SPS {
       let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
       if !Marking.comparable(m1: qa, m2: qc) {
         if !(qa.leq(qc)){
-          if psp.mergeable(PS(value: (qMax, b), net: psp.net)) {
-            res.insert(psp)
+          let newPSForMerge = PS(value: (qMax, b), net: psp.net)
+          if !newPSForMerge.isEmpty() {
+            if psp.mergeable(newPSForMerge) {
+              res.insert(psp)
+            }
           }
         }
       }
@@ -44,8 +47,11 @@ public struct SPS {
       let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
       if !Marking.comparable(m1: qa, m2: qc) {
         if !(qc.leq(qa)){
-          if ps.mergeable(PS(value: (qMax, d), net: psp.net)) {
-            res.insert(psp)
+          let newPSForMerge = PS(value: (qMax, d), net: psp.net)
+          if !newPSForMerge.isEmpty() {
+            if ps.mergeable(newPSForMerge) {
+              res.insert(psp)
+            }
           }
         }
       }
@@ -84,9 +90,9 @@ public struct SPS {
     
     let spsSingleton = SPS(values: [ps])
 
-    if spsSingleton.isIncluded(self) {
-      return self
-    }
+//    if spsSingleton.isIncluded(self) {
+//      return self
+//    }
     
     if canonicityLevel == .none {
       return SPS(values: self.values.union([ps]))
@@ -113,9 +119,17 @@ public struct SPS {
             // Can optimise by calling merge with already computed !
             let newPSMerged: SPS = psp.merge(PS(value: (qMax, b), net: ps.net))
             
+            if newPSMerged.count > 1 {
+              fatalError("This should not be the case")
+            }
+            
             let spsWithoutNdls: Set<PS> = self.values.subtracting(ndlsSps.values)
 
-            return SPS(values: addTemp.values.union(newPSMerged.values).union(spsWithoutNdls))
+//            return SPS(values: addTemp.values.union(newPSMerged.values).union(spsWithoutNdls))
+
+            let addMerged = addTemp.add(newPSMerged.first!, canonicityLevel: canonicityLevel)
+//            return SPS(values: addMerged.values.union(spsWithoutNdls))
+            return addMerged.union(SPS(values: spsWithoutNdls), canonicityLevel: canonicityLevel)
           } else {
 //            let spsWithoutNdus: SPS = SPS(values: self.values.subtracting(ndusSps.values))
 //            var res: SPS = []
@@ -135,13 +149,15 @@ public struct SPS {
               for psp in ndusSps {
                 res = res.add(psp, canonicityLevel: canonicityLevel)
               }
-              res = SPS(values: spsWithoutNdus.values.union(res.values))
+//              res = SPS(values: spsWithoutNdus.values.union(res.values))
+              res = spsWithoutNdus.union(res, canonicityLevel: canonicityLevel)
             } else {
               res = ndlsSps.add(ps, canonicityLevel: canonicityLevel)
               for psp in ndusSps {
                 res = res.add(psp, canonicityLevel: canonicityLevel)
               }
-              res = SPS(values: res.values.union(self.values.subtracting(ndlsSps.values.union(ndusSps.values))))
+//              res = SPS(values: res.values.union(self.values.subtracting(ndlsSps.values.union(ndusSps.values))))
+              res = res.union(SPS(values: self.values.subtracting(ndlsSps.values.union(ndusSps.values))), canonicityLevel: canonicityLevel)
             }
 //            for psp in ndusSps {
 //              res = res.add(psp, canonicityLevel: canonicityLevel)
@@ -159,7 +175,7 @@ public struct SPS {
     let lowerPs = nonEmptySet.lowPs(net: ps.net)
     let merge = ps.merge(lowerPs)
     var res: SPS = self.subtract([lowerPs], canonicityLevel: canonicityLevel)
-    for psp in merge.sorted(by: {$1.value.inc <= $0.value.inc}) {
+    for psp in merge.sorted(by: {$0.value.inc <= $1.value.inc}) {
       res = res.add(psp, canonicityLevel: canonicityLevel)
     }
     return res
@@ -187,6 +203,7 @@ public struct SPS {
     }
     let selfWithoutPS = SPS(values: self.values.subtracting([ps]))
     let addPsToSps = sps.add(ps, canonicityLevel: canonicityLevel)
+//    print("Semi result: \(addPsToSps)")
     return selfWithoutPS.union(addPsToSps, canonicityLevel: canonicityLevel)
   }
   
@@ -195,22 +212,53 @@ public struct SPS {
   ///   - sps: The set of predicate structures on which the intersection is applied
   ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
   /// - Returns: The result of the intersection.
-  public func intersection(_ sps: SPS) -> SPS {
+//  public func intersection(_ sps: SPS) -> SPS {
+//    if self.isEmpty || sps.isEmpty {
+//      return []
+//    }
+//
+//    var res: Set<PS> = []
+//    for ps1 in self {
+//      for ps2 in sps {
+//        let intersect = ps1.intersection(ps2, isCanonical: true)
+//        if !intersect.isEmpty() {
+//          res.insert(intersect)
+//        }
+//      }
+//    }
+//
+//    return SPS(values: res)
+//  }
+  public func intersection(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
     if self.isEmpty || sps.isEmpty {
       return []
     }
     
-    var res: Set<PS> = []
+    if canonicityLevel == .none {
+      var res: Set<PS> = []
+      for ps1 in self {
+        for ps2 in sps {
+          let intersect = ps1.intersection(ps2, isCanonical: true)
+          if !intersect.isEmpty() {
+            res.insert(intersect)
+          }
+        }
+      }
+  
+      return SPS(values: res)
+    }
+    
+    var res: SPS = []
     for ps1 in self {
       for ps2 in sps {
         let intersect = ps1.intersection(ps2, isCanonical: true)
         if !intersect.isEmpty() {
-          res.insert(intersect)
+          res = res.add(intersect, canonicityLevel: .full)
         }
       }
     }
 
-    return SPS(values: res)
+    return res
   }
   
   private func emptyIntersection(_ sps: SPS) -> Bool {
@@ -245,9 +293,16 @@ public struct SPS {
 //    }
     
 //    var res: SPS = []
+////    var res2Temp: Set<PS> = []
 //    for ps in self {
 //      if !ps.isEmpty() {
+////        res2Temp = res2Temp.union(ps.subtract(sps, canonicityLevel: canonicityLevel).values)
 //        res = res.union(ps.subtract(sps, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+////        if SPS(values: res2Temp) != res {
+////          print("NOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO")
+////          print("Count res: \(res.count)")
+////          print("Count res2: \(res2Temp.count)")
+////        }
 //      }
 //    }
 //    return res

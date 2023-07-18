@@ -222,16 +222,18 @@ public struct PS {
         let intersect = self.intersection(ps, isCanonical: true)
         if !intersect.isEmpty() {
           if self.value.inc.leq(ps.value.inc) {
-            return SPS(values: ps.subtract(intersect, canonicityLevel: .full).values.union([self]))
+            return ps.subtract(intersect, canonicityLevel: .full).add(self, canonicityLevel: .full)
           }
-          return SPS(values: self.subtract(intersect, canonicityLevel: .full).values.union([ps]))
+          return self.subtract(intersect, canonicityLevel: .full).add(ps, canonicityLevel: .full)
         }
         return [self, ps]
       }
     }
 
-    var (qa, b) = self.nes().value
-    var (qc, d) = ps.nes().value
+//    var (qa, b) = self.nes().value
+//    var (qc, d) = ps.nes().value
+    var (qa, b) = self.value
+    var (qc, d) = ps.value
     
     if qc <= qa {
       let temp = (qa, b)
@@ -255,6 +257,7 @@ public struct PS {
     for marking in incomparableMarkings {
       let convMax = Marking.convMax(markings: [marking, qc], net: net)
       d.remove(convMax)
+//      d.remove
     }
     
     for qb in comparableMarkings {
@@ -285,7 +288,10 @@ public struct PS {
       for qb in b {
         if !(qc <= qb) {
           let convMax = Marking.convMax(markings: [qb,qc], net: net)
-          if !d.contains(convMax) {
+//          if !d.contains(convMax) {
+//            return false
+//          }
+          if !d.contains(where: {$0 <= convMax}) {
             return false
           }
         }
@@ -422,12 +428,10 @@ public struct PS {
     }
     
     var res: SPS = []
-//    var res: Set<PS> = []
 
     let newPS = PS(value: (qa, b.union([qc]))).mes()
     if !newPS.isEmpty() {
       res = res.add(newPS, canonicityLevel: canonicityLevel)
-//      res.insert(newPS)
     }
     
     var markingSetConstrained: Set<Marking> = b
@@ -437,10 +441,8 @@ public struct PS {
       if !newPS.isEmpty() {
         markingSetConstrained.insert(marking)
         res = res.add(newPS, canonicityLevel: canonicityLevel)
-//        res.insert(newPS)
       }
     }
-//    return SPS(values: res)
     return res
 
   }

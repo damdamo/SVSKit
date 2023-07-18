@@ -92,6 +92,8 @@ public struct Marking {
   public static func convMax(markings: Set<Marking>, net: PetriNet) -> Marking {
     if markings.isEmpty {
       return net.zeroMarking()
+    } else if markings.count == 1 {
+      return markings.first!
     }
       
     var res = markings.first!

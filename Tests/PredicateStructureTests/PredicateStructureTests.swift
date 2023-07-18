@@ -62,7 +62,7 @@ final class PredicateStructureTests: XCTestCase {
 
 //    XCTAssertEqual(SPS(values: [ps1]).union([PS(value: ps1.emptyValue, net: net)], canonicityLevel: .full), [ps1])
     
-    let intersection = SPS(values: [ps1]).intersection([ps2])
+    let intersection = SPS(values: [ps1]).intersection([ps2], canonicityLevel: .full)
 //    let expectedSPS: SPS = [PS(value: ([marking1, marking3], [marking2, marking4]), net: net)]
     
     XCTAssertTrue(intersection.isEmpty)
@@ -74,7 +74,7 @@ final class PredicateStructureTests: XCTestCase {
 //      PS(value: ([marking3, marking2], [marking3, marking4]), net: net),
 //    ]
     
-    XCTAssertTrue(SPS(values: [ps1,ps2]).intersection([ps3]).isEmpty)
+    XCTAssertTrue(SPS(values: [ps1,ps2]).intersection([ps3], canonicityLevel: .full).isEmpty)
   }
 
   func testSPS2() {
@@ -415,7 +415,7 @@ final class PredicateStructureTests: XCTestCase {
     // {({(0,3)}, {}), ({(1,1)}, {})} - {({(0,4)}, {}), ({(1,2)}, {}), ({(2,1)}, {})}
     // =
     // {({(0,3)}, {}), ({(1,1)}, {})} ∩ ¬({({(0,4)}, {}), ({(1,2)}, {}), ({(2,1)}, {})})
-    XCTAssertEqual(sps1.subtract(sps2, canonicityLevel: .none), sps1.intersection(sps2.not(net: net, canonicityLevel: .none)))
+    XCTAssertEqual(sps1.subtract(sps2, canonicityLevel: .none), sps1.intersection(sps2.not(net: net, canonicityLevel: .none), canonicityLevel: .none))
     
     let m6 = Marking(["p0": 10, "p1": 10], net: net)
     let m7 = Marking(["p0": 5, "p1": 0], net: net)
@@ -733,6 +733,9 @@ final class PredicateStructureTests: XCTestCase {
   }
   
   func testToo() {
+//    ([p0: 7, p1: 6, p2: 0], [[p0: 7, p1: 6, p2: 1], [p0: 8, p1: 9, p2: 0]]),
+//    ([p0: 7, p1: 6, p2: 1], [[p0: 7, p1: 8, p2: 1]])
+
     let net = PetriNet(
       places: ["p0", "p1", "p2"],
       transitions: ["t0"],
@@ -740,16 +743,28 @@ final class PredicateStructureTests: XCTestCase {
       .post(from: "t0", to: "p1", labeled: 1)
     )
     
-    let m1 = Marking(["p0": 4, "p1": 5, "p2": 0], net: net)
-    let m2 = Marking(["p0": 1, "p1": 2, "p2": 3], net: net)
-    let m3 = Marking(["p0": 8, "p1": 8, "p2": 8], net: net)
-//    let m4 = Marking(["p0": 3, "p1": 5, "p2": 4], net: net)
+    let m1 = Marking(["p0": 7, "p1": 6, "p2": 0], net: net)
+    let m2 = Marking(["p0": 7, "p1": 6, "p2": 1], net: net)
+    let m3 = Marking(["p0": 8, "p1": 9, "p2": 0], net: net)
+    let m4 = Marking(["p0": 7, "p1": 8, "p2": 1], net: net)
+//    let m5 = Marking(["p0": 3, "p1": 5, "p2": 4], net: net)
     
-    let ps1 = PS(value: ([m1], []), net: net)
-    let ps2 = PS(value: ([m2], [m3]), net: net)
+    let ps1 = PS(value: ([m1], [m2,m3]), net: net)
+    let ps2 = PS(value: ([m2], [m4]), net: net)
+    let ps3 = PS(value: ([m1], [m3, m4]), net: net)
     
     print(ps1.mergeable(ps2))
     print(ps1.merge(ps2))
+    print(SPS(values: [ps1,ps2]).isEquiv([ps3]))
+    
+//    let sps1 = SPS(values: [ps1])
+//    let sps2 = SPS(values: [ps2])
+//
+//    print("---------------")
+//    print(sps2.ndus(ps: ps1))
+//    print(sps1.ndus(ps: ps2))
+//    print("-------------")
+//    print(sps2.add(ps1, canonicityLevel: .full))
     
 //    let ps3 = PS(value: ([m2], [m3]), net: net)
 //
