@@ -5,84 +5,25 @@ public struct SPS {
   /// The set of predicate structures
   public let values: Set<PS>
   
-  /// The related Petri net
-//  private static var netStatic: PetriNet? = nil
-//
-//  public var net: PetriNet {
-//    return SPS.netStatic!
-//  }
-  
   public init(values: Set<PS>) {
     self.values = values
   }
   
-  
-//  public func ndls(ps: PS) -> SPS {
-//    let (qa,b) = ps.value
-//    var res: Set<PS> = []
-//
-//    for psp in self {
-//      let (qc, _) = psp.value
-//      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
-////      if !Marking.comparable(m1: qa, m2: qc) {
-//        if !(qa.leq(qc)){
-//          let newPSForMerge = PS(value: (qMax, b), net: psp.net)
-//          if !newPSForMerge.isEmpty() {
-//            if psp.mergeable(newPSForMerge) {
-//              res.insert(psp)
-//            }
-//          }
-////        }
-//      }
-//    }
-//    return SPS(values: res)
-//  }
-  
   public func ndls(ps: PS) -> SPS {
-    let (qa,b) = ps.value
+    let (qa, _) = ps.value
     var res: Set<PS> = []
     
     for psp in self {
       let (qc, _) = psp.value
-      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
-//      if !Marking.comparable(m1: qa, m2: qc) {
         if !(qa.leq(qc)){
           if !ps.sharingPart(ps: psp).isEmpty() {
-//            if ps.mergeable(newPSForMerge) {
             res.insert(psp)
-//            }
           }
         }
     }
     return SPS(values: res)
   }
-  
-//  public func ndus(ps: PS) -> SPS {
-//    let (qa,_) = ps.value
-//    var res: Set<PS> = []
-//
-//    for psp in self {
-//      let (qc, d) = psp.value
-//      let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
-////      if !Marking.comparable(m1: qa, m2: qc) {
-//        if !(qc.leq(qa)){
-//          print("OOOOOOOOKKKKKKKKKK")
-//          let newPSForMerge = PS(value: (qMax, d), net: psp.net)
-//          print("\(psp.mergeable(ps))")
-//          print("newPSForMerge: \(newPSForMerge)")
-//          print("Original psp: \(psp)")
-//          print(psp.subtract(newPSForMerge, canonicityLevel: .full))
-//          if !newPSForMerge.isEmpty() {
-//            if ps.mergeable(newPSForMerge) {
-//              res.insert(psp)
-//            }
-//          }
-//        }
-////      }
-//    }
-//    return SPS(values: res)
-//  }
-  
+    
   public func ndus(ps: PS) -> SPS {
     let (qa,_) = ps.value
     var res: Set<PS> = []
@@ -98,8 +39,6 @@ public struct SPS {
     }
     return SPS(values: res)
   }
-  
-  
   
   /// Lowest predicate structure, containing the singleton marking with the lowest marking using the total function order leq from marking.
   private func lowPs(net: PetriNet) -> PS {
@@ -122,106 +61,6 @@ public struct SPS {
     return psTemp
   }
   
-//  public func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
-//
-//    if self.isEmpty {
-//      return SPS(values: [ps])
-//    } else if ps.isEmpty() {
-//      return self
-//    }
-//
-//    let spsSingleton = SPS(values: [ps])
-//
-////    if spsSingleton.isIncluded(self) {
-////      return self
-////    }
-//
-//    if canonicityLevel == .none {
-//      return SPS(values: self.values.union([ps]))
-//    }
-//
-//    if spsSingleton.emptyIntersection(self) {
-//      let mergeableSPS: SPS = self.mergeable(ps)
-//      if mergeableSPS.isEmpty {
-//        if canonicityLevel == .full {
-//          let ndlsSps = self.ndls(ps: ps)
-//          let ndusSps = self.ndus(ps: ps)
-//          if ndlsSps.isEmpty && ndusSps.isEmpty {
-//            return SPS(values: self.values.union([ps]))
-//          } else if !ndlsSps.isEmpty && ndusSps.isEmpty {
-//            let (qa,b) = ps.value
-//            let psp: PS = ndlsSps.lowPs(net: ps.net)
-//            let (qc,_) = psp.value
-//            let qMax: Marking = Marking.convMax(markings: [qa, qc], net: ps.net)
-//            let reducedPS: PS = PS(value: ([qa], b.union([qMax])), net: ps.net).mes()
-//
-//            let ndlsSPSReduced: SPS = SPS(values: ndlsSps.values.subtracting([psp]))
-//            let addTemp = ndlsSPSReduced.add(reducedPS, canonicityLevel: canonicityLevel)
-//
-//            // Can optimise by calling merge with already computed !
-//            let newPSMerged: SPS = psp.merge(PS(value: (qMax, b), net: ps.net))
-//
-//            if newPSMerged.count > 1 {
-//              fatalError("This should not be the case")
-//            }
-//
-//            let spsWithoutNdls: Set<PS> = self.values.subtracting(ndlsSps.values)
-//
-////            return SPS(values: addTemp.values.union(newPSMerged.values).union(spsWithoutNdls))
-//
-//            let addMerged = addTemp.add(newPSMerged.first!, canonicityLevel: canonicityLevel)
-////            return SPS(values: addMerged.values.union(spsWithoutNdls))
-//            return addMerged.union(SPS(values: spsWithoutNdls), canonicityLevel: canonicityLevel)
-//          } else {
-////            let spsWithoutNdus: SPS = SPS(values: self.values.subtracting(ndusSps.values))
-////            var res: SPS = []
-////            if ndlsSps.isEmpty && !ndusSps.isEmpty {
-////              res = SPS(values: spsWithoutNdus.values.union([ps]))
-////            } else {
-////              res = spsWithoutNdus.add(ps, canonicityLevel: canonicityLevel)
-////            }
-////            for psp in ndusSps {
-////              res = res.add(psp, canonicityLevel: canonicityLevel)
-////            }
-////            return res
-//            let spsWithoutNdus: SPS = SPS(values: self.values.subtracting(ndusSps.values))
-//            var res: SPS = []
-//            if ndlsSps.isEmpty && !ndusSps.isEmpty {
-//              res = [ps]
-//              for psp in ndusSps {
-//                res = res.add(psp, canonicityLevel: canonicityLevel)
-//              }
-////              res = SPS(values: spsWithoutNdus.values.union(res.values))
-//              res = spsWithoutNdus.union(res, canonicityLevel: canonicityLevel)
-//            } else {
-//              res = ndlsSps.add(ps, canonicityLevel: canonicityLevel)
-//              for psp in ndusSps {
-//                res = res.add(psp, canonicityLevel: canonicityLevel)
-//              }
-////              res = SPS(values: res.values.union(self.values.subtracting(ndlsSps.values.union(ndusSps.values))))
-//              res = res.union(SPS(values: self.values.subtracting(ndlsSps.values.union(ndusSps.values))), canonicityLevel: canonicityLevel)
-//            }
-////            for psp in ndusSps {
-////              res = res.add(psp, canonicityLevel: canonicityLevel)
-////            }
-//            return res
-//          }
-//        }
-//        return SPS(values: self.values.union([ps]))
-//      }
-//      let psp = mergeableSPS.lowPs(net: ps.net)
-//      let mergedPart = ps.merge(psp, mergeablePreviouslyComputed: true).first!
-//      return SPS(values: self.values.subtracting([psp])).add(mergedPart, canonicityLevel: canonicityLevel)
-//    }
-//    let nonEmptySet = SPS(values: Set(self.filter({!$0.intersection(ps, isCanonical: false).isEmpty()})))
-//    let lowerPs = nonEmptySet.lowPs(net: ps.net)
-//    let merge = ps.merge(lowerPs)
-//    var res: SPS = self.subtract([lowerPs], canonicityLevel: canonicityLevel)
-//    for psp in merge.sorted(by: {$0.value.inc <= $1.value.inc}) {
-//      res = res.add(psp, canonicityLevel: canonicityLevel)
-//    }
-//    return res
-//  }
   func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
 
     if self.isEmpty {
@@ -239,15 +78,11 @@ public struct SPS {
     let mergeableSPS: SPS = self.mergeable(ps)
     
     if mergeableSPS.isEmpty {
-//    if spsSingleton.emptyIntersection(self) {
       if spsSingleton.emptyIntersection(self) {
-//      if mergeableSPS.isEmpty {
         if canonicityLevel == .full {
           let ndlsSps = self.ndls(ps: ps)
           let ndusSps = self.ndus(ps: ps)
           if ndlsSps.isEmpty && ndusSps.isEmpty {
-//            print("sps current: \(self)")
-//            print("ps current: \(ps)")
             return SPS(values: self.values.union([ps]))
           } else if !ndlsSps.isEmpty && ndusSps.isEmpty {
             let (qa,b) = ps.value
@@ -263,11 +98,6 @@ public struct SPS {
 //            let newPSMerged: SPS = psp.merge(PS(value: (qMax, b), net: ps.net))
 
             let newPSMerged: SPS = psp.merge(ps)
-
-            if newPSMerged.count > 1 {
-//              fatalError("This should not be the case")
-//              print("This should not be the case")
-            }
 
             let spsWithoutNdls: Set<PS> = self.values.subtracting(ndlsSps.values)
 
@@ -358,23 +188,6 @@ public struct SPS {
   ///   - sps: The set of predicate structures on which the intersection is applied
   ///   - isCanonical: An option to decide whether the application simplifies each new predicate structure into its canonical form. The intersection can create contradiction that leads to empty predicate structure or simplification. It is true by default, but it can be changed as false.
   /// - Returns: The result of the intersection.
-//  public func intersection(_ sps: SPS) -> SPS {
-//    if self.isEmpty || sps.isEmpty {
-//      return []
-//    }
-//
-//    var res: Set<PS> = []
-//    for ps1 in self {
-//      for ps2 in sps {
-//        let intersect = ps1.intersection(ps2, isCanonical: true)
-//        if !intersect.isEmpty() {
-//          res.insert(intersect)
-//        }
-//      }
-//    }
-//
-//    return SPS(values: res)
-//  }
   public func intersection(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
     if self.isEmpty || sps.isEmpty {
       return []
@@ -636,7 +449,6 @@ public struct SPS {
     var spsCanonised: Set<PS> = []
     var spsReduced: Set<PS> = []
     var spsMerged: Set<PS> = []
-//    var spsTemp: SPS = []
     var psFirst: PS
     var psFirstTemp: PS
 
@@ -650,9 +462,7 @@ public struct SPS {
     if spsCanonised.isEmpty {
       return []
     }
-    
-//    print("Number of ps in spsCanonised: \(spsCanonised.count)")
-    
+        
     while !spsCanonised.isEmpty {
       psFirst = spsCanonised.removeFirst()
       psFirstTemp = psFirst
@@ -669,16 +479,12 @@ public struct SPS {
       }
     }
     
-//    print("Number of ps in spsMerged: \(spsMerged.count)")
-
     while !spsMerged.isEmpty {
       let firstPS = spsMerged.removeFirst()
       if !SPS(values: [firstPS]).isIncluded(SPS(values: spsMerged)) {
         spsReduced.insert(firstPS)
       }
     }
-
-//    print("Number of ps in spsReduced: \(spsReduced.count)")
     
     return SPS(values: spsReduced)
   }

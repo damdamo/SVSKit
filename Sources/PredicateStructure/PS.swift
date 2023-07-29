@@ -232,19 +232,17 @@ public struct PS {
         let sharing = self.sharingPart(ps: ps)
         if !sharing.isEmpty() {
           if self.value.inc.leq(ps.value.inc) {
-            let res = self.merge(sharing).union(SPS(values: [ps]).subtract([sharing], canonicityLevel: .full), canonicityLevel: .full)
+            let res = self.merge(sharing, mergeablePreviouslyComputed: true).union(SPS(values: [ps]).subtract([sharing], canonicityLevel: .full), canonicityLevel: .full)
             return res
 //            return SPS(values: self.merge(sharing).values.union(SPS(values: [ps]).subtract([sharing], canonicityLevel: .full).values))
           }
-          return ps.merge(sharing).union(SPS(values: [self]).subtract([sharing], canonicityLevel: .full), canonicityLevel: .full)
+          return ps.merge(sharing, mergeablePreviouslyComputed: true).union(SPS(values: [self]).subtract([sharing], canonicityLevel: .full), canonicityLevel: .full)
 //          return SPS(values: ps.merge(sharing).values.union(SPS(values: [self]).subtract([sharing], canonicityLevel: .full).values))
         }
         return [self, ps]
       }
     }
 
-//    var (qa, b) = self.nes().value
-//    var (qc, d) = ps.nes().value
     var (qa, b) = self.value
     var (qc, d) = ps.value
     
@@ -272,11 +270,6 @@ public struct PS {
       d.remove(convMax)
     }
     
-//    for qb in comparableMarkings {
-//      for qd in d {
-//        convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
-//      }
-//    }
       for qb in comparableMarkings {
         for qd in d {
           convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
@@ -289,8 +282,6 @@ public struct PS {
   
   public func mergeable(_ ps: PS) -> Bool {
         
-//    var (qa, b) = self.nes().value
-//    var (qc, d) = ps.nes().value
     // Be careful: We can avoid to use nes() because functions returns always canonical predicate structures
     var (qa, b) = self.value
     var (qc, d) = ps.value
@@ -306,12 +297,6 @@ public struct PS {
         if !(qc <= qb) {
           let convMax = Marking.convMax(markings: [qb,qc], net: net)
           if !d.contains(where: {$0 <= convMax}) {
-//            print("qb: \(qb)")
-//            print("cm: \(convMax)")
-//            for qd in d {
-//              print("qd: \(qd)")
-//              print("is qd included in convMax ? \(qd <= convMax)")
-//            }
             return false
           }
         }

@@ -64,31 +64,6 @@ public struct Marking {
   /// This is the convergent point such as all marking of markings are included in this convergent marking.
   /// - Parameter markings: The marking set
   /// - Returns: The singleton that contains one marking where each place takes the maximum between all markings.
-//  public static func convMax(markings: Set<Marking>, net: PetriNet) -> Marking {
-//    if markings.isEmpty {
-//      return net.zeroMarking()
-//    }
-//
-//    if markings.count == 1 {
-//      return markings.first!
-//    }
-//
-//    var dicMarking: [String: Int] = [:]
-//    let placeCount = net.places.count
-//    dicMarking.reserveCapacity(placeCount)
-//
-//    for place in net.places {
-//      for marking in markings {
-//        if let placeValue = marking[place], let dicValue = dicMarking[place] {
-//          dicMarking[place] = max(placeValue, dicValue)
-//        } else if let placeValue = marking[place] {
-//          dicMarking[place] = placeValue
-//        }
-//      }
-//    }
-//
-//    return Marking(dicMarking, net: net)
-//  }
   public static func convMax(markings: Set<Marking>, net: PetriNet) -> Marking {
     if markings.isEmpty {
       return net.zeroMarking()
@@ -107,32 +82,6 @@ public struct Marking {
     }
     return res
   }
-
-
-
-//  public static func convMax(markings: Set<Marking>, net: PetriNet) -> Marking {
-//    if markings.isEmpty {
-//      return net.zeroMarking()
-//    }
-//
-//    if markings.count == 1 {
-//      return markings.first!
-//    }
-//
-//    var dicMarking: [String: Int] = [:]
-//    for marking in markings {
-//      for place in net.places {
-//        if let m = dicMarking[place] {
-//          if m < marking[place]! {
-//            dicMarking[place] = marking[place]
-//          }
-//        } else {
-//          dicMarking[place] = marking[place]
-//        }
-//      }
-//    }
-//    return Marking(dicMarking, net: net)
-//  }
   
   /// convMin, for convergence minimal, is a function to compute a singleton containing a marking where each value is the minimum of all places for a given place.
   /// This is the convergent point such as the convergent marking is included in all the other markings.
@@ -251,8 +200,8 @@ extension Marking: CustomStringConvertible {
     
     var res = "["
     for (place, values) in storage.sorted(by: {$0.key < $1.key}) {
-//      res.append("\(place): \(values), ")
-      res.append("\(values), ")
+      res.append("\(place): \(values), ")
+//      res.append("\(values), ")
     }
     res.removeLast()
     res.removeLast()
