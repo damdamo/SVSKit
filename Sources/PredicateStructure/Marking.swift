@@ -251,7 +251,8 @@ extension Marking: CustomStringConvertible {
     
     var res = "["
     for (place, values) in storage.sorted(by: {$0.key < $1.key}) {
-      res.append("\(place): \(values), ")
+//      res.append("\(place): \(values), ")
+      res.append("\(values), ")
     }
     res.removeLast()
     res.removeLast()

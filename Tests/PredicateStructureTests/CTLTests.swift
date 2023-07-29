@@ -3,7 +3,7 @@ import XCTest
 import PredicateStructure
 
 final class CTLTests: XCTestCase {
-  
+
   func testCTLEvalAX() {
 
     // Following Petri net:
@@ -38,6 +38,10 @@ final class CTLTests: XCTestCase {
     let sps = ctlFormula.eval()
     
     XCTAssertTrue(sps.isEquiv(expectedSPS))
+    
+    print(sps)
+    print("------------")
+    print(expectedSPS)
   }
 
   
@@ -426,7 +430,7 @@ final class CTLTests: XCTestCase {
 
     var oldT2: SPS = []
     var oldT3: SPS = []
-    for _ in 0 ..< 200 {
+    for _ in 0 ..< 10 {
       let t1 = e1.not(net: net, canonicityLevel: .full)
       print("t1 count: \(t1.count)")
       let t2 = t1.revert(canonicityLevel: .full)
@@ -437,7 +441,6 @@ final class CTLTests: XCTestCase {
       print("-------------------")
       print("t3 count: \(t3.count)")
       print("t3 equal to old t3 ? \(t3 == oldT3)")
-      print("t3 is equiv to old t3 ? \(t3.isEquiv(oldT3))")
       if t3 != oldT3 {
         print("t3: \(t3)")
         print("old t3: \(oldT3)")

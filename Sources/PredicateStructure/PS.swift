@@ -222,9 +222,22 @@ public struct PS {
         let intersect = self.intersection(ps, isCanonical: true)
         if !intersect.isEmpty() {
           if self.value.inc.leq(ps.value.inc) {
-            return ps.subtract(intersect, canonicityLevel: .full).add(self, canonicityLevel: .full)
+//            return ps.subtract(intersect, canonicityLevel: .full).add(self, canonicityLevel: .full)
+            return ps.subtract(self, canonicityLevel: .full).add(self, canonicityLevel: .full)
           }
-          return self.subtract(intersect, canonicityLevel: .full).add(ps, canonicityLevel: .full)
+//          return self.subtract(intersect, canonicityLevel: .full).add(ps, canonicityLevel: .full)
+          return self.subtract(ps, canonicityLevel: .full).add(ps, canonicityLevel: .full)
+        }
+        
+        let sharing = self.sharingPart(ps: ps)
+        if !sharing.isEmpty() {
+          if self.value.inc.leq(ps.value.inc) {
+            let res = self.merge(sharing).union(SPS(values: [ps]).subtract([sharing], canonicityLevel: .full), canonicityLevel: .full)
+            return res
+//            return SPS(values: self.merge(sharing).values.union(SPS(values: [ps]).subtract([sharing], canonicityLevel: .full).values))
+          }
+          return ps.merge(sharing).union(SPS(values: [self]).subtract([sharing], canonicityLevel: .full), canonicityLevel: .full)
+//          return SPS(values: ps.merge(sharing).values.union(SPS(values: [self]).subtract([sharing], canonicityLevel: .full).values))
         }
         return [self, ps]
       }
@@ -257,14 +270,18 @@ public struct PS {
     for marking in incomparableMarkings {
       let convMax = Marking.convMax(markings: [marking, qc], net: net)
       d.remove(convMax)
-//      d.remove
     }
     
-    for qb in comparableMarkings {
-      for qd in d {
-        convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
+//    for qb in comparableMarkings {
+//      for qd in d {
+//        convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
+//      }
+//    }
+      for qb in comparableMarkings {
+        for qd in d {
+          convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
+        }
       }
-    }
     
     let newPS = PS(value: (qa, convMaxMarkingSet)).mes()
     return SPS(values: [newPS])
@@ -288,10 +305,13 @@ public struct PS {
       for qb in b {
         if !(qc <= qb) {
           let convMax = Marking.convMax(markings: [qb,qc], net: net)
-//          if !d.contains(convMax) {
-//            return false
-//          }
           if !d.contains(where: {$0 <= convMax}) {
+//            print("qb: \(qb)")
+//            print("cm: \(convMax)")
+//            for qd in d {
+//              print("qd: \(qd)")
+//              print("is qd included in convMax ? \(qd <= convMax)")
+//            }
             return false
           }
         }
@@ -300,6 +320,34 @@ public struct PS {
     }
     
     return false
+  }
+  
+  public func sharingPart(ps: PS) -> PS {
+    var (qa,b) = self.value
+    var (qc,d) = ps.value
+    
+    if !qa.leq(qc) {
+      let qaTemp = qa
+      let bTemp = b
+      qa = qc
+      b = d
+      qc = qaTemp
+      d = bTemp
+    }
+    
+    let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
+    var markingToAdd: Set<Marking> = []
+    
+    for qb in b {
+      if !(qc <= qb) {
+        let convMax = Marking.convMax(markings: [qb,qc], net: ps.net)
+        if !d.contains(where: {$0 <= convMax}) {
+          markingToAdd.insert(qb)
+        }
+      }
+    }
+    
+    return PS(value: (qMax, d.union(markingToAdd))).canonised()
   }
   
   /// Compute the inverse of the fire operation for a given transition. It takes into account the current predicate structure where it consumes tokens for post arcs and produces new ones for pre arcs.

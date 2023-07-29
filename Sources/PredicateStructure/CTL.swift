@@ -875,6 +875,9 @@ extension CTL {
     }
     var res = psi
     var resTemp: SPS
+    
+//    evalEUBIS(ctl, marking: marking)
+
     repeat {
       if res.contains(marking: marking) {
         return true
@@ -882,15 +885,78 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      let res1 = res.revert(canonicityLevel: canonicityLevel)
+      let res2 = phi.intersection(res1, canonicityLevel: canonicityLevel)
+      let res3 = psi.union(res2, canonicityLevel: canonicityLevel)
+      res = res3
+//      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
+//      print(res)
       if debug {
+//        print("Number during res1 : \(res1.count)")
+//        print("Number during res2 : \(res2.count)")
+//        print("Number during res3 : \(res3.count)")
         print("Predicate structure number during EU evaluation: \(res.count)")
       }
     } while !res.isIncluded(resTemp)
     return res.contains(marking: marking)
+  }
+  
+  func evalEUBIS(_ ctl: CTL, marking: Marking) {
+    print("EUBIS ACTIVATED")
+    let psi = ctl.eval()
+    let phi = self.eval()
+
+    var res = psi
+    var resTemp: SPS
+    repeat {
+      if res.contains(marking: marking) {
+        break
+      }
+      resTemp = res
+      var resTemp2 = res
+      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
+      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
+      var res1Temp = res.revert(canonicityLevel: canonicityLevel)
+      var res2Temp = phi.intersection(res1Temp, canonicityLevel: canonicityLevel)
+      var res3Temp = psi.union(res2Temp, canonicityLevel: canonicityLevel)
+      for i in 0 ..< 5 {
+        print("--------------------")
+        print("loop \(i)")
+        let res1 = res.revert(canonicityLevel: canonicityLevel)
+        let res2 = phi.intersection(res1, canonicityLevel: canonicityLevel)
+        let res3 = psi.union(res2, canonicityLevel: canonicityLevel)
+        print("--------------------")
+        print("Number during res1 : \(res1.count)")
+        print("Number during res2 : \(res2.count)")
+        print("Number during res3 : \(res3.count)")
+        
+        if res1 != res1Temp {
+          print("res1: \(res1)")
+          print("res1Temp: \(res1Temp)")
+          print("Difference result:")
+          print("res1 - res1Temp")
+          print(SPS(values: res1.values.subtracting(res1Temp.values)))
+          print("res1Temp - res1")
+          print(SPS(values: res1Temp.values.subtracting(res1.values)))
+        }
+//        print("Equiv res1 et res1Temp: \(res1Temp.isEquiv(res1))")
+//        print("Equiv res2 et res2Temp: \(res2Temp.isEquiv(res2))")
+//        print("Equiv res3 et res3Temp: \(res3Temp.isEquiv(res3))")
+        res1Temp = res1
+        res2Temp = res2
+        res3Temp = res3
+        
+        resTemp2 = res3
+      }
+      res = resTemp2
+//      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      if simplified {
+        res = res.simplified()
+      }
+    } while !res.isIncluded(resTemp)
   }
   
   func evalAU(_ ctl: CTL, marking: Marking) -> Bool {
