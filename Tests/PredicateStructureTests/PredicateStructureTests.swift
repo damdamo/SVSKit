@@ -493,7 +493,8 @@ final class PredicateStructureTests: XCTestCase {
     let ps6 = PS(value: ([m4],[m6]), net: net)
     let sps2 = SPS(values: [ps5, ps6])
     
-    XCTAssertEqual(ps1.merge(ps4), sps2)
+    XCTAssertNotEqual(ps1.merge(ps4), sps2)
+    XCTAssertEqual(SPS(values: [ps1]).union(SPS(values: [ps4]), canonicityLevel: .full), sps2)
   }
 
   func testIsEmpty() {

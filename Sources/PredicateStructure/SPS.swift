@@ -9,37 +9,6 @@ public struct SPS {
     self.values = values
   }
   
-  public func ndls(ps: PS) -> SPS {
-    let (qa, _) = ps.value
-    var res: Set<PS> = []
-    
-    for psp in self {
-      let (qc, _) = psp.value
-        if !(qa.leq(qc)){
-          if !ps.sharingPart(ps: psp).isEmpty() {
-            res.insert(psp)
-          }
-        }
-    }
-    return SPS(values: res)
-  }
-    
-  public func ndus(ps: PS) -> SPS {
-    let (qa,_) = ps.value
-    var res: Set<PS> = []
-    
-    for psp in self {
-      let (qc, _) = psp.value
-        if !(qc.leq(qa)){
-          let sharingPart = ps.sharingPart(ps: psp)
-          if !sharingPart.isEmpty() {
-            res.insert(psp)
-          }
-        }
-    }
-    return SPS(values: res)
-  }
-  
   public func sharingSps(ps: PS) -> SPS {
     var res: Set<PS> = []
     for psp in self {
@@ -72,52 +41,66 @@ public struct SPS {
     return psTemp
   }
   
-  func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
-
-    if self.isEmpty {
-       return SPS(values: [ps])
-    } else if ps.isEmpty() {
-       return self
-    }
-
-    let spsSingleton = SPS(values: [ps])
-
-    if canonicityLevel == .none {
-      return SPS(values: self.values.union([ps]))
-    }
-      
-    let mergeableSPS: SPS = self.mergeable(ps)
-    
-    if mergeableSPS.isEmpty {
-      if spsSingleton.emptyIntersection(self) {
-        if canonicityLevel == .full {
-          var shareablePS = sharingSps(ps: ps).values
-          if !shareablePS.isEmpty {
-            let psp: PS = shareablePS.sorted(by: {$0.value.inc.leq($1.value.inc)}).first!
-            shareablePS.remove(psp)
-            let mergedPsAndPsp = ps.merge(psp)
-            let spsWithoutShareablePS = SPS(values: self.values.subtracting(shareablePS))
-
-            return SPS(values: shareablePS).union(mergedPsAndPsp, canonicityLevel: canonicityLevel).union(spsWithoutShareablePS, canonicityLevel: canonicityLevel)
+    func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
+  
+      if self.isEmpty {
+         return SPS(values: [ps])
+      } else if ps.isEmpty() {
+         return self
+      }
+  
+      let spsSingleton = SPS(values: [ps])
+  
+      if canonicityLevel == .none {
+        return SPS(values: self.values.union([ps]))
+      }
+  
+      let mergeableSPS: SPS = self.mergeable(ps)
+  
+      if mergeableSPS.isEmpty {
+        if spsSingleton.emptyIntersection(self) {
+          if canonicityLevel == .full {
+            var shareablePS = sharingSps(ps: ps).values
+            if !shareablePS.isEmpty {
+              let psp: PS = shareablePS.sorted(by: {$0.value.inc.leq($1.value.inc)}).first!
+              shareablePS.remove(psp)
+              let shared = ps.sharingPart(ps: psp)
+              let spsWithoutShared = SPS(values: self.values.subtracting([psp]))
+              var res: SPS = []
+              
+              if ps.value.inc.leq(psp.value.inc) {
+                let merged = ps.merge(shared, mergeablePreviouslyComputed: true)
+                if merged.count > 1 {
+                  fatalError("Should not be possible")
+                }
+                res = SPS(values: [psp]).subtract([shared], canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
+              } else {
+                let merged = psp.merge(shared, mergeablePreviouslyComputed: true)
+                if merged.count > 1 {
+                  fatalError("Should not be possible")
+                }
+                res = SPS(values: [ps]).subtract([shared], canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
+              }
+              return res.union(spsWithoutShared, canonicityLevel: .full)
+            }
+            return SPS(values: self.values.union([ps]))
           }
           return SPS(values: self.values.union([ps]))
         }
-        return SPS(values: self.values.union([ps]))
+        let nonEmptySet = SPS(values: Set(self.filter({!$0.intersection(ps, isCanonical: false).isEmpty()})))
+        let lowerPs = nonEmptySet.lowPs(net: ps.net)
+        let merge = ps.merge(lowerPs)
+        var res: SPS = self.subtract([lowerPs], canonicityLevel: canonicityLevel)
+        for psp in merge.sorted(by: {$0.value.inc <= $1.value.inc}) {
+          res = res.add(psp, canonicityLevel: canonicityLevel)
+        }
+        return res
       }
-      let nonEmptySet = SPS(values: Set(self.filter({!$0.intersection(ps, isCanonical: false).isEmpty()})))
-      let lowerPs = nonEmptySet.lowPs(net: ps.net)
-      let merge = ps.merge(lowerPs)
-      var res: SPS = self.subtract([lowerPs], canonicityLevel: canonicityLevel)
-      for psp in merge.sorted(by: {$0.value.inc <= $1.value.inc}) {
-        res = res.add(psp, canonicityLevel: canonicityLevel)
-      }
+      let psp = mergeableSPS.lowPs(net: ps.net)
+      let mergedPart = ps.merge(psp, mergeablePreviouslyComputed: true).first!
+      let res = SPS(values: self.values.subtracting([psp])).add(mergedPart, canonicityLevel: canonicityLevel)
       return res
     }
-    let psp = mergeableSPS.lowPs(net: ps.net)
-    let mergedPart = ps.merge(psp, mergeablePreviouslyComputed: true).first!
-    let res = SPS(values: self.values.subtracting([psp])).add(mergedPart, canonicityLevel: canonicityLevel)
-    return res
-  }
   
   /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
   /// - Parameters:

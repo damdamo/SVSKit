@@ -228,22 +228,6 @@ public struct PS {
 //          return self.subtract(ps, canonicityLevel: .full).add(ps, canonicityLevel: .full)
           return SPS(values: self.subtract(ps, canonicityLevel: .full).values.union([ps]))
         }
-        
-        let sharing = self.sharingPart(ps: ps)
-        if !sharing.isEmpty() {
-          if self.value.inc.leq(ps.value.inc) {
-            let merged = self.merge(sharing, mergeablePreviouslyComputed: true)
-            if merged.count > 1 {
-              fatalError("Should not be possible")
-            }
-            return SPS(values: [ps]).subtract([sharing], canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
-          }
-          let merged = ps.merge(sharing, mergeablePreviouslyComputed: true)
-          if merged.count > 1 {
-            fatalError("Should not be possible")
-          }
-          return SPS(values: [self]).subtract([sharing], canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
-        }
         return [self, ps]
       }
     }

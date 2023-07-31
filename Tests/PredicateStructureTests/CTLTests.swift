@@ -298,10 +298,13 @@ final class CTLTests: XCTestCase {
       .pre(from: "p2", to: "t2", labeled: 1)
     )
     
-    let ctl1 = CTL(formula: .AX(.or(.isFireable("t0"), .or(.isFireable("t1"), .isFireable("t2")))), net: net, canonicityLevel: .full)
-    let ctl2 = CTL(formula: .AX(.or(.isFireable("t0"), .or(.isFireable("t1"), .isFireable("t2")))), net: net, canonicityLevel: .none)
+    let ctl1 = CTL(formula: .AX(.or(.isFireable("t0"), .or(.isFireable("t1"), .isFireable("t2")))), net: net, canonicityLevel: .none)
+    let ctl2 = CTL(formula: .AX(.or(.isFireable("t0"), .or(.isFireable("t1"), .isFireable("t2")))), net: net, canonicityLevel: .full)
     
-    XCTAssertTrue(ctl1.eval().isEquiv(ctl2.eval()))
+    let ctl1Eval = ctl1.eval()
+    let ctl2Eval = ctl2.eval()
+    
+    XCTAssertTrue(ctl1Eval.isEquiv(ctl2Eval))
   }
 
   

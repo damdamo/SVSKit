@@ -114,15 +114,16 @@ final class ListExampleTests: XCTestCase {
     let key = "ERK-PT-000001-CTLFireability-15"
     let formula = dicCTL[key]!
     let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
-    print(ctlReduced)
 //    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
+    print(ctlReduced)
+    
 
     print(ctlReduced.eval(marking: marking1))
 
     print(s.elapsed.humanFormat)
   }
 
-  
+
   func testERK() {
     let parserPN = PnmlParser()
     let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
