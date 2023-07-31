@@ -106,12 +106,12 @@ public struct PS {
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
   /// - Returns: The canonical form of the predicate structure.
   public func canonised() -> PS {
-    let mesPS = PS(value: (self.value.inc, self.value.exc)).mes()
-    if mesPS.isEmpty() {
+    if self.isEmpty() {
       // In (a,b) ∈ PS, if a marking in b is included in a, it returns the empty predicate structure
       return PS(value: emptyValue)
     }
-    return mesPS
+    
+    return PS(value: (self.value.inc, self.value.exc)).mes()
   }
   
   /// Compute all the markings represented by the symbolic representation of a predicate structure.
@@ -222,22 +222,27 @@ public struct PS {
         let intersect = self.intersection(ps, isCanonical: true)
         if !intersect.isEmpty() {
           if self.value.inc.leq(ps.value.inc) {
-//            return ps.subtract(intersect, canonicityLevel: .full).add(self, canonicityLevel: .full)
-            return ps.subtract(self, canonicityLevel: .full).add(self, canonicityLevel: .full)
+//            return ps.subtract(self, canonicityLevel: .full).add(self, canonicityLevel: .full)
+            return SPS(values: ps.subtract(self, canonicityLevel: .full).values.union([self]))
           }
-//          return self.subtract(intersect, canonicityLevel: .full).add(ps, canonicityLevel: .full)
-          return self.subtract(ps, canonicityLevel: .full).add(ps, canonicityLevel: .full)
+//          return self.subtract(ps, canonicityLevel: .full).add(ps, canonicityLevel: .full)
+          return SPS(values: self.subtract(ps, canonicityLevel: .full).values.union([ps]))
         }
         
         let sharing = self.sharingPart(ps: ps)
         if !sharing.isEmpty() {
           if self.value.inc.leq(ps.value.inc) {
-            let res = self.merge(sharing, mergeablePreviouslyComputed: true).union(SPS(values: [ps]).subtract([sharing], canonicityLevel: .full), canonicityLevel: .full)
-            return res
-//            return SPS(values: self.merge(sharing).values.union(SPS(values: [ps]).subtract([sharing], canonicityLevel: .full).values))
+            let merged = self.merge(sharing, mergeablePreviouslyComputed: true)
+            if merged.count > 1 {
+              fatalError("Should not be possible")
+            }
+            return SPS(values: [ps]).subtract([sharing], canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
           }
-          return ps.merge(sharing, mergeablePreviouslyComputed: true).union(SPS(values: [self]).subtract([sharing], canonicityLevel: .full), canonicityLevel: .full)
-//          return SPS(values: ps.merge(sharing).values.union(SPS(values: [self]).subtract([sharing], canonicityLevel: .full).values))
+          let merged = ps.merge(sharing, mergeablePreviouslyComputed: true)
+          if merged.count > 1 {
+            fatalError("Should not be possible")
+          }
+          return SPS(values: [self]).subtract([sharing], canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
         }
         return [self, ps]
       }
