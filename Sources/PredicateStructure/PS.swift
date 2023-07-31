@@ -219,15 +219,6 @@ public struct PS {
     
     if !mergeablePreviouslyComputed {
       if !self.mergeable(ps) {
-        let intersect = self.intersection(ps, isCanonical: true)
-        if !intersect.isEmpty() {
-          if self.value.inc.leq(ps.value.inc) {
-//            return ps.subtract(self, canonicityLevel: .full).add(self, canonicityLevel: .full)
-            return SPS(values: ps.subtract(self, canonicityLevel: .full).values.union([self]))
-          }
-//          return self.subtract(ps, canonicityLevel: .full).add(ps, canonicityLevel: .full)
-          return SPS(values: self.subtract(ps, canonicityLevel: .full).values.union([ps]))
-        }
         return [self, ps]
       }
     }

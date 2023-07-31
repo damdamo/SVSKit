@@ -87,14 +87,15 @@ public struct SPS {
           }
           return SPS(values: self.values.union([ps]))
         }
-        let nonEmptySet = SPS(values: Set(self.filter({!$0.intersection(ps, isCanonical: false).isEmpty()})))
-        let lowerPs = nonEmptySet.lowPs(net: ps.net)
-        let merge = ps.merge(lowerPs)
-        var res: SPS = self.subtract([lowerPs], canonicityLevel: canonicityLevel)
-        for psp in merge.sorted(by: {$0.value.inc <= $1.value.inc}) {
-          res = res.add(psp, canonicityLevel: canonicityLevel)
-        }
-        return res
+//        let nonEmptySet = SPS(values: Set(self.filter({!$0.intersection(ps, isCanonical: false).isEmpty()})))
+//        let lowerPs = nonEmptySet.lowPs(net: ps.net)
+//        let merge = ps.merge(lowerPs)
+//        var res: SPS = self.subtract([lowerPs], canonicityLevel: canonicityLevel)
+//        for psp in merge.sorted(by: {$0.value.inc <= $1.value.inc}) {
+//          res = res.add(psp, canonicityLevel: canonicityLevel)
+//        }
+//        return res
+        return spsSingleton.union(self.subtract(spsSingleton, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       }
       let psp = mergeableSPS.lowPs(net: ps.net)
       let mergedPart = ps.merge(psp, mergeablePreviouslyComputed: true).first!
