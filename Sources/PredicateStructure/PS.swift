@@ -295,12 +295,9 @@ public struct PS {
     var (qc,d) = ps.value
     
     if !qa.leq(qc) {
-      let qaTemp = qa
-      let bTemp = b
-      qa = qc
-      b = d
-      qc = qaTemp
-      d = bTemp
+      let temp = (qa, b)
+      (qa, b) = (qc, d)
+      (qc, d) = temp
     }
     
     let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
@@ -310,6 +307,9 @@ public struct PS {
       if !(qc <= qb) {
         let convMax = Marking.convMax(markings: [qb,qc], net: ps.net)
         if !d.contains(where: {$0 <= convMax}) {
+//          if qb <= qMax {
+//            return PS(value: (net.zeroMarking(), [net.zeroMarking()]))
+//          }
           markingToAdd.insert(qb)
         }
       }

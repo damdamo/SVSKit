@@ -57,54 +57,38 @@ public struct SPS {
        return self
     }
 
-    let spsSingleton = SPS(values: [ps])
 
     if canonicityLevel == .none {
       return SPS(values: self.values.union([ps]))
     }
 
-    let mergeableSPS: SPS = self.mergeable(ps)
-
-    if mergeableSPS.isEmpty {
-      if spsSingleton.emptyIntersection(self) {
-        if canonicityLevel == .full {
-          var shareablePS = sharingSps(ps: ps).values
-          if !shareablePS.isEmpty {
-            let psp: PS = shareablePS.sorted(by: {$0.value.inc.leq($1.value.inc)}).first!
-            shareablePS.remove(psp)
-            let shared = ps.sharingPart(ps: psp)
-            let spsWithoutShared = SPS(values: self.values.subtracting([psp]))
-            var res: SPS = []
-            
-            if ps.value.inc.leq(psp.value.inc) {
-              let merged = ps.merge(shared, mergeablePreviouslyComputed: true)
-              if merged.count > 1 {
-                fatalError("Should not be possible")
-              }
-              res = psp.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
-            } else {
-              let merged = psp.merge(shared, mergeablePreviouslyComputed: true)
-              if merged.count > 1 {
-                fatalError("Should not be possible")
-              }
-              res = ps.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
-            }
-            return res.union(spsWithoutShared, canonicityLevel: .full)
-          }
-          // If some of the predicate structures are not canonical, the result could contain non canonical predicate structures. In this case, it would be required to add mes()
-          // return SPS(values: self.values.union([ps.mes()]))
-          return SPS(values: self.values.union([ps]))
+    var shareablePS = sharingSps(ps: ps).values
+    if !shareablePS.isEmpty {
+      let psp: PS = shareablePS.sorted(by: {$0.value.inc.leq($1.value.inc)}).first!
+      shareablePS.remove(psp)
+      let shared = ps.sharingPart(ps: psp)
+      let spsWithoutShared = SPS(values: self.values.subtracting([psp]))
+      var res: SPS = []
+      
+      if ps.value.inc.leq(psp.value.inc) {
+        let merged = ps.merge(shared, mergeablePreviouslyComputed: true)
+        if merged.count > 1 {
+          fatalError("Should not be possible")
         }
-        return SPS(values: self.values.union([ps]))
+        res = psp.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
+      } else {
+        let merged = psp.merge(shared, mergeablePreviouslyComputed: true)
+        if merged.count > 1 {
+          fatalError("Should not be possible")
+        }
+        res = ps.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
       }
-      return spsSingleton.union(self.subtract(spsSingleton, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      return res.union(spsWithoutShared, canonicityLevel: .full)
     }
-    let psp = mergeableSPS.lowPs(net: ps.net)
-    let mergedPart = ps.merge(psp, mergeablePreviouslyComputed: true).first!
-    let res = SPS(values: self.values.subtracting([psp])).add(mergedPart, canonicityLevel: canonicityLevel)
-    return res
+    // If some of the predicate structures are not canonical, the result could contain non canonical predicate structures. In this case, it would be required to add mes()
+    // return SPS(values: self.values.union([ps.mes()]))
+    return SPS(values: self.values.union([ps]))
   }
-  
   /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the union is applied
