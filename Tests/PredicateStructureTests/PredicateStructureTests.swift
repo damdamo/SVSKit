@@ -1043,6 +1043,4 @@ final class PredicateStructureTests: XCTestCase {
 //    
 //    print(sps4.not().isEquiv(spsAll.subtract(sps4)))
 //  }
-  
-    
 }
