@@ -6,23 +6,39 @@ public struct CTL {
   /// CTL formula
   let formula: Formula
   /// Related Petri net
-  let net: PetriNet
-  /// Option to decide how to compute AX, either by using the negation (¬ EX ¬) when set to true, or by subtracting the current solution to the whole state ( {({(0, 0, ...)}, {})} \ sps) set to false.
-  /// Set to false
-  let rewrited: Bool
+  private static var netStatic: PetriNet? = nil
   /// Option to decide if the simplification function should be called during execution. It removes redundancy in sps and ps.
   /// Set to true
-  let simplified: Bool
+  private static var simplifiedStatic: Bool = true
   /// Option to print the state number in fixpoint loop.
   /// Set to false
-  let debug: Bool
+  private static var debugStatic: Bool = false
   
-  public init(formula: Formula, net: PetriNet, rewrited: Bool = false, simplified: Bool = true, debug: Bool = false) {
+  private let canonicityLevel: CanonicityLevel
+  
+  public var net: PetriNet {
+    return CTL.netStatic!
+  }
+
+  var simplified: Bool {
+    return CTL.simplifiedStatic
+  }
+  var debug: Bool {
+    return CTL.debugStatic
+  }
+  
+  public init(formula: Formula, net: PetriNet, canonicityLevel: CanonicityLevel, simplified: Bool = true, debug: Bool = false) {
     self.formula = formula
-    self.net = net
-    self.rewrited = rewrited
-    self.simplified = simplified
-    self.debug = debug
+    CTL.netStatic = net
+    CTL.simplifiedStatic = simplified
+    CTL.debugStatic = debug
+    
+    self.canonicityLevel = canonicityLevel
+  }
+  
+  private init(formula: Formula, canonicityLevel: CanonicityLevel) {
+    self.formula = formula
+    self.canonicityLevel = canonicityLevel
   }
     
   /// Enum that lists the accepted operators for a cardinality formula
@@ -168,43 +184,58 @@ public struct CTL {
     case .false:
       res = []
     case .and(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      res = ctl1.eval().intersection(ctl2.eval())
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
+      res = ctl1.eval().intersection(ctl2.eval(), canonicityLevel: canonicityLevel)
+      if debug {
+        print("Predicate structure number after and: \(res.count)")
+      }
     case .or(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      res = ctl1.eval().union(ctl2.eval())
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel).eval()
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel).eval()
+      res = ctl1.union(ctl2, canonicityLevel: canonicityLevel)
+      if debug {
+        print("Predicate structure number after or: \(res.count)")
+      }
     case .not(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      res = ctl1.eval().not()
+      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      res = ctl1.eval().not(net: net, canonicityLevel: canonicityLevel)
+      if debug {
+        print("Predicate structure number after not: \(res.count)")
+      }
     case .deadlock:
       res = SPS.deadlock(net: net)
     case .EX(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      res = ctl1.eval().revert()
+      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      res = ctl1.eval().revert(canonicityLevel: canonicityLevel)
+      if debug {
+        print("Predicate structure number after EX: \(res.count)")
+      }
     case .AX(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      res = ctl1.eval().revertTilde(rewrited: rewrited)
+      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      res = ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel)
+      if debug {
+        print("Predicate structure number after AX: \(res.count)")
+      }
     case .EF(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.evalEF()
     case .AF(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.evalAF()
     case .EG(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.evalEG()
     case .AG(let formula):
-      let ctl1 = CTL(formula: formula, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.evalAG()
     case .EU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       res = ctl1.evalEU(ctl2)
     case .AU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       res = ctl1.evalAU(ctl2)
     }
     
@@ -220,7 +251,7 @@ public struct CTL {
   func evalCardinality() -> SPS {
     switch formula {
     case .intExpr(e1: .value(_), operator: _, e2: .value(_)):
-      return CTL(formula: .true, net: net, rewrited: rewrited, simplified: simplified).eval()
+      return CTL(formula: .true, net: net, canonicityLevel: canonicityLevel, simplified: simplified).eval()
     case .intExpr(e1: .tokenCount(_), operator: _, e2: .tokenCount(_)):
       fatalError("The tool does not manage a cardinality comparison between places")
     case .intExpr(e1: let e1, operator: .leq, e2: let e2):
@@ -299,7 +330,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.union(res.revert())
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -319,7 +350,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -339,7 +370,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
+      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -359,7 +390,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = phi.intersection(res.revertTilde(rewrited: rewrited))
+      res = phi.intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -381,7 +412,7 @@ public struct CTL {
     var resTemp: SPS
     repeat {
       resTemp = res
-      res = psi.union(phi.intersection(res.revert()))
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -403,7 +434,7 @@ public struct CTL {
     }
     repeat {
       resTemp = res
-      res = psi.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -418,7 +449,7 @@ public struct CTL {
   /// for Efficient Model Checking of Petri Nets from Frederik Bønneland & al. .
   /// - Returns: The reduced CTL
   public func queryReduction() -> CTL {
-    return CTL(formula: queryReduction(formula), net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+    return CTL(formula: queryReduction(formula), canonicityLevel: canonicityLevel)
   }
   
   
@@ -663,57 +694,57 @@ extension CTL {
     case .false:
       return false
     case .and(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       let evalCTL1 = ctl1.eval(marking: marking)
       if evalCTL1 == false {
         return false
       }
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       return ctl2.eval(marking: marking)
     case .or(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       let evalCTL1 = ctl1.eval(marking: marking)
       if evalCTL1 == true {
         return true
       }
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       return (ctl2.eval(marking: marking))
     case .not(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      return ctl1.eval().not().contains(marking: marking)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      return ctl1.eval().not(net: net, canonicityLevel: canonicityLevel).contains(marking: marking)
     case .deadlock:
       return SPS.deadlock(net: net).contains(marking: marking)
     case .EX(let formula1):
       if SPS.deadlock(net: net).contains(marking: marking) {
         return false
       }
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      return ctl1.eval().revert().contains(marking: marking)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      return ctl1.eval().revert(canonicityLevel: canonicityLevel).contains(marking: marking)
     case .AX(let formula1):
       if SPS.deadlock(net: net).contains(marking: marking) {
         return true
       }
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      return ctl1.eval().revertTilde(rewrited: rewrited).contains(marking: marking)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      return ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel).contains(marking: marking)
     case .EF(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       return ctl1.evalEF(marking: marking)
     case .AF(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       return ctl1.evalAF(marking: marking)
     case .EG(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       return ctl1.evalEG(marking: marking)
     case .AG(let formula1):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       return ctl1.evalAG(marking: marking)
     case .EU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       return ctl1.evalEU(ctl2, marking: marking)
     case .AU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
-      let ctl2 = CTL(formula: formula2, net: net, rewrited: rewrited, simplified: simplified, debug: debug)
+      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
       return ctl1.evalAU(ctl2, marking: marking)
     }
     
@@ -734,7 +765,7 @@ extension CTL {
         return true
       }
       resTemp = res
-      res = phi.union(res.revert())
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
 
       if simplified {
         res = res.simplified()
@@ -763,7 +794,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = phi.union(res.revert().intersection(res.revertTilde(rewrited: rewrited)))
+      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -789,7 +820,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = phi.intersection(res.revert().union(res.revertTilde(rewrited: rewrited)))
+      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -815,7 +846,7 @@ extension CTL {
         return false
       }
       resTemp = res
-      res = phi.intersection(res.revertTilde(rewrited: rewrited))
+      res = phi.intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -844,6 +875,7 @@ extension CTL {
     }
     var res = psi
     var resTemp: SPS
+    
     repeat {
       if res.contains(marking: marking) {
         return true
@@ -851,10 +883,14 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = psi.union(phi.intersection(res.revert()))
+//      let res1 = res.revert(canonicityLevel: canonicityLevel)
+//      let res2 = phi.intersection(res1, canonicityLevel: canonicityLevel)
+//      let res = psi.union(res2, canonicityLevel: canonicityLevel)
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
+//      print(res)
       if debug {
         print("Predicate structure number during EU evaluation: \(res.count)")
       }
@@ -887,7 +923,7 @@ extension CTL {
       resTemp = res
       // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
       // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = psi.union(phi.intersection(res.revert().intersection(res.revertTilde(rewrited: rewrited))))
+      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
       if simplified {
         res = res.simplified()
       }
@@ -911,7 +947,7 @@ extension CTL: CustomStringConvertible {
     var res: String = ""
     res.append("CTL formula: \(formula.description)\n")
     res.append("Options: \n")
-    res.append("  Rewrited: \(rewrited)\n")
+    res.append("  Canonicity level: \(canonicityLevel)\n")
     res.append("  Simplified: \(simplified)\n")
     res.append("  Debug: \(debug)")
     return res

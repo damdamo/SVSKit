@@ -12,150 +12,90 @@ public struct PS {
   public typealias TransitionType = String
   
   /// The couple that represents the predicate structure
-  public let value: (inc: Set<Marking>, exc: Set<Marking>)?
+  public let value: (inc: Marking, exc: Set<Marking>)
   /// The related Petri net
-  public let net: PetriNet
+  private static var netStatic: PetriNet? = nil
   
-  public init(value: (inc: Set<Marking>, exc: Set<Marking>)?, net: PetriNet) {
-    if let v = value {
-      // If `inc` is an empty set, we replace it by the zero marking, containing 0 for all places
-      // It corresponds to the marking accepting all markings.
-      if v.inc.isEmpty {
-        let couple = (Set([net.zeroMarking()]), v.exc)
-        self.value = couple
-      } else {
-        self.value = value
-      }
+  public var net: PetriNet {
+    return PS.netStatic!
+  }
+    
+  public var emptyValue: (inc: Marking, exc: Set<Marking>) {
+    return (net.zeroMarking(), [net.zeroMarking()])
+  }
+  
+  private init(value: (inc: Marking, exc: Set<Marking>)) {
+    self.value = value
+  }
+  
+  public init(value: (inc: Marking, exc: Set<Marking>), net: PetriNet) {
+    PS.netStatic = net
+    self.value = value
+  }
+  
+  public init(value: (inc: Set<Marking>, exc: Set<Marking>), net: PetriNet) {
+    PS.netStatic = net
+
+    // If `inc` is an empty set, we replace it by the zero marking, containing 0 for all places
+    // It corresponds to the marking accepting all markings.
+    if value.inc.isEmpty {
+      let couple = (net.zeroMarking(), value.exc)
+      self.value = couple
     } else {
-      self.value = value
+      self.value = (Marking.convMax(markings: value.inc, net: net), value.exc)
     }
-    self.net = net
+  }
+  
+  public func isEmpty() -> Bool {
+    for qb in value.exc {
+      if qb <= self.value.inc {
+        return true
+      }
+      
+    }
+    return false
   }
   
   /// Compute the negation of a predicate structure, which is a set of predicate structures
   /// - Returns: Returns the negation of the predicate structure
   public func not() -> SPS {
-    if let p = value {
-      var sps: Set<PS> = []
-      for el in p.inc {
-        // .ps([], [el])
-        sps.insert(PS(value: ([net.zeroMarking()], [el]) , net: net))
-      }
-      for el in p.exc {
-        sps.insert(PS(value: ([el], []) , net: net))
-      }
-      return SPS(values: sps)
+    if self.isEmpty() {
+      return [PS(value: (net.zeroMarking(), []))]
     }
     
-    var dicMarking: [PlaceType: Int] = [:]
-    for place in net.places {
-      dicMarking[place] = 0
+    var sps: Set<PS> = []
+    sps.insert(PS(value: (net.zeroMarking(), [self.value.inc])))
+    for el in value.exc {
+      sps.insert(PS(value: (el, [])))
     }
-    return [PS(value: ([Marking(dicMarking, net: net)], []), net: net)]
+    return SPS(values: sps)
   }
   
-  /// Change the target marking using the source marking, by using the source marking as a lower bound for each place. If a place of a target marking is lower than this lower bound, its value is changed to be equal to the lower bound. Otherwise, nothing is changed.
-  /// - Parameters:
-  ///   - sourceMarking: The reference marking
-  ///   - targetMarking: The marking to be changed if necessary
-  ///   - net: The current Petri net
-  /// - Returns: A new marking containing the modified target marking
-  public static func normaliseMarking(sourceMarking: Marking, targetMarking: Marking, net: PetriNet) -> Marking {
-    var marking = targetMarking
-    for place in net.places {
-      if sourceMarking[place]! > targetMarking[place]! {
-        marking[place]! = sourceMarking[place]!
-      }
-    }
-    return marking
-  }
-  
-  /// Change the target markings using the source marking, by using the source marking as a lower bound for each place. If a place of a target marking is lower than this lower bound, its value is changed to be equal to the lower bound. Otherwise, nothing is changed.
-  /// - Parameters:
-  ///   - sourceMarking: The reference marking
-  ///   - targetMarkings: The markings to be changed if necessary
-  ///   - net: The current Petri net
-  /// - Returns: A new set of markings containing the changed target markings
-  public static func normaliseMarkings(sourceMarking: Marking, targetMarkings: Set<Marking>, net: PetriNet) -> Set<Marking> {
-    var markingSet: Set<Marking> = []
-    for marking in targetMarkings {
-      markingSet.insert(PS.normaliseMarking(sourceMarking: sourceMarking, targetMarking: marking, net: net))
-    }
-    return markingSet
-  }
-  
-  /// convMax, for convergence maximal, is a function to compute a singleton containing a marking where each value is the maximum of all places for a given place.
-  /// This is the convergent point such as all marking of markings are included in this convergent marking.
-  /// - Parameter markings: The marking set
-  /// - Returns: The singleton that contains one marking where each place takes the maximum between all markings.
-  public static func convMax(markings: Set<Marking>, net: PetriNet) -> Set<Marking> {
-    if markings.isEmpty {
-      return []
-    }
+  // nes: Normalise excluding set
+  public func nes() -> PS {
+    var excludingSet: Set<Marking> = []
+    var markingTemp: Marking
+    let qa = self.value.inc
     
-    var dicMarking: [PlaceType: Int] = [:]
-    for marking in markings {
-      for place in net.places {
-        if let m = dicMarking[place] {
-          if m < marking[place]! {
-            dicMarking[place] = marking[place]
-          }
-        } else {
-          dicMarking[place] = marking[place]
-        }
-      }
+    for qb in self.value.exc {
+      markingTemp = Marking.convMax(markings: [qa, qb], net: net)
+      excludingSet.insert(markingTemp)
     }
-    return [Marking(dicMarking, net: net)]
+    return PS(value: (self.value.inc, excludingSet))
   }
   
-  /// convMin, for convergence minimal, is a function to compute a singleton containing a marking where each value is the minimum of all places for a given place.
-  /// This is the convergent point such as the convergent marking is included in all the other markings.
-  /// - Parameter markings: The marking set
-  /// - Returns: The singleton that contains one marking where each place takes the minimum between all markings.
-  public static func convMin(markings: Set<Marking>, net: PetriNet) -> Set<Marking> {
-    if markings.isEmpty {
-      return []
+  // mes: minimum excluding set
+  public func mes() -> PS {
+    if self.value == emptyValue {
+      return self
     }
-    
-    var dicMarking: [PlaceType: Int] = [:]
-    for marking in markings {
-      for place in net.places {
-        if let m = dicMarking[place] {
-          if marking[place]! < m {
-            dicMarking[place] = marking[place]
-          }
-        } else {
-          dicMarking[place] = marking[place]
-        }
-      }
-    }
-    return [Marking(dicMarking, net: net)]
-  }
-  
-  /// minSet for minimum set is a function that removes all markings that could be redundant, i.e. a marking that is already included in another one.
-  /// It would mean that the greater marking is already contained in lower one. Thus, we keep only the lowest marking when some of them are included in each other.
-  /// - Parameter markings: The marking set
-  /// - Returns: The minimal set of markings with no inclusion between all of them.
-  public func minSet(markings: Set<Marking>) -> Set<Marking> {
-    if markings.isEmpty {
-      return []
-    }
-    
-    // Extract markings that are included in other ones
-    var invalidMarkings: Set<Marking> = []
-    for marking1 in markings {
-      for marking2 in markings {
-        if marking1 != marking2 {
-          if marking2 <= marking1 {
-            invalidMarkings.insert(marking1)
-            break
-          }
-        }
-      }
-    }
-    
+    let (qa, b) = self.nes().value
+    let newExcludingMarkings = b.filter({(qb) -> Bool in
+      !b.contains(where: {($0 != qb && $0 <= qb)})
+    })
+
     // The result is the subtraction between the original markings and thus that are already included
-    return markings.subtracting(invalidMarkings)
+    return PS(value: (qa, newExcludingMarkings))
   }
   
   /// Returns the canonical form of a predicate structure. Let suppose (a,b) in PS
@@ -163,35 +103,12 @@ public struct PS {
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
   /// - Returns: The canonical form of the predicate structure.
   public func canonised() -> PS {
-    if let p = value {
-      var canInclude = PS.convMax(markings: p.inc, net: net)
-
-      if let markingInclude = canInclude.first {
-        // In (a,b) ∈ PS, if a marking in b is included in a, it returns empty
-        for marking in p.exc {
-          if marking <= markingInclude {
-            return PS(value: nil, net: net)
-          }
-        }
-
-        // In ({q},b) ∈ PS, forall q_b in b, if q(p) >= q_b(p) => q_b(p) = q(p)
-        var canExclude: Set<Marking> = PS.normaliseMarkings(sourceMarking: markingInclude, targetMarkings: p.exc, net: net)
-        // This is important to apply the minSet operation after the normalisation with include marking
-        // Marking could become comparable with the previous step, and then be removed by minSet.
-        canExclude = minSet(markings: canExclude)
-        
-        if canInclude == [] {
-          canInclude = [net.zeroMarking()]
-        }
-        if canInclude == canExclude {
-          return PS(value: nil, net: net)
-        }
-        return PS(value: (canInclude, canExclude), net: net)
-      }
-      return PS(value: ([], minSet(markings: p.exc)), net: net)
+    if self.isEmpty() {
+      // In (a,b) ∈ PS, if a marking in b is included in a, it returns the empty predicate structure
+      return PS(value: emptyValue)
     }
-
-    return PS(value: nil, net: net)
+    
+    return PS(value: (self.value.inc, self.value.exc)).mes()
   }
   
   /// Compute all the markings represented by the symbolic representation of a predicate structure.
@@ -205,26 +122,22 @@ public struct PS {
     var upperBound: Int
     var am: Marking
     
+    if canonizedPS.value == emptyValue {
+      return []
+    }
     // Create a dictionnary where the key is the place and whose values is a set of all possibles integers that can be taken
-    if let can = canonizedPS.value {
-      if let _ = can.inc.first {
-        am = can.inc.first!
-      } else {
-        am = net.zeroMarking()
-      }
-      for place in net.places {
-        lowerBound = am[place]!
-        upperBound = net.capacity[place]!
-        for i in lowerBound ..< upperBound+1 {
-          if let _ = placeSetValues[place] {
-            placeSetValues[place]!.insert(i)
-          } else {
-            placeSetValues[place] = [i]
-          }
+    let can = canonizedPS.value
+    am = can.inc
+    for place in net.places {
+      lowerBound = am[place]!
+      upperBound = net.capacity[place]!
+      for i in lowerBound ..< upperBound+1 {
+        if let _ = placeSetValues[place] {
+          placeSetValues[place]!.insert(i)
+        } else {
+          placeSetValues[place] = [i]
         }
       }
-    } else {
-      return []
     }
     
     // Using the previous constructed dictionnary, it applies a combinatory to connect each value of each place with the other ones.
@@ -254,7 +167,7 @@ public struct PS {
       Marking(el, net: net)
     }))
     
-    for mb in canonizedPS.value!.exc {
+    for mb in canonizedPS.value.exc {
       for marking in markingSet {
         if mb <= marking {
           markingSet.remove(marking)
@@ -277,8 +190,7 @@ public struct PS {
       bMarkings.insert(markingTemp)
       markingTemp = marking
     }
-    
-    return PS(value: ([marking], bMarkings), net: net)
+    return PS(value: (marking, bMarkings))
   }
   
   /// Encode a set of markings into a set of predicate structures.
@@ -292,132 +204,158 @@ public struct PS {
     return SPS(values: sps).simplified()
   }
   
-  /// Product between a predicate structure and a set of predicate structures: ps * {ps1, ..., psn} = (ps ∩ ps1) ∪ ... ∪ (ps ∩ psn)
-  /// - Parameters:
-  ///   - sps: The set of predicate structures
-  /// - Returns: The product between both parameters
-  func distribute(sps: SPS) -> SPS {
-    if let first = sps.first {
-      if let _ = self.value {
-        var rest = sps.values
-        rest.remove(first)
-        if rest == [] {
-          return SPS(values: [self]).intersection([first])
-        }
-        return SPS(values: [self]).intersection([first]).union(self.distribute(sps: SPS(values: rest)))
-      }
-      return []
-    }
-    return [self]
-  }
-  
-  
-  /// Try to merge two predicate structures if there are comparable.
+  /// Try to merge two predicate structures if they are mergeable.
   /// The principle is similar to intervals, where the goal is to reunified intervals if they can be merged.
   /// Otherwise, nothing is changed.
   /// - Parameters:
   ///   - ps: The second predicate structure
   /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
-  public func merge(_ ps: PS) -> SPS {
-    var ps1Temp = self
-    var ps2Temp = ps
+  public func merge(_ ps: PS, mergeablePreviouslyComputed: Bool = false) -> SPS {
+    if !mergeablePreviouslyComputed {
+      if !self.mergeable(ps) {
+        return [self, ps]
+      }
+    }
+
+    var (qa, b) = self.value
+    var (qc, d) = ps.value
     
-    if let p1 = self.value, let p2 = ps.value {
-      if let am = p1.inc.first, let cm = p2.inc.first  {
-        if p1.inc.count > 1 || p1.exc.count > 1 || p2.inc.count > 1 || p2.exc.count > 1 {
-          return [self, ps]
-        }
-        if !(am <= cm) {
-          ps1Temp = ps
-          ps2Temp = self
-        }
-      }
-    } else {
-      if self.value == nil {
-        return [ps]
-      }
-      return [self]
+    if qc <= qa {
+      let temp = (qa, b)
+      (qa, b) = (qc, d)
+      (qc, d) = temp
     }
     
-    // This manages the case where self or ps is included in the other one
-    let intersect = self.intersection(ps)
-    if self == intersect {
-      return [ps]
-    } else if ps == intersect {
-      return [self]
+    var comparableMarkings: Set<Marking> = []
+    var incomparableMarkings: Set<Marking> = []
+    var convMaxMarkingSet: Set<Marking> = []
+    
+    for qb in b {
+      if qc <= qb {
+        comparableMarkings.insert(qb)
+      } else {
+        incomparableMarkings.insert(qb)
+        convMaxMarkingSet.insert(qb)
+      }
     }
     
-    let a = ps1Temp.value!.inc
-    let b = ps1Temp.value!.exc
-    let c = ps2Temp.value!.inc
-    let d = ps2Temp.value!.exc
+    for marking in incomparableMarkings {
+      let convMax = Marking.convMax(markings: [marking, qc], net: net)
+      d.remove(convMax)
+    }
     
-    // This manages the case where there is a potential overlap
-    if let am = a.first, let cm = c.first {
-      if am <= cm {
-        if let bm = b.first {
-          if cm <= bm {
-            if let dm = d.first {
-              if bm <= dm {
-                return [PS(value: (a,d), net: net)]
-              }
-            } else {
-              return [PS(value: (a,d), net: net)]
-            }
+    for qb in comparableMarkings {
+      for qd in d {
+        convMaxMarkingSet.insert(Marking.convMax(markings: [qb,qd], net: net))
+      }
+    }
+    
+    let newPS = PS(value: (qa, convMaxMarkingSet)).mes()
+    return SPS(values: [newPS])
+  }
+  
+  
+  /// Determine whether two predicate structures are mergable
+  /// - Parameter ps: The second predicate structure
+  /// - Returns: True if they are, false otherwise
+  public func mergeable(_ ps: PS) -> Bool {
+        
+    // Be careful: We can avoid to use nes() because functions returns always canonical predicate structures
+    var (qa, b) = self.value
+    var (qc, d) = ps.value
+    
+    if qc <= qa {
+      let temp = (qa, b)
+      (qa, b) = (qc, d)
+      (qc, d) = temp
+    }
+
+    if qa <= qc {
+      for qb in b {
+        if !(qc <= qb) {
+          let convMax = Marking.convMax(markings: [qb,qc], net: net)
+          if !d.contains(where: {$0 <= convMax}) {
+            return false
           }
-        } else {
-          return [PS(value: (a,b), net: net)]
+        }
+      }
+      return true
+    }
+    
+    return false
+  }
+  
+  
+  /// Compute the potential part that could be moved from one predicate structure to the other.
+  /// This common part is mergeable on both predicate structures. This operation is different from the intersection ! In this context, intersection could be empty but the sharing part not.
+  /// - Parameter ps: The second predicate structure
+  /// - Returns: The common part that could be merged on both predicate structures
+  public func sharingPart(ps: PS) -> PS {
+    var (qa,b) = self.value
+    var (qc,d) = ps.value
+    
+    if !qa.leq(qc) {
+      let temp = (qa, b)
+      (qa, b) = (qc, d)
+      (qc, d) = temp
+    }
+    
+    let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
+    var markingToAdd: Set<Marking> = []
+    
+    for qb in b {
+      if !(qc <= qb) {
+        let convMax = Marking.convMax(markings: [qb,qc], net: ps.net)
+        if !d.contains(where: {$0 <= convMax}) {
+          // Small optimisation to finish as soon as possible if the result is the empty ps
+          if qb <= qMax {
+            return PS(value: (net.zeroMarking(), [net.zeroMarking()]))
+          }
+          markingToAdd.insert(qb)
         }
       }
     }
     
-    return [self, ps]
+    return PS(value: (qMax, d.union(markingToAdd))).canonised()
   }
   
   /// Compute the inverse of the fire operation for a given transition. It takes into account the current predicate structure where it consumes tokens for post arcs and produces new ones for pre arcs.
   /// - Parameter transition: The given transition
   /// - Returns: A new predicate structure where the revert operation has been applied.
   public func revert(transition: String) -> PS? {
-    if let p = value {
-      var aTemp: Set<Marking> = []
+    if self.value == emptyValue {
+      return self
+    }
+    
+    if let qaTemp = net.revert(marking: value.inc, transition: transition) {
       var bTemp: Set<Marking> = []
       
-      if p.inc == [] {
-        aTemp = [net.inputMarkingForATransition(transition: transition)]
-      } else {
-        for marking in p.inc {
-          if let rev = net.revert(marking: marking, transition: transition) {
-            aTemp.insert(rev)
-          } else {
-            return nil
-          }
-        }
-      }
-      if p.exc == [] {
+      if value.exc == [] {
         bTemp = []
       } else {
-        for marking in p.exc {
+        for marking in value.exc {
           if let rev = net.revert(marking: marking, transition: transition) {
             bTemp.insert(rev)
           }
         }
       }
-      return PS(value: (aTemp, bTemp), net: net)
+      return PS(value: (qaTemp, bTemp))
     }
-    
-    return PS(value: nil, net: net)
+    return nil
   }
   
   /// General revert operation where all transitions are applied
   /// - Returns: A set of predicate structures resulting from the union of the revert operation on each transition on the current predicate structure.
-  public func revert() -> SPS {
-    var res: Set<PS> = []
+  public func revert(canonicityLevel: CanonicityLevel) -> SPS {
+    var res: SPS = []
     for transition in net.transitions {
       if let rev = self.revert(transition: transition)?.canonised() {
-        res.insert(rev)
+        if !rev.isEmpty() {
+          res = res.add(rev, canonicityLevel: canonicityLevel)
+        }
       }
     }
-    return SPS(values: res)
+    return res
   }
   
   /// Apply the intersection between two predicate structures
@@ -425,122 +363,149 @@ public struct PS {
   ///   - ps: The second predicate structure to intersect
   ///   - isCanonical: A boolean to specifiy if each predicate structure is canonised during the process.
   /// - Returns: The result of the intersection
-  public func intersection(_ ps: PS, isCanonical: Bool = true) -> PS {
-    if let p1 = self.value, let p2 = ps.value {
-      if isCanonical {
-        return PS(value: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: self.net).canonised()
-      }
-      return PS(value: (p1.inc.union(p2.inc), p1.exc.union(p2.exc)), net: self.net)
+  public func intersection(_ ps: PS, isCanonical: Bool) -> PS {
+    
+    if self.isEmpty() {
+      return self
+    } else if ps.isEmpty() {
+      return ps
     }
-    return PS(value: nil, net: self.net)
+    
+    let convMax = Marking.convMax(markings: [self.value.inc, ps.value.inc], net: net)
+    
+    if isCanonical {
+      return PS(value: (convMax, self.value.exc.union(ps.value.exc))).canonised()
+    }
+    
+    return PS(value: (convMax, self.value.exc.union(ps.value.exc)))
   }
   
   /// To know if a marking belongs to a predicate structure
   /// - Parameter marking: The marking to check if it belongs to the ps
   /// - Returns: True if the marking belongs, false otherwise
   public func contains(marking: Marking) -> Bool {
-    if let value = self.value {
-      for m in value.inc {
-        if !(marking >= m) {
-          return false
-        }
-      }
-      for m in value.exc {
-        if marking >= m {
-          return false
-        }
-      }
-      return true
+    if self.value == emptyValue {
+      return false
     }
-    return false
+    
+    let qa = self.value.inc
+    if !(marking >= qa) {
+      return false
+    }
+    
+    for qb in value.exc {
+      if marking >= qb {
+        return false
+      }
+    }
+    return true
   }
   
   
   /// Subtract two PS, by removing all markings for the right PS into the left PS
-  /// - Parameter ps: The ps to subtract
+  /// - Parameters:
+  ///   - ps: The ps to subtract
+  ///   - canonicityLevel: The level of canonicity
   /// - Returns: A sps containing no value of ps
-  public func subtract(_ ps: PS) -> SPS {
-    if self == ps || self.value == nil {
+  public func subtract(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
+    if self == ps || self.isEmpty() {
       return []
-    } else if ps.value == nil {
+    } else if ps.isEmpty() {
       return SPS(values: [self])
     }
 
-    let intersect = self.intersection(ps)
-    if intersect.value == nil  {
-      return [self]
+    if self.intersection(ps, isCanonical: false).isEmpty() {
+      return SPS(values: [self])
     }
 
-    let a = self.value!.inc
-    let b = self.value!.exc
-    let c = intersect.value!.inc
-    let d = intersect.value!.exc
+    let qa = self.value.inc
+    let b = self.value.exc
 
+    // Important to normalise the right predicate structure
+    // We want to move some constraints of the right marking into the left marking.
+    // If we do not normalise it, it means that we could remove values that we should not.
+    // For more information, look at the thesis document (operation nes).
+    var nesPS = ps
+    if canonicityLevel == .none {
+      nesPS = nesPS.nes()
+    }
+    let qc = nesPS.value.inc
+    let d = nesPS.value.exc
     var res: Set<PS> = []
-
-    let ps1 = PS(value: (a, c.union(b)), net: net).canonised()
-    res = res.union(SPS(values: [ps1]))
-
-    for marking in d {
-      var newA = a
-      newA.insert(marking)
-      let ps = PS(value: (newA,b), net: net).canonised()
-      res.insert(ps)
+    let newPS = PS(value: (qa, b.union([qc])))
+    if !newPS.isEmpty() {
+      res.insert(newPS.mes())
     }
-    res.remove(PS(value: nil, net: net))
+
+    var markingSetConstrained: Set<Marking> = b
+    for qd in d.sorted(by: {$0.leq($1)}) {
+      let newQa = Marking.convMax(markings: [qa, qd], net: net)
+      let newPS = PS(value: (newQa, markingSetConstrained))
+      if !newPS.isEmpty() {
+        markingSetConstrained.insert(qd)
+        res.insert(newPS.mes())
+      }
+    }
     return SPS(values: res)
   }
   
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
-  /// - Parameter sps: The set of predicate structures to subtract
+  /// - Parameters:
+  ///   - sps: The set of predicate structures to subtract
+  ///   - canonicityLevel: The level of canonicity
   /// - Returns: A set of predicate structures where all elements of sps have been removed from ps
-  public func subtract(_ sps: SPS) -> SPS {
-    var res: SPS = [self]
-    var spsTemp: SPS
-    for ps in sps {
-      spsTemp = []
-      for psTemp in res {
-        spsTemp = spsTemp.union(psTemp.subtract(ps))
+  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
+    if canonicityLevel == .none {
+      var res: Set<PS> = [self]
+      var spsTemp: Set<PS>
+      for ps in sps {
+        spsTemp = []
+        for psTemp in res {
+          spsTemp = spsTemp.union(psTemp.subtract(ps, canonicityLevel: canonicityLevel).values)
+        }
+        res = spsTemp
       }
-      res = spsTemp
+      return SPS(values: res)
     }
-    return res
+    var spsValues = sps.values
+    let psp = spsValues.removeFirst()
+    return self.subtract(psp, canonicityLevel: canonicityLevel).subtract(SPS(values: spsValues), canonicityLevel: canonicityLevel)
   }
   
   /// Is a predicate structure included in another one ?
   /// - Parameter ps: The predicate structure to check if self is contained
   /// - Returns: True if it is contained, false otherwise.
   public func isIncluded(_ ps: PS) -> Bool {
-    return self.subtract(ps) == []
+    return self.subtract(ps, canonicityLevel: .none) == []
   }
   
   /// Count the number of markings that composes the predicate structure.
   /// - Returns: Marking number of a predicate structure
   public func countMarking() -> Int {
-    if let val = self.value {
-      return val.inc.count + val.exc.count
+    if self.value == emptyValue {
+      return 0
     }
-    return 0
+    return 1 + value.exc.count
   }
 
 }
 
 extension PS: Hashable {
   public static func == (lhs: PS, rhs: PS) -> Bool {
-    return lhs.value?.inc == rhs.value?.inc && lhs.value?.exc == rhs.value?.exc
+    return lhs.value.inc == rhs.value.inc && lhs.value.exc == rhs.value.exc
   }
 
   public func hash(into hasher: inout Hasher) {
-    hasher.combine(value?.inc)
-    hasher.combine(value?.exc)
+    hasher.combine(value.inc)
+    hasher.combine(value.exc)
   }
 }
 
 extension PS: CustomStringConvertible {
   public var description: String {
-    if let p = value {
-      return "(\(p.inc), \(p.exc))"
+    if value == emptyValue {
+      return "∅"
     }
-    return "∅"
+    return "(\(value.inc), \(value.exc.sorted(by: {$0.leq($1)})))"
   }
 }
