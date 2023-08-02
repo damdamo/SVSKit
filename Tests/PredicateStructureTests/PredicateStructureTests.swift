@@ -420,18 +420,19 @@ final class PredicateStructureTests: XCTestCase {
     let m6 = Marking(["p0": 10, "p1": 10], net: net)
     let m7 = Marking(["p0": 5, "p1": 0], net: net)
     let m8 = Marking(["p0": 0, "p1": 5], net: net)
+    let m9 = Marking(["p0": 5, "p1": 5], net: net)
     
     let ps6 = PS(value: ([net.zeroMarking()],[m6]), net: net)
     let ps7 = PS(value: ([net.zeroMarking()],[m7,m8]), net: net)
-    let ps8 = PS(value: ([m7],[m6]), net: net)
-    let ps9 = PS(value: ([m8],[m6]), net: net)
+    let ps8 = PS(value: ([m8],[m6]), net: net)
+    let ps9 = PS(value: ([m7],[m9]), net: net)
     
     let sps3 = SPS(values: [ps6])
     let sps4 = SPS(values: [ps7])
     let sps5 = SPS(values: [ps8,ps9])
     
     // ({}, {(10,10)}) - ({}, {(5,0),(0,5)})
-    XCTAssertEqual(sps3.subtract(sps4, canonicityLevel: .none), sps5)
+    XCTAssertEqual(sps3.subtract(sps4, canonicityLevel: .full), sps5)
   }
     
   func testMergePS1() {

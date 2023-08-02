@@ -101,27 +101,27 @@ final class ListExampleTests: XCTestCase {
 //    }
 //  }
   
-  func testERKCase15() {
-    let parserPN = PnmlParser()
-    var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
-    var s = Stopwatch()
-
-    let parserCTL = CTLParser()
-    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
-
-    s.reset()
-
-    let key = "ERK-PT-000001-CTLFireability-15"
-    let formula = dicCTL[key]!
-    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
-//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
-    print(ctlReduced)
-    
-
-    print(ctlReduced.eval(marking: marking1))
-
-    print(s.elapsed.humanFormat)
-  }
+//  func testERKCase15() {
+//    let parserPN = PnmlParser()
+//    var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+//    var s = Stopwatch()
+//
+//    let parserCTL = CTLParser()
+//    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
+//
+//    s.reset()
+//
+//    let key = "ERK-PT-000001-CTLFireability-03"
+//    let formula = dicCTL[key]!
+//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
+////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
+//    print(ctlReduced)
+//    
+//
+//    print(ctlReduced.eval(marking: marking1))
+//
+//    print(s.elapsed.humanFormat)
+//  }
 //
 //
 //  func testERK() {
