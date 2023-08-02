@@ -776,50 +776,7 @@ final class PredicateStructureTests: XCTestCase {
     
   }
   
-  func testToo() {
-//    ([p0: 7, p1: 6, p2: 0], [[p0: 7, p1: 6, p2: 1], [p0: 8, p1: 9, p2: 0]]),
-//    ([p0: 7, p1: 6, p2: 1], [[p0: 7, p1: 8, p2: 1]])
-
-    let net = PetriNet(
-      places: ["p0", "p1", "p2"],
-      transitions: ["t0"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p1", labeled: 1)
-    )
-    
-//    let m1 = Marking(["p0": 0, "p1": 1, "p2": 0, "p3": 0], net: net)
-//    let m2 = Marking(["p0": 1, "p1": 1, "p2": 0, "p3": 0], net: net)
-//    let m3 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0], net: net)
-//    let m4 = Marking(["p0": 1, "p1": 1, "p2": 1, "p3": 0], net: net)
-  
-    let m1 = Marking(["p0": 0, "p1": 1, "p2": 0], net: net)
-    let m2 = Marking(["p0": 1, "p1": 1, "p2": 0], net: net)
-    let m3 = Marking(["p0": 0, "p1": 1, "p2": 1], net: net)
-    let m4 = Marking(["p0": 1, "p1": 1, "p2": 1], net: net)
-    
-    let ps1 = PS(value: ([m1], [m2,m3]), net: net)
-    let ps2 = PS(value: ([m3], [m4]), net: net)
-    let ps3 = PS(value: ([m3], []), net: net)
-    
-    print(ps1.mergeable(ps2))
-    print(ps1.merge(ps2))
-    print(ps1.mergeable(ps3))
-    
-    let sps1 = SPS(values: [ps1,ps3])
-    let sps2 = ps1.merge(ps2).union(SPS(values: [ps3]).subtract([ps2], canonicityLevel: .full), canonicityLevel: .full)
-    
-    print(sps1)
-    print(sps2)
-    print(sps1.isEquiv(sps2))
-    
-    print(SPS(values: [ps1]).union([ps3], canonicityLevel: .full))
-//    let sps1 = SPS(values: [ps1])
-//    let sps2 = SPS(values: [ps2])
-//
-//    print(sps1.union(sps2, canonicityLevel: .full))
-  }
-  
-  func testToo2() {
+  func testComplexeExample() {
 
     let net = PetriNet(
       places: ["p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "pa"],
@@ -873,232 +830,22 @@ final class PredicateStructureTests: XCTestCase {
     let ps4 = PS(value: ([n1], [n2,n3,n4,n5,n6,n7,n8]), net: net)
     let ps5 = PS(value: ([n9], [n10,n11,n12,n13,n14]), net: net)
     
-    let sps1 = SPS(values: [ps1,ps2,ps3])
-    let sps2 = SPS(values: [ps4,ps5])
+    let sps1 = SPS(values: [ps1])
+    let sps2 = SPS(values: [ps2])
+    let sps3 = SPS(values: [ps3])
+    let sps4 = SPS(values: [ps4])
+    let sps5 = SPS(values: [ps5])
     
-    print(sps1.isEquiv(sps2))
-    print("is Mergeable ps1 ps2: \(ps1.mergeable(ps2))")
-    print("is Mergeable ps1 ps3: \(ps2.mergeable(ps3))")
+    let union1 = sps1.union(sps2.union(sps3, canonicityLevel: .full), canonicityLevel: .full)
+    let union2 = sps4.union(sps5, canonicityLevel: .full)
+    
+    print(union1.isEquiv(union2))
+    
+    XCTAssertEqual(union1, union2)
   }
   
-  func testToo3() {
+  func testToo() {
 
-    let net = PetriNet(
-      places: ["p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "pa"],
-      transitions: ["t0"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p1", labeled: 1)
-    )
-    
-    let m1 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let m2 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 0, "pa": 1], net: net)
-    let m3 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 1, "pa": 0], net: net)
-    let m4 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 0, "p6": 1, "p7": 0, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let m5 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 1, "p6": 0, "p7": 1, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let m6 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let m7 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let m8 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 1, "p9": 0, "pa": 0], net: net)
-    
-    let m9 = Marking( ["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 1, "pa": 0], net: net)
-    let m10 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 1, "pa": 1], net: net)
-    let m11 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 1, "p9": 1, "pa": 0], net: net)
-    let m12 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 1, "p5": 0, "p6": 1, "p7": 0, "p8": 1, "p9": 1, "pa": 0], net: net)
-    
-    let m13 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 0, "pa": 0], net: net)
-    let m14 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 0, "pa": 1], net: net)
-    let m15 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m16 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 0, "pa": 0], net: net)
-    let m17 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 1, "p6": 0, "p7": 1, "p8": 0, "p9": 0, "pa": 0], net: net)
-    let m18 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 0, "pa": 0], net: net)
-    
-    let n1 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let n2 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 0, "pa": 1], net: net)
-    let n3 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 1, "pa": 0], net: net)
-    let n4 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 0, "p6": 1, "p7": 0, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let n5 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 1, "p6": 0, "p7": 1, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let n6 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let n7 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 1, "p9": 0, "pa": 0], net: net)
-    let n8 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 1, "p9": 0, "pa": 0], net: net)
-    
-    let n9 = Marking( ["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 0, "pa": 0], net: net)
-    let n10 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 0, "pa": 1], net: net)
-    let n11 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n12 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 0, "pa": 0], net: net)
-    let n13 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 1, "p6": 0, "p7": 1, "p8": 0, "p9": 0, "pa": 0], net: net)
-    let n14 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 1, "p9": 0, "pa": 0], net: net)
-    
-    
-    let ps1 = PS(value: ([m1], [m2,m3,m4,m5,m6,m7,m8]), net: net)
-    let ps2 = PS(value: ([m9], [m10,m11,m12]), net: net)
-    let ps3 = PS(value: ([m13], [m14,m15,m16,m17]), net: net)
-    
-    let ps4 = PS(value: ([n1], [n2,n3,n4,n5,n6,n7,n8]), net: net)
-    let ps5 = PS(value: ([n9], [n10,n11,n12,n13,n14]), net: net)
-    
-    let sps1 = SPS(values: [ps1,ps2,ps3])
-    let sps2 = SPS(values: [ps4,ps5])
-    
-//    print(sps1.subtract(sps2, canonicityLevel: .full))
-//    print(sps1.isIncluded(sps2))
-//    print(sps2.isIncluded(sps1))
-    print(sps1.isEquiv(sps2))
-    
-    let ps1b = PS(value: ([m1], [m2,m4,m5,m6,m7,m8]), net: net)
-    
-//    print("is Mergeable ps1 ps2: \(ps1.mergeable(ps2))")
-//    print("is Mergeable ps2 ps3: \(ps2.mergeable(ps3))")
-//
-//    print("intersection ps1,ps3:")
-//    print(ps1.intersection(ps3, isCanonical: true))
-  }
-  
-  func testToo4() {
-
-    let net = PetriNet(
-      places: ["p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "pa"],
-      transitions: ["t0"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p1", labeled: 1)
-    )
-    
-    let m1 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m2 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 1], net: net)
-    let m3 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m4 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m5 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    
-    let m6 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m7 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 1], net: net)
-    let m8 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m9 = Marking( ["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m10 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m11 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m12 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m13 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m14 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    
-    let n1 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n2 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 1], net: net)
-    let n3 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n4 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n5 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n6 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n7 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    
-    let n8 = Marking( ["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n9 = Marking( ["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 1], net: net)
-    let n10 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n11 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n12 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    
-    let ps1 = PS(value: ([m6], [m7,m8,m9,m10,m11,m12,m13,m14]), net: net)
-    let ps2 = PS(value: ([m1], [m2,m3,m4,m5]), net: net)
-    
-    let ps3 = PS(value: ([n1], [n2,n3,n4,n5,n6,n7]), net: net)
-    let ps4 = PS(value: ([n8], [n9,n10,n11,n12]), net: net)
-    
-    let sps1 = SPS(values: [ps1,ps2])
-    let sps2 = SPS(values: [ps3,ps4])
-    
-//    print(sps1.isEquiv(sps2))
-    let a = ps1.subtract(ps3, canonicityLevel: .full)
-//    let b = ps4.subtract(ps2, canonicityLevel: .full)
-//    print("Is ps1 included in ps3 ? \(ps1.isIncluded(ps3))")
-//    print("Is ps3 included in ps1 ? \(ps3.isIncluded(ps1))")
-//    print(ps3.mergeable(a.first!))
-//    print(ps2.mergeable(a.first!))
-//    print(ps3.merge(a.first!) == [ps1])
-//    print(ps2.merge(a.first!) == [ps4])
-//
-//    print("Is ps2 included in ps4 ? \(ps2.isIncluded(ps4))")
-//    print("Is ps4 included in ps2 ? \(ps4.isIncluded(ps2))")
-//    print(ps4.subtract(ps2, canonicityLevel: .full))
-    
-    let sps1WithoutA = sps1.subtract(a, canonicityLevel: .full)
-    let sps2WithoutA = sps2.subtract(a, canonicityLevel: .full)
-
-//    print("------------------------------")
-//    print("sps1WithoutA == sps2WithoutA ? \(sps1WithoutA == sps2WithoutA)")
-//    print(a.union([ps2], canonicityLevel: .full) == [ps4])
-//    print("--------------------")
-//    print(sps1WithoutA.union(a, canonicityLevel: .full) == sps1)
-//    print("------------------")
-//    print(ps3.mergeable(ps4))
-    print(SPS(values: [ps3]).union([ps4], canonicityLevel: .full))
-  }
-  
-  func testToo5() {
-
-    let net = PetriNet(
-      places: ["p0", "p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "pa"],
-      transitions: ["t0"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p1", labeled: 1)
-    )
-    
-    let m1 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m2 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 1], net: net)
-    let m3 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m4 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m5 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 1, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    
-    let m6 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m7 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 1], net: net)
-    let m8 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m9 = Marking( ["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m10 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m11 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m12 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m13 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let m14 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    
-    let n1 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n2 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 1], net: net)
-    let n3 = Marking(["p0": 0, "p1": 0, "p2": 0, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n4 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n5 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n6 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n7 = Marking(["p0": 1, "p1": 0, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    
-    let n8 = Marking( ["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n9 = Marking( ["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 1], net: net)
-    let n10 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 0, "p7": 1, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n11 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 0, "p4": 0, "p5": 0, "p6": 1, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n12 = Marking(["p0": 0, "p1": 1, "p2": 1, "p3": 1, "p4": 0, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    let n13 = Marking(["p0": 1, "p1": 1, "p2": 1, "p3": 0, "p4": 1, "p5": 0, "p6": 0, "p7": 0, "p8": 0, "p9": 1, "pa": 0], net: net)
-    
-//    [1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0]
-    
-    let ps1 = PS(value: ([m6], [m7,m8,m9,m10,m11,m12,m13,m14]), net: net)
-    let ps2 = PS(value: ([m1], [m2,m3,m4,m5]), net: net)
-    
-    let ps3WithoutN4 = PS(value: ([n1], [n2,n3,n5,n6,n7]), net: net)
-    let ps3 = PS(value: ([n1], [n2,n3,n4,n5,n6,n7]), net: net)
-
-    let ps4 = PS(value: ([n8], [n9,n10,n11,n12]), net: net)
-    
-    let ps5 = PS(value: ([n8], [n9,n10,n11,n12,n13]), net: net)
-    
-    let sps1 = SPS(values: [ps3WithoutN4,ps4])
-    let sps2 = SPS(values: [ps3,ps4])
-    
-    
-//    print(ps3.mergeable(ps5))
-    
-    print("Shared part")
-    print(ps3.sharingPart(ps: ps4))
-    print("-------------")
-    print(ps3.merge(ps4))
-  }
-  
-  func testToo6() {
-//  ps: ([0, 1, 0], [[0, 2, 0]])
-//  ps': ([0, 0, 1], [[0, 1, 1]])
-//  sharingPart: ([0, 1, 1], [[0, 2, 1]])
-//  ps: ([1, 0, 1], [])
-//  ps': ([0, 1, 1], [[1, 1, 1]])
-// sharingPart: ([1, 1, 1], [])
-    
     let net = PetriNet(
       places: ["p0", "p1", "p2"],
       transitions: ["t0"],
@@ -1106,19 +853,30 @@ final class PredicateStructureTests: XCTestCase {
       .post(from: "t0", to: "p1", labeled: 1)
     )
     
-    let m1 = Marking(["p0": 1, "p1": 0, "p2": 1], net: net)
-    let m2 = Marking(["p0": 0, "p1": 1, "p2": 1], net: net)
-    let m3 = Marking(["p0": 1, "p1": 1, "p2": 1], net: net)
-//    let m4 = Marking(["p0": 3, "p1": 0, "p2": 7], net: net)
+  
+    let m1 = Marking(["p0": 2, "p1": 2, "p2": 0], net: net)
+    let m2 = Marking(["p0": 0, "p1": 0, "p2": 7], net: net)
+    let m3 = Marking(["p0": 3, "p1": 3, "p2": 0], net: net)
+    let m4 = Marking(["p0": 5, "p1": 5, "p2": 0], net: net)
+    let m5 = Marking(["p0": 0, "p1": 5, "p2": 5], net: net)
+    let m6 = Marking(["p0": 2, "p1": 5, "p2": 5], net: net)
     
-    let ps1 = PS(value: ([m2],[m3]), net: net)
-    let ps2 = PS(value: ([m1],[]), net: net)
+    let ps1 = PS(value: ([m1], [m2]), net: net)
+    let ps2 = PS(value: ([m3], [m4,m5]), net: net)
+    let ps3 = PS(value: ([m1], [m2,m3]), net: net)
+    let ps4 = PS(value: ([m4], [m2]), net: net)
+    let ps5 = PS(value: ([m6], [m2]), net: net)
     
-    print(ps1)
-    print(ps2)
+    let sps3 = SPS(values: [ps3])
+    let sps4 = SPS(values: [ps4])
+    let sps5 = SPS(values: [ps5])
     
-    print(ps1.sharingPart(ps: ps2))
-    
+    let a = ps1.subtract(ps2, canonicityLevel: .full)
+    print("Subtraction: \(a)")
+    print("-----------")
+    let b = sps3.union(sps4.union(sps5, canonicityLevel: .full), canonicityLevel: .full)
+    print("Canonical: \(b)")
+    print(a.isEquiv(b))
   }
   
 //  func testThesis() {

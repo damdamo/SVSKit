@@ -364,41 +364,6 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-06"]!, expectedCTL2)
   }
   
-//  func testCTLX() {
-//    // Following Petri net:
-//    //      1 p0
-//    //     -->
-//    // t0 ▭   o ---
-//    //     <--      \
-//    //      2       | 4
-//    //              ↓
-//    //           -> ▭ t1
-//    //        6 /   | 3
-//    //          |   /
-//    // t2 ▭ <-- o <-
-//    //    ↑   5 p1
-//    //    |
-//    //    o p2
-//    let net = PetriNet(
-//      places: ["p0", "p1", "p2"],
-//      transitions: ["t0", "t1", "t2"],
-//      arcs: //.pre(from: "p0", to: "t0", labeled: 2),
-//      .post(from: "t0", to: "p0", labeled: 1),
-//      .pre(from: "p0", to: "t1", labeled: 4),
-////      .pre(from: "p1", to: "t1", labeled: 6),
-//      .post(from: "t1", to: "p1", labeled: 3),
-//      .pre(from: "p1", to: "t2", labeled: 5),
-//      .pre(from: "p2", to: "t2", labeled: 1),
-//      capacity: ["p0": 10, "p1": 10, "p2": 10]
-//    )
-//
-//    let ctlFormula1 = CTL(formula: .EF(.isFireable("t2")), net: net, canonicityLevel: .full, simplified: false, debug: true)
-//
-//    print(ctlFormula1.eval())
-//
-//
-//  }
-  
   func testAXDiffTesto() {
     // Following Petri net:
     //      1 p0
