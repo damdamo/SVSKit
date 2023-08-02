@@ -712,33 +712,9 @@ final class PredicateStructureTests: XCTestCase {
     let sps1 = SPS(values: [ps1, ps2])
     let sps2 = SPS(values: [ps3])
     
-    print(sps1.isEquiv(sps2))
-    print(sps1.subtract(sps2, canonicityLevel: .none))
-    print(sps2.subtract(sps1, canonicityLevel: .none))
-    
-//    print(ps1)
-//    print(ps2)
-//
-//    print(ps1.mergeable(ps2))
-//
-//    let m4 = Marking(["p0": 3, "p1": 5], net: net)
-//    let m5 = Marking(["p0": 7, "p1": 8], net: net)
-//    let m6 = Marking(["p0": 6, "p1": 6], net: net)
-//    let m7 = Marking(["p0": 10, "p1": 6], net: net)
-//
-//    let ps3 = PS(value: ([m4],[m5]), net: net)
-//    let ps4 = PS(value: ([m6],[m7]), net: net)
-//
-//    let m = ps3.merge(ps4)
-//    print(m)
-//
-//    let sps1 = SPS(values: [ps3,ps4])
-//
-//    print(sps1.isEquiv(m))
-//
-//    print(sps1.contains(marking: Marking(["p0": 10, "p1": 8], net: net)))
-//    print(m.contains(marking: Marking(["p0": 10, "p1": 8], net: net)))
-    
+//    print(sps1.isEquiv(sps2))
+//    print(sps1.subtract(sps2, canonicityLevel: .none))
+//    print(sps2.subtract(sps1, canonicityLevel: .none))
     
   }
   
@@ -760,21 +736,9 @@ final class PredicateStructureTests: XCTestCase {
     let ps2 = PS(value: ([m3],[m4]), net: net)
     let sps1 = SPS(values: [ps1,ps2])
     
-    print(ps1.merge(ps2))
-    
-    print(sps1.isEquiv(ps1.merge(ps2)))
-//    let sps3 = SPS(values: [ps1])
-//    let sps4 = SPS(values: [ps2])
-//    let sps5 = sps2.subtract(sps3)
-//    let sps6 = sps5.subtract(sps4)
-//    print("sps5: \(sps5)")
-//    print("-")
-//    print("sps4: \(sps4)")
-//    print("=")
-//    print("sps6: \(sps6)")
+//    print(ps1.merge(ps2))
 //
-    
-    
+//    print(sps1.isEquiv(ps1.merge(ps2)))
   }
   
   func testComplexeExample() {
@@ -840,45 +804,43 @@ final class PredicateStructureTests: XCTestCase {
     let union1 = sps1.union(sps2.union(sps3, canonicityLevel: .full), canonicityLevel: .full)
     let union2 = sps4.union(sps5, canonicityLevel: .full)
     
-    print(union1.isEquiv(union2))
-    
     XCTAssertEqual(union1, union2)
   }
   
-  func testToo() {
-
-    let net = PetriNet(
-      places: ["p0", "p1", "p2"],
-      transitions: ["t0"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p1", labeled: 1)
-    )
-    
-  
-    let m1 = Marking(["p0": 2, "p1": 2, "p2": 0], net: net)
-    let m2 = Marking(["p0": 0, "p1": 0, "p2": 7], net: net)
-    let m3 = Marking(["p0": 3, "p1": 3, "p2": 0], net: net)
-    let m4 = Marking(["p0": 5, "p1": 5, "p2": 0], net: net)
-    let m5 = Marking(["p0": 0, "p1": 5, "p2": 5], net: net)
-    let m6 = Marking(["p0": 2, "p1": 5, "p2": 5], net: net)
-    
-    let ps1 = PS(value: ([m1], [m2]), net: net)
-    let ps2 = PS(value: ([m3], [m4,m5]), net: net)
-    let ps3 = PS(value: ([m1], [m2,m3]), net: net)
-    let ps4 = PS(value: ([m4], [m2]), net: net)
-    let ps5 = PS(value: ([m6], [m2]), net: net)
-    
-    let sps3 = SPS(values: [ps3])
-    let sps4 = SPS(values: [ps4])
-    let sps5 = SPS(values: [ps5])
-    
-    let a = ps1.subtract(ps2, canonicityLevel: .full)
-    print("Subtraction: \(a)")
-    print("-----------")
-    let b = sps3.union(sps4.union(sps5, canonicityLevel: .full), canonicityLevel: .full)
-    print("Canonical: \(b)")
-    print(a.isEquiv(b))
-  }
+//  func testToo() {
+//
+//    let net = PetriNet(
+//      places: ["p0", "p1", "p2"],
+//      transitions: ["t0"],
+//      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+//      .post(from: "t0", to: "p1", labeled: 1)
+//    )
+//    
+//  
+//    let m1 = Marking(["p0": 2, "p1": 2, "p2": 0], net: net)
+//    let m2 = Marking(["p0": 0, "p1": 0, "p2": 7], net: net)
+//    let m3 = Marking(["p0": 3, "p1": 3, "p2": 0], net: net)
+//    let m4 = Marking(["p0": 5, "p1": 5, "p2": 0], net: net)
+//    let m5 = Marking(["p0": 0, "p1": 5, "p2": 5], net: net)
+//    let m6 = Marking(["p0": 2, "p1": 5, "p2": 5], net: net)
+//    
+//    let ps1 = PS(value: ([m1], [m2]), net: net)
+//    let ps2 = PS(value: ([m3], [m4,m5]), net: net)
+//    let ps3 = PS(value: ([m1], [m2,m3]), net: net)
+//    let ps4 = PS(value: ([m4], [m2]), net: net)
+//    let ps5 = PS(value: ([m6], [m2]), net: net)
+//    
+//    let sps3 = SPS(values: [ps3])
+//    let sps4 = SPS(values: [ps4])
+//    let sps5 = SPS(values: [ps5])
+//    
+//    let a = ps1.subtract(ps2, canonicityLevel: .full)
+//    print("Subtraction: \(a)")
+//    print("-----------")
+//    let b = sps3.union(sps4.union(sps5, canonicityLevel: .full), canonicityLevel: .full)
+//    print("Canonical: \(b)")
+//    print(a.isEquiv(b))
+//  }
   
 //  func testThesis() {
 //    let net = PetriNet(

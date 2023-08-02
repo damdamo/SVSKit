@@ -302,7 +302,7 @@ public struct SPS {
       }
       return SPS(values: res)
     }
-    
+
     var res: SPS = []
     for ps in self {
       res = res.union(ps.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)

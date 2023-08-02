@@ -9,6 +9,9 @@ Furthermore, this structure allows to represent finite and infinite sets of mark
 This means that the number of markings can be unbounded.
 
 The theory has been originally invented by Pascal Racloz & Didier Buchs [1].
+In addition to the first theory, a canonical form has been invented in order to keep a unique form during manipulation. 
+Currently, this canonical form does not provide results that are more efficient than the usual technique.
+However, the current state will be evolving and thanks to the canonical form new optimisations will be made.
 
 ## What are Predicate structures ?
 
@@ -36,7 +39,8 @@ For a set of predicate structures `sps`, a marking `m` belongs to it if there is
 - Create a Petri net / fire a transition.
 - Create a set of predicate structures containing all markings that satisfy a CTL formula / return a set of predicate structures as a set of markings.
 - Check if a marking satisfies a CTL formula.
-- PNML parser, to import Petri nets from `pnml` file from a local source or a url.
+- PNML parser to import Petri nets from `pnml` file from a local source or a url.
+- XML parser to import CTL formulas.
 - Query reduction for a CTL formula: From the paper in [2].
 
 ## CTL syntax
@@ -65,31 +69,42 @@ For a set of predicate structures `sps`, a marking `m` belongs to it if there is
 
 Example of some CTL formulas in Swift:
 ```Swift
+let net = PetriNet(
+  places: ["p0", "p1"],
+  transitions: ["t0", "t1", "t2"],
+  arcs: .pre(from: "p0", to: "t0", labeled: 1),
+  .post(from: "t0", to: "p1", labeled: 1),
+  .pre(from: "p1", to: "t1", labeled: 1),
+  .post(from: "t1", to: "p0", labeled: 1)
+)
+
 // EX(t0)
-CTL.EX(.isFireable("t0"))
+let ctl1 = CTL(formula: .EX(.isFireable("t0")), net: net, canonicityLevel: .full)
 // E (t0 ∧ ¬t1) U (t0)
-CTL.EU(.and(.isFireable("t0"), .not(.isFireable("t1"))), .isFireable("t0"))
+let ctl2 = CTL(formula: .EU(.and(.isFireable("t0"), .not(.isFireable("t1"))), .isFireable("t0")), net: net, canonicityLevel: .full)
 // EF(deadlock)
-CTL.EF(.deadlock)
+let ctl3 = CTL(formula: .deadlock, net: net, canonicityLevel: .full)
 // AF(1 <= p1)
-CTL.AF(.intExpr(e1: .value(1), operator: .leq, e2: .place("p1")))
+let ctl4 = CTL(formula: .AF(.intExpr(e1: .value(1), operator: .leq, e2: .tokenCount("p1"))), net: net, canonicityLevel: .full)
 // (p0 < 4) ∧ (7 < p1)
-CTL.and(.intExpr(e1: .place("p0"), operator: .lt, e2: .value(4)), .intExpr(e1: .value(7), operator: .lt, e2: .place("p1")))
+let ctl5 = CTL(formula: .and(.intExpr(e1: .tokenCount("p0"), operator: .lt, e2: .value(4)), .intExpr(e1: .value(7), operator: .lt, e2: .tokenCount("p1"))), net: net, canonicityLevel: .full)
 ```
 
-Thanks to Swift inference, we do not need to write `CTL.EX(CTL.isFireable("t0"))`.
-We can reduce `CTL.isFireable` into `.isFireable`.
-The same logic is applicable for each operators, except for the first one of the list.
+Note that you must provide the parameter `canonicityLevel`, which has two possibilities:
+- `.none`: No application of the canonicity
+- `.full`: Application of all canonical reductions
+
+Although there are two possibilities that could be resolved by a logical value, this option leaves open the possibility of an intermediate canonical version.
 
 For `intExpr`, type `Expression` and `Operator` are expressible as follows:
 - `Expression`:
   - `value(Int)`: The expression is an `Int`.
-  - `tokensCount(String)`: The expression is a place that must belong to the set of places of the Petri net.
+  - `tokenCount(String)`: The expression is a place that must belong to the set of places of the Petri net.
 - `Operator`:
   - `lt`: Operator lesser than (`<`).
   - `leq`: Operator lesser than or equal to (`≤`).
 
-In the case of you try to compare two values, this is equivalent to having no constraint.
+In the case you try to compare two values, this is equivalent to having no constraint.
 The program does not support the comparison between two places.
 Therefore, an example such as `p1 < p2` is not supported.
 
@@ -118,9 +133,9 @@ let net = PetriNet(
 )
 
 // Three examples of CTL formulas:
-let ctlFormula1 = CTL(formula: .AX(.isFireable("t2"), net: net)
-let ctlFormula2 = CTL(formula: .EF(.isFireable("t2"), net: net)
-let ctlFormula3 = CTL(formula: .AF(.isFireable("t2"), net: net)
+let ctlFormula1 = CTL(formula: .AX(.isFireable("t2")), net: net, canonicityLevel: .full)
+let ctlFormula2 = CTL(formula: .EF(.isFireable("t2")), net: net, canonicityLevel: .full)
+let ctlFormula3 = CTL(formula: .AF(.isFireable("t2")), net: net, canonicityLevel: .full)
 
 let marking = Marking(["p0": 2, "p1": 1], net: net)
 
@@ -167,9 +182,9 @@ If we want to check for a marking:
 If we want to obtain all markings:
 `eval() -> SPS`
 
-Two parameters are optionals and can be changed during the declaration of a CTL formula if needed:
-- rewrited: false by default. In CTL computation, the extended syntax is often computed using the rewriting into basic components. For example, `AX Φ ≡ ¬EX¬Φ`. When it is set to false, the extended syntax is not rewritten. In the case of `AX`, a specific function is dedicated to compute it.
-- simplified: true by default. During a computation, the number of generated predicate structures may increase faster with redundant results. The simplification aims to reduce the set of predicate structures during the computation, using certain tricks. If it is set to true, no simplification is applied.
+Two parameters are optionals when you create a ctl formula and can be modified:
+- simplified: false by default. Another way of reducing the number of predicate structures. This is unnecessary if the level of canonicality is set to `.full'. This can be used to compare performance when every effort is made to preserve a canonical form, and when minimal effort is made to avoid certain redundancies.
+- debug: false by default. Display number of predicate structures between each step of the computation.
 
 To get all the underlying markings of a set of predicate structures, you should use the function `underlyingMarkings`, which works on predicate structure and set of predicate structures.
 Because a predicate structure can represent an infinite number of markings, the place capacity is used to bound the number of solutions.
@@ -182,12 +197,12 @@ The below example shows how to use the query reduction:
 ```swift
 // We suppose the declaration of a net before
 ...
-let ctl1 = CTL(formula: .not(.not(.true)), net: net)
+let ctl1 = CTL(formula: .not(.not(.true)), net: net, canonicityLevel: .full)
 
 // Return: .true
 print(ctl1.queryReduction())
 
-let ctl2 = CTL(formula: .EF(.EF(.true)), net: net)
+let ctl2 = CTL(formula: .EF(.EF(.true)), net: net, canonicityLevel: .full)
 // Return: .EF(.true)
 print(ctl2.queryReduction())
 ```

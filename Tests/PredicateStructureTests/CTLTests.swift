@@ -364,58 +364,111 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-06"]!, expectedCTL2)
   }
   
-  func testAXDiffTesto() {
-    // Following Petri net:
-    //      1 p0
-    //     -->
-    // t0 ▭   o ---
-    //     <--      \
-    //      2       | 4
-    //              ↓
-    //           -> ▭ t1
-    //        6 /   | 3
-    //          |   /
-    // t2 ▭ <-- o <-
-    //    ↑   5 p1
-    //    |
-    //    o p2
+//  func testAXDiffTesto() {
+//    // Following Petri net:
+//    //      1 p0
+//    //     -->
+//    // t0 ▭   o ---
+//    //     <--      \
+//    //      2       | 4
+//    //              ↓
+//    //           -> ▭ t1
+//    //        6 /   | 3
+//    //          |   /
+//    // t2 ▭ <-- o <-
+//    //    ↑   5 p1
+//    //    |
+//    //    o p2
+//    let net = PetriNet(
+//      places: ["p0", "p1", "p2"],
+//      transitions: ["t0", "t1", "t2"],
+//      arcs: .pre(from: "p0", to: "t0", labeled: 2),
+//      .post(from: "t0", to: "p0", labeled: 1),
+//      .pre(from: "p0", to: "t1", labeled: 4),
+//      .pre(from: "p1", to: "t1", labeled: 6),
+//      .post(from: "t1", to: "p1", labeled: 3),
+//      .pre(from: "p1", to: "t2", labeled: 5),
+//      .pre(from: "p2", to: "t2", labeled: 1),
+//      capacity: ["p0": 10, "p1": 10, "p2": 10]
+//    )
+//    
+//    let ctlFormula: CTL = CTL(formula: .AX(.or(.isFireable("t0"), .isFireable("t2"))), net: net, canonicityLevel: .full, debug: true)
+//    
+//    let e1 = ctlFormula.eval()
+//
+//    var oldT2: SPS = []
+//    var oldT3: SPS = []
+//    for _ in 0 ..< 10 {
+//      let t1 = e1.not(net: net, canonicityLevel: .full)
+//      print("t1 count: \(t1.count)")
+//      let t2 = t1.revert(canonicityLevel: .full)
+//      print("t2 count: \(t2.count)")
+//      print("t2 equal to old t2 ? \(t2 == oldT2)")
+//      print("-------------------")
+//      let t3 = t2.not(net: net, canonicityLevel: .full)
+//      print("-------------------")
+//      print("t3 count: \(t3.count)")
+//      print("t3 equal to old t3 ? \(t3 == oldT3)")
+//      if t3 != oldT3 {
+//        print("t3: \(t3)")
+//        print("old t3: \(oldT3)")
+//      }
+//      oldT2 = t2
+//      oldT3 = t3
+//    }
+//  }
+  
+  func testLOL() {
+    
     let net = PetriNet(
-      places: ["p0", "p1", "p2"],
+      places: ["p0", "p1"],
       transitions: ["t0", "t1", "t2"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 2),
-      .post(from: "t0", to: "p0", labeled: 1),
-      .pre(from: "p0", to: "t1", labeled: 4),
-      .pre(from: "p1", to: "t1", labeled: 6),
-      .post(from: "t1", to: "p1", labeled: 3),
-      .pre(from: "p1", to: "t2", labeled: 5),
-      .pre(from: "p2", to: "t2", labeled: 1),
-      capacity: ["p0": 10, "p1": 10, "p2": 10]
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .pre(from: "p0", to: "t1", labeled: 1),
+      .post(from: "t1", to: "p1", labeled: 1),
+      .pre(from: "p1", to: "t2", labeled: 2),
+      capacity: ["p0": 4, "p1": 4] // Optional, can be removed
     )
-    
-    let ctlFormula: CTL = CTL(formula: .AX(.or(.isFireable("t0"), .isFireable("t2"))), net: net, canonicityLevel: .full, debug: true)
-    
-    let e1 = ctlFormula.eval()
 
-    var oldT2: SPS = []
-    var oldT3: SPS = []
-    for _ in 0 ..< 10 {
-      let t1 = e1.not(net: net, canonicityLevel: .full)
-      print("t1 count: \(t1.count)")
-      let t2 = t1.revert(canonicityLevel: .full)
-      print("t2 count: \(t2.count)")
-      print("t2 equal to old t2 ? \(t2 == oldT2)")
-      print("-------------------")
-      let t3 = t2.not(net: net, canonicityLevel: .full)
-      print("-------------------")
-      print("t3 count: \(t3.count)")
-      print("t3 equal to old t3 ? \(t3 == oldT3)")
-      if t3 != oldT3 {
-        print("t3: \(t3)")
-        print("old t3: \(oldT3)")
-      }
-      oldT2 = t2
-      oldT3 = t3
-    }
+    // Three examples of CTL formulas:
+    let ctlFormula1 = CTL(formula: .AX(.isFireable("t2")), net: net, canonicityLevel: .full)
+    let ctlFormula2 = CTL(formula: .EF(.isFireable("t2")), net: net, canonicityLevel: .full)
+    let ctlFormula3 = CTL(formula: .AF(.isFireable("t2")), net: net, canonicityLevel: .full)
+
+    let marking = Marking(["p0": 2, "p1": 1], net: net)
+
+    // Check CTL formulas for a given marking:
+
+    // Return: false
+    print(ctlFormula1.eval(marking: marking))
+    // Return: true
+    print(ctlFormula2.eval(marking: marking))
+    // Return: false
+    print(ctlFormula3.eval(marking: marking))
+
+    // To obtain the sets of predicate structures that represent all markings:
+    let eval1 = ctlFormula1.eval()
+    // Return:
+    // {
+    //   ([], [[p1: 2, p0: 0], [p0: 1, p1: 0]]),
+    //   ([[p0: 0, p1: 4]], [])
+    // }
+    print(eval1)
+    // Return: [[p0: 0, p1: 0], [p0: 0, p1: 1], [p0: 0, p1: 4], [p0: 1, p1: 4], [p0: 2, p1: 4], [p0: 3, p1: 4], [p0: 4, p1: 4]]
+    print(eval1.underlyingMarkings())
+    // Return:
+    // {
+    //   ([[p1: 2, p0: 0]], []),
+    //   ([[p1: 0, p0: 2]], []),
+    //   ([[p1: 1, p0: 1]], [])
+    // }
+    print(ctlFormula2.eval())
+    // Return:
+    // {
+    //    ([[p1: 2, p0: 0]], [])
+    // }
+    print(ctlFormula3.eval())
+  
   }
 
   
