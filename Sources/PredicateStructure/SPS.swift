@@ -23,6 +23,18 @@ public struct SPS {
     return SPS(values: res)
   }
   
+  /// Find the first predicate structure in self that shares a part with ps. This is to avoid computing every shareable ps in sps
+  /// - Parameter ps: The related predicate structure
+  /// - Returns: The first predicate structure that shares a common part with ps. If not, returns nil.
+  func firstSharingPS(ps: PS) -> PS? {
+    for psp in self {
+      if !ps.sharingPart(ps: psp).isEmpty() {
+        return psp
+      }
+    }
+    return nil
+  }
+  
   /// Lowest predicate structure, containing the singleton marking with the lowest marking using the total function order leq from marking.
   private func lowPs(net: PetriNet) -> PS {
         
@@ -62,10 +74,7 @@ public struct SPS {
       return SPS(values: self.values.union([ps]))
     }
 
-    var shareablePS = sharingSps(ps: ps).values
-    if !shareablePS.isEmpty {
-      let psp: PS = shareablePS.sorted(by: {$0.value.inc.leq($1.value.inc)}).first!
-      shareablePS.remove(psp)
+    if let psp = firstSharingPS(ps: ps) {
       let shared = ps.sharingPart(ps: psp)
       let spsWithoutShared = SPS(values: self.values.subtracting([psp]))
       var res: SPS = []
@@ -89,6 +98,7 @@ public struct SPS {
     // return SPS(values: self.values.union([ps.mes()]))
     return SPS(values: self.values.union([ps]))
   }
+  
   /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the union is applied

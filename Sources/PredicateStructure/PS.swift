@@ -307,9 +307,10 @@ public struct PS {
       if !(qc <= qb) {
         let convMax = Marking.convMax(markings: [qb,qc], net: ps.net)
         if !d.contains(where: {$0 <= convMax}) {
-//          if qb <= qMax {
-//            return PS(value: (net.zeroMarking(), [net.zeroMarking()]))
-//          }
+          // Small optimisation to finish as soon as possible if the result is the empty ps
+          if qb <= qMax {
+            return PS(value: (net.zeroMarking(), [net.zeroMarking()]))
+          }
           markingToAdd.insert(qb)
         }
       }
