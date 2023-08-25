@@ -64,6 +64,9 @@ public struct SPS {
   func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
 
     if self.isEmpty {
+      if ps.isEmpty() {
+        return SPS(values: [ps.zeroPS])
+      }
        return SPS(values: [ps])
     } else if ps.isEmpty() {
        return self
@@ -163,7 +166,7 @@ public struct SPS {
   }
   
   /// An efficient function to compute whether intersection of two sets of predicate structures is empty.
-  private func emptyIntersection(_ sps: SPS) -> Bool {
+  func emptyIntersection(_ sps: SPS) -> Bool {
     for ps in self {
       for psp in sps {
         if !ps.intersection(psp, isCanonical: false).isEmpty() {

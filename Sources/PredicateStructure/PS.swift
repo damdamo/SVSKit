@@ -19,6 +19,10 @@ public struct PS {
   public var net: PetriNet {
     return PS.netStatic!
   }
+  
+  public var zeroPS: PS {
+    return PS(value: emptyValue)
+  }
     
   public var emptyValue: (inc: Marking, exc: Set<Marking>) {
     return (net.zeroMarking(), [net.zeroMarking()])
@@ -309,7 +313,7 @@ public struct PS {
 //        if !d.contains(where: {$0 <= convMax}) {
           // Small optimisation to finish as soon as possible if the result is the empty ps
           if qb <= qMax {
-            return PS(value: (net.zeroMarking(), [net.zeroMarking()]))
+            return zeroPS
           }
           markingToAdd.insert(qb)
 //        }
