@@ -232,8 +232,8 @@ extension PetriNet {
     for place in places {
       if let pre = input[transition]?[place] {
         if let post = output[transition]?[place] {
-          if !(post <= marking[place]!) {
-            return nil
+          if marking[place]! <= post {
+            markingRes[place] = pre
           } else {
             markingRes[place] = marking[place]! + pre - post
           }
