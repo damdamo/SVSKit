@@ -75,9 +75,7 @@ public struct Marking {
     
     for marking in markings.subtracting([res]) {
       for place in net.places {
-        if res[place]! < marking[place]! {
-          res[place] = marking[place]!
-        }
+        res[place] = max(marking[place]!, res[place]!)
       }
     }
     return res
