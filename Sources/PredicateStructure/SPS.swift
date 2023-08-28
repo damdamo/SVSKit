@@ -25,35 +25,15 @@ public struct SPS {
   
   /// Find the first predicate structure in self that shares a part with ps. This is to avoid computing every shareable ps in sps
   /// - Parameter ps: The related predicate structure
-  /// - Returns: The first predicate structure that shares a common part with ps. If not, returns nil.
-  func firstSharingPS(ps: PS) -> PS? {
+  /// - Returns: The first predicate structure that shares a common part with ps. If not, returns nil.  
+  func firstSharingPS(ps: PS) -> (PS, PS)? {
     for psp in self {
-      if !ps.sharingPart(ps: psp).isEmpty() {
-        return psp
+      let shared = ps.sharingPart(ps: psp)
+      if !shared.isEmpty() {
+        return (psp, shared)
       }
     }
     return nil
-  }
-  
-  /// Lowest predicate structure, containing the singleton marking with the lowest marking using the total function order leq from marking.
-  private func lowPs(net: PetriNet) -> PS {
-        
-    if self == [] {
-      return PS(value: ([net.zeroMarking()], [net.zeroMarking()]), net: net)
-    }
-    
-    var psTemp = self.first!
-    let sps = SPS(values: self.values.subtracting([psTemp]))
-    
-    for ps in sps {
-      let qat = psTemp.value.inc
-      let qa =  ps.value.inc
-      if !qat.leq(qa) {
-        psTemp = ps
-      }
-    }
-    
-    return psTemp
   }
   
   /// Add a predicate structure into a set of predicate structures, ensuring canonicity if required.
@@ -72,13 +52,11 @@ public struct SPS {
        return self
     }
 
-
     if canonicityLevel == .none {
       return SPS(values: self.values.union([ps]))
     }
 
-    if let psp = firstSharingPS(ps: ps) {
-      let shared = ps.sharingPart(ps: psp)
+    if let (psp, shared) = firstSharingPS(ps: ps) {
       let spsWithoutShared = SPS(values: self.values.subtracting([psp]))
       var res: SPS = []
       
@@ -87,13 +65,13 @@ public struct SPS {
         if merged.count > 1 {
           fatalError("Should not be possible")
         }
-        res = psp.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
+        res = psp.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none)
       } else {
         let merged = psp.merge(shared, mergeablePreviouslyComputed: true)
         if merged.count > 1 {
           fatalError("Should not be possible")
         }
-        res = ps.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .full)
+        res = ps.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none)
       }
       return res.union(spsWithoutShared, canonicityLevel: .full)
     }
@@ -157,7 +135,7 @@ public struct SPS {
       for ps2 in sps {
         let intersect = ps1.intersection(ps2, isCanonical: true)
         if !intersect.isEmpty() {
-          res = res.add(intersect, canonicityLevel: canonicityLevel)
+          res = res.add(intersect, canonicityLevel: .none)
         }
       }
     }
