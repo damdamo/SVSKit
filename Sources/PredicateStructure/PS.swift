@@ -7,6 +7,10 @@
 /// This representation allows to model a potential infinite set of markings in a finite way.
 /// However, for the sake of finite representations and to compute them, we use the Petri net capacity on places to bound them.
 public struct PS {
+  
+//  public class Memoization {
+//    static public var memoizationRevertTable: [PS: SPS] = [:]
+//  }
 
   public typealias PlaceType = String
   public typealias TransitionType = String
@@ -323,6 +327,33 @@ public struct PS {
     return PS(value: (qMax, d.union(markingToAdd))).canonised()
   }
   
+  func shareable(ps: PS) -> Bool {
+    var (qa,b) = self.value
+    var (qc,d) = ps.value
+    
+    if !qa.leq(qc) {
+      let temp = (qa, b)
+      (qa, b) = (qc, d)
+      (qc, d) = temp
+    }
+    
+    let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
+    
+    for qb in b {
+        if qb <= qMax && qb != qMax {
+          return false
+        }
+    }
+    
+    for qd in d {
+        if qd <= qMax {
+          return false
+        }
+    }
+    
+    return true
+  }
+  
   /// Compute the inverse of the fire operation for a given transition. It takes into account the current predicate structure where it consumes tokens for post arcs and produces new ones for pre arcs.
   /// - Parameter transition: The given transition
   /// - Returns: A new predicate structure where the revert operation has been applied.
@@ -351,6 +382,11 @@ public struct PS {
   /// General revert operation where all transitions are applied
   /// - Returns: A set of predicate structures resulting from the union of the revert operation on each transition on the current predicate structure.
   public func revert(canonicityLevel: CanonicityLevel) -> SPS {
+    
+//    if let res = Memoization.memoizationRevertTable[self] {
+//      return res
+//    }
+    
     var res: SPS = []
     for transition in net.transitions {
       if let rev = self.revert(transition: transition)?.canonised() {
@@ -359,6 +395,9 @@ public struct PS {
         }
       }
     }
+    
+//    Memoization.memoizationRevertTable[self] = res
+    
     return res
   }
   

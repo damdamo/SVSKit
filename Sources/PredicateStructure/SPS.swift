@@ -5,6 +5,11 @@ public struct SPS {
   /// The set of predicate structures
   public let values: Set<PS>
   
+//  public class Memoization {
+//    static public var memoizationRevertTable: [SPS: SPS] = [:]
+//    static public var memoizationRevertTildeTable: [SPS: SPS] = [:]
+//  }
+  
   public init(values: Set<PS>) {
     self.values = values
   }
@@ -15,8 +20,7 @@ public struct SPS {
   func sharingSps(ps: PS) -> SPS {
     var res: Set<PS> = []
     for psp in self {
-      let sharingPart = ps.sharingPart(ps: psp)
-      if !sharingPart.isEmpty() {
+      if ps.shareable(ps: psp) {
         res.insert(psp)
       }
     }
@@ -56,8 +60,14 @@ public struct SPS {
       return SPS(values: self.values.union([ps]))
     }
 
-    if let (psp, shared) = firstSharingPS(ps: ps) {
-      let spsWithoutShared = SPS(values: self.values.subtracting([psp]))
+    var sharedSPS = self.sharingSps(ps: ps).values
+    
+    if !sharedSPS.isEmpty {
+      let spsWithoutSharedSPS = SPS(values: self.values.subtracting(sharedSPS))
+      let psp = sharedSPS.removeFirst()
+      let shared = ps.sharingPart(ps: psp)
+//    if let (psp, shared) = firstSharingPS(ps: ps) {
+//      let spsWithoutShared = SPS(values: self.values.subtracting([psp]))
       var res: SPS = []
       
       if ps.value.inc.leq(psp.value.inc) {
@@ -65,20 +75,21 @@ public struct SPS {
         if merged.count > 1 {
           fatalError("Should not be possible")
         }
-        res = psp.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none)
+        res = psp.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none).union(SPS(values: sharedSPS), canonicityLevel: .full)
       } else {
         let merged = psp.merge(shared, mergeablePreviouslyComputed: true)
         if merged.count > 1 {
           fatalError("Should not be possible")
         }
-        res = ps.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none)
+        res = ps.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none).union(SPS(values: sharedSPS), canonicityLevel: .full)
       }
-      return res.union(spsWithoutShared, canonicityLevel: .full)
+      return res.union(spsWithoutSharedSPS, canonicityLevel: .full)
     }
     // If some of the predicate structures are not canonical, the result could contain non canonical predicate structures. In this case, it would be required to add mes()
     // return SPS(values: self.values.union([ps.mes()]))
     return SPS(values: self.values.union([ps]))
   }
+  
   
   /// Apply the union between two sets of predicate structures. Almost the same as set union, except we remove the predicate structure empty if there is one.
   /// - Parameters:
@@ -276,6 +287,11 @@ public struct SPS {
   /// - Parameter canonicityLevel: The level of the canonicity
   /// - Returns: A new set of predicate structures after the revert application
   public func revert(canonicityLevel: CanonicityLevel) -> SPS {
+    
+//    if let res = Memoization.memoizationRevertTable[self] {
+//      return res
+//    }
+    
     if canonicityLevel == .none {
       var res: Set<PS> = []
       for ps in self {
@@ -288,6 +304,9 @@ public struct SPS {
     for ps in self {
       res = res.union(ps.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
     }
+    
+//    Memoization.memoizationRevertTable[self] = res
+    
     return res
   }
   
@@ -297,6 +316,11 @@ public struct SPS {
   ///   - canonicityLevel: The level of canonicity
   /// - Returns: A new set of predicate structures
   public func revertTilde(net: PetriNet, canonicityLevel: CanonicityLevel) -> SPS {
+    
+//    if let res = Memoization.memoizationRevertTildeTable[self] {
+//      return res
+//    }
+    
     if self.values.isEmpty {
       return []
     }
@@ -305,6 +329,9 @@ public struct SPS {
     let step1 = self.not(net: net, canonicityLevel: canonicityLevel)
     let step2 = step1.revert(canonicityLevel: canonicityLevel)
     let step3 = step2.not(net: net, canonicityLevel: canonicityLevel)
+    
+//    Memoization.memoizationRevertTildeTable[self] = step3
+    
     return step3
   }
   
