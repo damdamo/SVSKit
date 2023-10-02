@@ -934,6 +934,60 @@ extension CTL {
     return res.contains(marking: marking)
   }
   
+  public func relatedPlaces() -> Set<PetriNet.PlaceType> {
+    switch self.formula {
+    case .deadlock:
+      return net.places
+    case .isFireable(let t):
+      var places: Set<PetriNet.PlaceType> = []
+      if let i = net.input[t] {
+        places = places.union(i.keys)
+      }
+      if let o = net.output[t] {
+        places = places.union(o.keys)
+      }
+      return places
+    case .intExpr(e1: _, operator: _, e2: _):
+      print("CAREFUL, NOT MANAGED YET")
+      return []
+    case .after(let t):
+      var places: Set<PetriNet.PlaceType> = []
+      if let i = net.input[t] {
+        places = places.union(i.keys)
+      }
+      if let o = net.output[t] {
+        places = places.union(o.keys)
+      }
+      return places
+    case .true:
+      return net.places
+    case .false:
+      return net.places
+    case .and(let formula1, let formula2):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, canonicityLevel: .none).relatedPlaces())
+    case .or(let formula1, let formula2):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, canonicityLevel: .none).relatedPlaces())
+    case .not(let formula1):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+    case .EX(let formula1):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+    case .EF(let formula1):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+    case .EG(let formula1):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+    case .AX(let formula1):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+    case .AF(let formula1):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+    case .AG(let formula1):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+    case .EU(let formula1, let formula2):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, canonicityLevel: .none).relatedPlaces())
+    case .AU(let formula1, let formula2):
+      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, canonicityLevel: .none).relatedPlaces())
+    }
+  }
+  
 }
 
 extension CTL: Equatable {

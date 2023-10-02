@@ -34,6 +34,45 @@
 ////
 ////  }
 //
+//  func testSwimmingPool() {
+//    let parserPN = PnmlParser()
+//    let (net1, marking1) = parserPN.loadPN(filePath: "SwimmingPool-1.pnml")
+//    var s = Stopwatch()
+//
+//    let parserCTL = CTLParser()
+//    let dicCTL = parserCTL.loadCTL(filePath: "ReachabilityFireabilitySwimmingPool.xml")
+//
+//    s.reset()
+//
+//    print("Transitions: \(net1.transitions)")
+//    var answers: [String: Bool] = [:]
+////    var answers: [String: SPS] = [:]
+//    var times: [String: String] = [:]
+//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
+////      print(ctlReduced)
+//      print("-------------------------------")
+//      print(key)
+//      s.reset()
+//      answers[key] = ctlReduced.eval(marking: marking1)
+////      answers[key] = ctlReduced.eval()
+//      print(answers[key]!)
+//      times[key] = s.elapsed.humanFormat
+//      print(s.elapsed.humanFormat)
+//      print("-------------------------------")
+//    }
+//
+//    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
+//      print("Formula \(key) is: \(b) (\(times[key]!))")
+////      print("Formula \(key) is: \(times[key]!)")
+//    }
+//
+//    print(s.elapsed.humanFormat)
+//  }
+//  
+//  // FFFTFFFTTTFTFFFF
+//  // ffftfffttfffffff
+//  
 ////  func testDeadlock() {
 ////    // Example 1 of paper: https://journals.sagepub.com/doi/10.1177/1687814017693542
 ////    let net = PetriNet(
@@ -112,13 +151,13 @@
 //
 //    let key = "ERK-PT-000001-CTLFireability-15"
 //    let formula = dicCTL[key]!
-//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: false).queryReduction()
-////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
+////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: false).queryReduction()
+//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: false)
 //    print(ctlReduced)
-//    
+//
 //
 //    s.reset()
-//    
+//
 //    for i in 0 ..< 10 {
 //      print(i)
 //      ctlReduced.eval(marking: marking1)
@@ -127,7 +166,7 @@
 //    print("Average: \(s.elapsed.s/10)")
 //    print(s.elapsed.humanFormat)
 //  }
-//  
+////
 //  func testERKCase15() {
 //    let parserPN = PnmlParser()
 //    var (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
@@ -138,21 +177,30 @@
 //
 //    s.reset()
 //
-//    let key = "ERK-PT-000001-CTLFireability-15"
+//    let key = "ERK-PT-000001-CTLFireability-03"
 //    let formula = dicCTL[key]!
 //    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
 ////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
 //    print(ctlReduced)
-//    
 //
-//    print(ctlReduced.eval(marking: marking1))
-////    print(ctlReduced.eval())
+//
+////    print(ctlReduced.eval(marking: marking1))
+//    let x = ctlReduced.eval()
+//    
+//    var total = 0
+//    
+//    for ps in x {
+//      print(ps.value.exc.count)
+//      total = total + ps.value.exc.count
+//    }
+//    
+//    print("AVG: \(total/x.count)")
 //
 //
 //    print(s.elapsed.humanFormat)
 //  }
-//
-//
+//////
+//////
 //  func testERK() {
 //    let parserPN = PnmlParser()
 //    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
@@ -196,6 +244,86 @@
 //  // Mine V2:  FTFTTTFTFFFFFTTT
 //  // Mine V1:  FTTTTTFTTTFFFTTT
 //  
+//  // ME: FTFTTFFTFFFFTFFT
+//  //     FFFTTFFFFFFFFTFF
+//  //     +-+++++-++++--+-
+//  func testTwoPhaseLocking() {
+//    let parserPN = PnmlParser()
+//    let (net1, marking1) = parserPN.loadPN(filePath: "twoPhaseLocking-model.pnml")
+//    var s = Stopwatch()
+//
+//    let parserCTL = CTLParser()
+//    let dicCTL = parserCTL.loadCTL(filePath: "TwoPhaseLocking-CTLFireability.xml")
+//
+//    s.reset()
+//
+//    let formula = dicCTL["TwoPhaseLocking-PT-nC00004vD-CTLFireability-01"]!
+//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true)
+//    print(ctlReduced.eval(marking: marking1))
+//    
+////    var answers: [String: Bool] = [:]
+//////    var answers: [String: SPS] = [:]
+////    var times: [String: String] = [:]
+////    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+////      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
+////      print("-------------------------------")
+////      print(key)
+////      print("CTLReduced: \(ctlReduced)")
+////      s.reset()
+////      answers[key] = ctlReduced.eval(marking: marking1)
+//////      answers[key] = ctlReduced.eval()
+////      print(answers[key]!)
+////      times[key] = s.elapsed.humanFormat
+////      print(s.elapsed.humanFormat)
+////      print("-------------------------------")
+////    }
+////
+////    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
+////      print("Formula \(key) is: \(b) (\(times[key]!))")
+//////      print("Formula \(key) is: \(times[key]!)")
+////    }
+//
+//    print(s.elapsed.humanFormat)
+//  }
+//  
+//  func testERKReachability() {
+//    let parserPN = PnmlParser()
+//    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+//    var s = Stopwatch()
+//
+//    let parserCTL = CTLParser()
+//    let dicCTL = parserCTL.loadCTL(filePath: "ERK-ReachabilityFireability.xml")
+//
+//    s.reset()
+//
+//    var answers: [String: Bool] = [:]
+////    var answers: [String: SPS] = [:]
+//    var times: [String: String] = [:]
+//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: false).queryReduction()
+//      print("-------------------------------")
+//      print(key)
+//      print(ctlReduced)
+//      s.reset()
+//      answers[key] = ctlReduced.eval(marking: marking1)
+////      answers[key] = ctlReduced.eval()
+//      print(answers[key]!)
+//      times[key] = s.elapsed.humanFormat
+//      print(s.elapsed.humanFormat)
+//      print("-------------------------------")
+//    }
+//
+//    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
+//      print("Formula \(key) is: \(b) (\(times[key]!))")
+////      print("Formula \(key) is: \(times[key]!)")
+//    }
+//
+//    print(s.elapsed.humanFormat)
+//  }
+//  
+//  // FTFTFTFTTTFFFFFF
+//  // ftftftftttffffff
+//  
 ////  func testSimpleLoadBal() {
 ////    let parserPN = PnmlParser()
 ////    var (net1, marking1) = parserPN.loadPN(filePath: "simpleLoadBal-2.pnml")
@@ -231,63 +359,124 @@
 ////      print("Formula \(key) is: \(b)")
 ////    }
 ////  }
-//  func testLoadBal() {
-//    let parserPN = PnmlParser()
-////    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
-//    let (net1, marking1) = parserPN.loadPN(filePath: "simpleLoadBal-2.pnml")
-//    var s = Stopwatch()
-//
-//    let parserCTL = CTLParser()
-//    let dicCTL = parserCTL.loadCTL(filePath: "CTLFireabilitySimpleLoadBal-2.xml")
-//
-//    s.reset()
-//
-//    var answers: [String: Bool] = [:]
-////    var answers: [String: SPS] = [:]
-//    var times: [String: String] = [:]
-//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
-//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
-//      print("-------------------------------")
-//      print(key)
-//      s.reset()
-//      answers[key] = ctlReduced.eval(marking: marking1)
-////      answers[key] = ctlReduced.eval()
-//      print(answers[key]!)
-//      times[key] = s.elapsed.humanFormat
-//      print(s.elapsed.humanFormat)
-//      print("-------------------------------")
-//    }
-//
-//    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
-//      print("Formula \(key) is: \(b) (\(times[key]!))")
-////      print("Formula \(key) is: \(times[key]!)")
-//    }
-//
-//    print(s.elapsed.humanFormat)
-//  }
+////  func testLoadBal() {
+////    let parserPN = PnmlParser()
+//////    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+////    let (net1, marking1) = parserPN.loadPN(filePath: "simpleLoadBal-2.pnml")
+////    var s = Stopwatch()
+////
+////    let parserCTL = CTLParser()
+////    let dicCTL = parserCTL.loadCTL(filePath: "CTLFireabilitySimpleLoadBal-2.xml")
+////
+////    s.reset()
+////
+////    var answers: [String: Bool] = [:]
+//////    var answers: [String: SPS] = [:]
+////    var times: [String: String] = [:]
+////    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+////      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
+////      print("-------------------------------")
+////      print(key)
+////      s.reset()
+////      answers[key] = ctlReduced.eval(marking: marking1)
+//////      answers[key] = ctlReduced.eval()
+////      print(answers[key]!)
+////      times[key] = s.elapsed.humanFormat
+////      print(s.elapsed.humanFormat)
+////      print("-------------------------------")
+////    }
+////
+////    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
+////      print("Formula \(key) is: \(b) (\(times[key]!))")
+//////      print("Formula \(key) is: \(times[key]!)")
+////    }
+////
+////    print(s.elapsed.humanFormat)
+////  }
 //  
-//  func testLoadBalCase() {
-//    let parserPN = PnmlParser()
-//    var (net1, marking1) = parserPN.loadPN(filePath: "simpleLoadBal-2.pnml")
-//    var s = Stopwatch()
-//
-//    let parserCTL = CTLParser()
-//    let dicCTL = parserCTL.loadCTL(filePath: "CTLFireabilitySimpleLoadBal-2.xml")
-//
-//    s.reset()
-//
-//    let key = "SimpleLoadBal-PT-02-CTLFireability-02"
-//    let formula = dicCTL[key]!
-//    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
-////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
-//    print(ctlReduced)
-//    
-//
-//    print(ctlReduced.eval(marking: marking1))
+////  func testLoadBalCase() {
+////    let parserPN = PnmlParser()
+////    var (net1, marking1) = parserPN.loadPN(filePath: "simpleLoadBal-2.pnml")
+////    var s = Stopwatch()
+////
+////    let parserCTL = CTLParser()
+////    let dicCTL = parserCTL.loadCTL(filePath: "CTLFireabilitySimpleLoadBal-2.xml")
+////
+////    s.reset()
+////
+////    let key = "SimpleLoadBal-PT-02-CTLFireability-02"
+////    let formula = dicCTL[key]!
+//////    let formula: CTL.Formula = .deadlock
+////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
+//////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
+////    print(ctlReduced)
+////
+////
+//////    print(ctlReduced.eval(marking: marking1))
 ////    print(ctlReduced.eval())
-//
-//
-//    print(s.elapsed.humanFormat)
-//  }
+////
+////
+////    print(s.elapsed.humanFormat)
+////  }
+////
+////    func testLoadBalReachability() {
+////      let parserPN = PnmlParser()
+////  //    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+////      let (net1, marking1) = parserPN.loadPN(filePath: "simpleLoadBal-2.pnml")
+////      var s = Stopwatch()
+////
+////      let parserCTL = CTLParser()
+////      let dicCTL = parserCTL.loadCTL(filePath: "SimpleLoadBal-ReachabilityFireability.xml")
+////
+////      s.reset()
+////
+////      var answers: [String: Bool] = [:]
+////  //    var answers: [String: SPS] = [:]
+////      var times: [String: String] = [:]
+////      for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+////        let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true).queryReduction()
+////        print("-------------------------------")
+////        print(key)
+////        s.reset()
+////        answers[key] = ctlReduced.eval(marking: marking1)
+////  //      answers[key] = ctlReduced.eval()
+////        print(answers[key]!)
+////        times[key] = s.elapsed.humanFormat
+////        print(s.elapsed.humanFormat)
+////        print("-------------------------------")
+////      }
+////
+////      for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
+////        print("Formula \(key) is: \(b) (\(times[key]!))")
+////  //      print("Formula \(key) is: \(times[key]!)")
+////      }
+////
+////      print(s.elapsed.humanFormat)
+////    }
+////
+////
+////  func testIotpPurchase() {
+////    let parserPN = PnmlParser()
+////    var (net1, _) = parserPN.loadPN(filePath: "des.pnml")
+////    var s = Stopwatch()
+////
+////    s.reset()
+////
+//////    let formula = dicCTL[key]!
+////    let formula: CTL.Formula = .deadlock
+////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true)
+//////    let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .none, simplified: true, debug: true)
+////    print(ctlReduced)
+////
+////    print(net1.places.count)
+////    print(net1.transitions.count)
+//////    print(ctlReduced.eval(marking: marking1))
+////    let x = ctlReduced.eval()
+////    print(x.first!.value.exc.count)
+////    print(x.count)
+////
+////
+////    print(s.elapsed.humanFormat)
+////  }
 //  
 //}

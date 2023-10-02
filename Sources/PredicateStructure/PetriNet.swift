@@ -152,6 +152,14 @@ public class PetriNet
       self.capacity = capacity
     }
   }
+  
+  init(places: Set<PlaceType>, transitions: Set<TransitionType>, input: [TransitionType: [PlaceType: ArcLabel]], output: [TransitionType: [PlaceType: ArcLabel]], capacity: [PlaceType: Int] = [:]) {
+    self.places = places
+    self.transitions = transitions
+    self.input = input
+    self.output = output
+    self.capacity = capacity
+  }
 
   /// Initializes a Petri net with descriptions of its preconditions and postconditions.
   ///
@@ -315,5 +323,198 @@ extension PetriNet {
     }
     return Marking(dicMarking, net: self)
   }
+  
+}
+
+// All methods related to the structural reduction of a PN
+extension PetriNet {
+  
+  public func removePlace(place: PlaceType) -> PetriNet {
+    var newPlaces = places
+    newPlaces.remove(place)
+    var newTransitions = transitions
+    var newCapacity = capacity
+    newCapacity.removeValue(forKey: place)
+    var newInput = input
+    var newOutput = output
+    //[TransitionType: [PlaceType: ArcLabel]]
+    for transition in transitions {
+      if let dicPlaceToArcLabel = newInput[transition] {
+        if dicPlaceToArcLabel.keys.contains(place) {
+          newInput[transition]!.removeValue(forKey: place)
+          if newInput[transition]! == [:] {
+            newInput.removeValue(forKey: transition)
+          }
+        }
+      }
+      if let dicPlaceToArcLabel = newOutput[transition] {
+        if dicPlaceToArcLabel.keys.contains(place) {
+          newOutput[transition]!.removeValue(forKey: place)
+          if newOutput[transition]! == [:] {
+            newOutput.removeValue(forKey: transition)
+          }
+        }
+      }
+      
+      if newInput[transition] == nil && newOutput[transition] == nil {
+        newTransitions.remove(transition)
+      }
+    }
+    return PetriNet(places: newPlaces, transitions: newTransitions, input: newInput, output: newOutput, capacity: newCapacity)
+  }
+
+  public func removeTransition(transition: TransitionType) -> PetriNet {
+    var potentialPlaceToRemove: Set<PlaceType> = []
+    var newTransitions = transitions
+    var newPlaces = places
+    var newCapacity = capacity
+    var newInput = input
+    var newOutput = output
+    //[TransitionType: [PlaceType: ArcLabel]]
+    
+    if let p = input[transition]?.keys {
+      potentialPlaceToRemove = potentialPlaceToRemove.union(p)
+    }
+    if let p = output[transition]?.keys {
+      potentialPlaceToRemove = potentialPlaceToRemove.union(p)
+    }
+    
+    newTransitions.remove(transition)
+    newInput.removeValue(forKey: transition)
+    newOutput.removeValue(forKey: transition)
+    
+    for t in newTransitions {
+      if potentialPlaceToRemove.isEmpty {
+        break
+      }
+      if let inputKeys = input[t]?.keys {
+        potentialPlaceToRemove = potentialPlaceToRemove.subtracting(inputKeys)
+      }
+      if let outputKeys = output[t]?.keys {
+        potentialPlaceToRemove = potentialPlaceToRemove.subtracting(outputKeys)
+      }
+    }
+    
+    print("Potential place to remove: \(potentialPlaceToRemove)")
+    for p in potentialPlaceToRemove {
+      newPlaces.remove(p)
+      newCapacity.removeValue(forKey: p)
+    }
+    
+    return PetriNet(places: newPlaces, transitions: newTransitions, input: newInput, output: newOutput, capacity: newCapacity)
+  }
+  
+  public func structuralReduction(ctl: CTL) -> PetriNet {
+    
+//    var newPN = self
+//
+//    let places = ctl.relatedPlaces()
+    
+    return self
+  }
+  
+  public func removalOfSeqTransition(transition: TransitionType, ctl: CTL) -> PetriNet {
+    
+    // IL FAUT EFFACER LA PLACE ET LA TRANSITION ! CEPENDANT IL FAUT PENSER AU COTE RECURSIF POUR EFFACER AU FUR ET A MESURE
+    
+    let relatedPlaces = ctl.relatedPlaces()
+    var newInput = input
+    var newOutput = output
+    
+//    for transition in transitions {
+      // If we have at least one input and output
+      if let inputPlaceToLabel = input[transition], let outputPlaceToLabel = output[transition] {
+        // If none of the places are related to the ctl formula
+        if (Set(inputPlaceToLabel.keys).union(outputPlaceToLabel.keys)).intersection(relatedPlaces) == [] {
+          // If there exists only one input arc with a label one
+          if inputPlaceToLabel.count == 1 {
+            let (place, label) = inputPlaceToLabel.first!
+            if label == 1 {
+              print("OOOOOKKKK")
+              var relatedTransitions: Set<TransitionType> = []
+              // We navigate into other transitions than the one of the loop
+              // We look for other transitions where P0 is their output
+              for otherTransition in transitions.subtracting([transition]) {
+                if let outputPlaces = output[otherTransition]?.keys {
+                  if outputPlaces.contains(place) {
+                    relatedTransitions.insert(otherTransition)
+                  }
+                }
+              }
+              for relatedTransition in relatedTransitions {
+                for placeOutput in outputPlaceToLabel.keys {
+                  let weightN = output[relatedTransition]![place]!
+                  let weightK = output[transition]![placeOutput]!
+                  var previousWeight = 0
+                  if let w = output[relatedTransition]![placeOutput] {
+                    previousWeight = w
+                  }
+                  newOutput[relatedTransition]![placeOutput] = weightN * weightK + previousWeight
+                }
+              }
+              var pn = PetriNet(places: places, transitions: transitions, input: newInput, output: newOutput, capacity: capacity)
+              
+              pn = pn.removePlace(place: place)
+              pn = pn.removeTransition(transition: transition)
+              return pn
+            }
+          }
+        }
+      }
+    print("oops")
+    return self
+  }
+  
+  func removalOfSeqPlace() -> PetriNet {
+    return self
+  }
+  
+  func removalOfParallelPlace() -> PetriNet {
+    return self
+  }
+  
+  func removalOfParallelTransition() -> PetriNet {
+    return self
+  }
+  
+  func removalOfDeadTransition() -> PetriNet {
+    return self
+  }
+  
+  func removalOfRedundantPlace() -> PetriNet {
+    return self
+  }
+  
+  func removalOfRedundantTransition() -> PetriNet {
+    return self
+  }
+  
+  func removalOfCirclePattern() -> PetriNet {
+    return self
+  }
+}
+
+extension PetriNet: CustomStringConvertible {
+  public var description: String {
+    return """
+      Places: \(places.sorted())
+      Transitions: \(transitions.sorted())
+      Capacities: \(capacity.sorted(by: {$0.key <= $1.key}))
+      Input: \(input.sorted(by: {$0.key <= $1.key}))
+      Output: \(output.sorted(by: {$0.key <= $1.key}))
+    """
+  }
+  
+}
+
+extension PetriNet: Equatable {
+  public static func == (lhs: PetriNet, rhs: PetriNet) -> Bool {
+    return lhs.places == rhs.places
+    && lhs.transitions == rhs.transitions
+    && lhs.capacity == rhs.capacity
+    && lhs.input == rhs.input
+    && lhs.output == rhs.output
+  }
+  
   
 }

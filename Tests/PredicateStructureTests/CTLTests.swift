@@ -38,10 +38,6 @@ final class CTLTests: XCTestCase {
     let sps = ctlFormula.eval()
     
     XCTAssertTrue(sps.isEquiv(expectedSPS))
-    
-    print(sps)
-    print("------------")
-    print(expectedSPS)
   }
 
   
@@ -471,5 +467,76 @@ final class CTLTests: XCTestCase {
   
   }
 
+  func testCTLEval1TESTO() {
+    // Following Petri net:
+    //          t0
+    //       -> ▭
+    // p0  /
+    // o -
+    //     \
+    //       -> ▭ -> o -> ▭
+    //          t1   p1   t2
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+      .pre(from: "p0", to: "t1", labeled: 1),
+      .post(from: "t1", to: "p1", labeled: 1),
+      .pre(from: "p1", to: "t2", labeled: 1),
+      capacity: ["p0": 6, "p1": 6]
+    )
+
+//    let ctlFormula1: CTL = CTL(formula: .AF(.isFireable("t2")), net: net, canonicityLevel: .full)
+    let ctlFormula2: CTL = CTL(formula: .EG(.isFireable("t2")), net: net, canonicityLevel: .full)
+    let ctlFormula3: CTL = CTL(formula: .AG(.isFireable("t2")), net: net, canonicityLevel: .full)
+//    let sps1 = ctlFormula1.eval()
+    let sps2 = ctlFormula2.eval()
+    let sps3 = ctlFormula3.eval()
+
+    let ps = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
+    let expectedRes: SPS = [ps]
+
+//    XCTAssertEqual(sps1, expectedRes)
+    XCTAssertEqual(sps2, [])
+    XCTAssertEqual(sps3, [])
+    
+//    let ctlFormula4: CTL = CTL(formula: .AX(.isFireable("t2")), net: net, canonicityLevel: .none)
+//    let ctlFormula5: CTL = CTL(formula: .AX(.isFireable("t2")), net: net, canonicityLevel: .full)
+//    let r1 = ctlFormula4.eval()
+//    let r2 = ctlFormula5.eval()
+//    XCTAssertTrue(r1.isEquiv(r2))
+    
+  }
+  
+  func testRemovalOfSeqTransition() {
+    let net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0", "t1", "t2", "t3", "t4", "t5"],
+      arcs: .post(from: "t0", to: "p0", labeled: 3),
+      .post(from: "t0", to: "p1", labeled: 40),
+      .post(from: "t1", to: "p0", labeled: 4),
+      .post(from: "t2", to: "p0", labeled: 5),
+      .pre(from: "p0", to: "t3", labeled: 1),
+      .post(from: "t3", to: "p1", labeled: 2),
+      .post(from: "t3", to: "p2", labeled: 7),
+      .pre(from: "p2", to: "t4", labeled: 2)
+    )
+    let ctlFormula: CTL = CTL(formula: .EG(.isFireable("t5")), net: net, canonicityLevel: .full)
+    
+    let n = net.removalOfSeqTransition(transition: "t3", ctl: ctlFormula)
+        
+    let expectedNet = PetriNet(
+      places: ["p1", "p2"],
+      transitions: ["t0", "t1", "t2", "t4"],
+      arcs: .post(from: "t0", to: "p1", labeled: 46),
+      .post(from: "t1", to: "p1", labeled: 8),
+      .post(from: "t2", to: "p1", labeled: 10),
+      .post(from: "t0", to: "p2", labeled: 21),
+      .post(from: "t1", to: "p2", labeled: 28),
+      .post(from: "t2", to: "p2", labeled: 35),
+      .pre(from: "p2", to: "t4", labeled: 2)
+    )
+    XCTAssertEqual(expectedNet, n)
+  }
   
 }

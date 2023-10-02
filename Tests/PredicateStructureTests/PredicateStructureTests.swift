@@ -665,7 +665,7 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(ps1.sharingPart(ps: ps1), ps1)
     XCTAssertEqual(ps1.sharingPart(ps: ps2), ps2)
     XCTAssertEqual(ps2.sharingPart(ps: ps1), ps2)
-    
+        
     let m4 = Marking(["p0": 0, "p1": 1, "p2": 0], net: net)
     let m5 = Marking(["p0": 1, "p1": 1, "p2": 0], net: net)
     let m6 = Marking(["p0": 0, "p1": 1, "p2": 1], net: net)
@@ -676,6 +676,7 @@ final class PredicateStructureTests: XCTestCase {
     let ps4 = PS(value: ([m7],[]), net: net)
     let expectedSharingPS = PS(value: ([m7],[m8]), net: net)
     
+    XCTAssertFalse(ps3.mergeable(ps4))
     XCTAssertEqual(ps3.sharingPart(ps: ps4), expectedSharingPS)
     
     let m9 = Marking(["p0": 0, "p1": 1, "p2": 1], net: net)
@@ -689,57 +690,48 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(ps5.sharingPart(ps: ps6), ps7)
   }
   
-  func test1() {
-    let net = PetriNet(
-      places: ["p0", "p1"],
-      transitions: ["t0"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p1", labeled: 1)
-    )
-    
-    let m1 = Marking(["p0": 1, "p1": 0], net: net)
-    let m2 = Marking(["p0": 0, "p1": 0], net: net)
-    let m3 = Marking(["p0": 0, "p1": 1], net: net)
-    let m4 = Marking(["p0": 1, "p1": 2], net: net)
-    
-    let ps1 = PS(value: ([m1],[m4]), net: net)
-    let ps2 = PS(value: ([m2],[m1,m3]), net: net)
-    let ps3 = PS(value: ([m2],[m4]), net: net)
-    
-//    ([p0: 1, p1: 0], [[p0: 1, p1: 2]])
-//    ([p0: 0, p1: 0], [[p0: 1, p1: 0], [p0: 0, p1: 1]])
-    
-    let sps1 = SPS(values: [ps1, ps2])
-    let sps2 = SPS(values: [ps3])
-    
-//    print(sps1.isEquiv(sps2))
-//    print(sps1.subtract(sps2, canonicityLevel: .none))
-//    print(sps2.subtract(sps1, canonicityLevel: .none))
-    
-  }
-  
-  func test2() {
-    let net = PetriNet(
-      places: ["p0", "p1", "p2"],
-      transitions: ["t0"],
-      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-      .post(from: "t0", to: "p1", labeled: 1)
-    )
-    
-    let m1 = Marking(["p0": 1, "p1": 5, "p2": 0], net: net)
-    let m2 = Marking(["p0": 1, "p1": 5, "p2": 7], net: net)
-    let m3 = Marking(["p0": 3, "p1": 5, "p2": 4], net: net)
-    let m4 = Marking(["p0": 3, "p1": 0, "p2": 7], net: net)
-//    let m8 = Marking(["p0": 10, "p1": 25, "p2": 16], net: net)
-    
-    let ps1 = PS(value: ([m1],[m2]), net: net)
-    let ps2 = PS(value: ([m3],[m4]), net: net)
-    let sps1 = SPS(values: [ps1,ps2])
-    
-//    print(ps1.merge(ps2))
-//
-//    print(sps1.isEquiv(ps1.merge(ps2)))
-  }
+//  func testShareable() {
+//    let net = PetriNet(
+//      places: ["p0", "p1", "p2"],
+//      transitions: ["t0"],
+//      arcs: .pre(from: "p0", to: "t0", labeled: 1),
+//      .post(from: "t0", to: "p1", labeled: 1)
+//    )
+//    
+//    let m1 = Marking(["p0": 0, "p1": 0, "p2": 0], net: net)
+//    let m2 = Marking(["p0": 1, "p1": 2, "p2": 3], net: net)
+//    let m3 = Marking(["p0": 3, "p1": 5, "p2": 4], net: net)
+//    
+//    let ps1 = PS(value: ([m1], []), net: net)
+//    let ps2 = PS(value: ([m2], [m3]), net: net)
+//    XCTAssertEqual(ps1.shareable(ps: ps1), true)
+//    XCTAssertEqual(ps1.shareable(ps: ps2), true)
+//    XCTAssertEqual(ps2.shareable(ps: ps1), true)
+//        
+//    let m4 = Marking(["p0": 0, "p1": 1, "p2": 0], net: net)
+//    let m5 = Marking(["p0": 1, "p1": 1, "p2": 0], net: net)
+//    let m6 = Marking(["p0": 0, "p1": 1, "p2": 1], net: net)
+//    let m7 = Marking(["p0": 0, "p1": 1, "p2": 1], net: net)
+//    let m8 = Marking(["p0": 1, "p1": 1, "p2": 1], net: net)
+//    
+//    let ps3 = PS(value: ([m4],[m5,m6]), net: net)
+//    let ps4 = PS(value: ([m7],[]), net: net)
+//    let expectedSharingPS = PS(value: ([m7],[m8]), net: net)
+//    
+//    XCTAssertFalse(ps3.mergeable(ps4))
+//    XCTAssertEqual(ps3.shareable(ps: ps4), true)
+////    XCTAssertTrue(ps3.moveable(ps: ps4))
+//    
+//    let m9 = Marking(["p0": 0, "p1": 1, "p2": 1], net: net)
+//    let m10 = Marking(["p0": 1, "p1": 1, "p2": 1], net: net)
+//    let m11 = Marking(["p0": 1, "p1": 0, "p2": 1], net: net)
+//    
+//    let ps5 = PS(value: ([m9],[m10]), net: net)
+//    let ps6 = PS(value: ([m11],[]), net: net)
+//    let ps7 = PS(value: ([m10],[]), net: net)
+//    
+//    XCTAssertEqual(ps5.sharingPart(ps: ps6), ps7)
+//  }
   
   func testComplexeExample() {
 
