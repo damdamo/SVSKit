@@ -409,6 +409,14 @@ public struct SPS {
     }
     return []
   }
+  
+  public func canonised() -> SPS {
+    var res: SPS = []
+    for el in self {
+      res = res.union(SPS(values: [el]), canonicityLevel: .full)
+    }
+    return res
+  }
     
 }
 
