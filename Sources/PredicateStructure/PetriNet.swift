@@ -355,10 +355,6 @@ extension PetriNet {
           }
         }
       }
-      
-      if newInput[transition] == nil && newOutput[transition] == nil {
-        newTransitions.remove(transition)
-      }
     }
     return PetriNet(places: newPlaces, transitions: newTransitions, input: newInput, output: newOutput, capacity: newCapacity)
   }
@@ -404,20 +400,62 @@ extension PetriNet {
     return PetriNet(places: newPlaces, transitions: newTransitions, input: newInput, output: newOutput, capacity: newCapacity)
   }
   
-  public func structuralReduction(ctl: CTL) -> PetriNet {
-    
-//    var newPN = self
-//
-//    let places = ctl.relatedPlaces()
-    
-    return self
+  public func inputAndOutputTransitionsForAPlace(place: PlaceType) -> (inputTransitions: Set<TransitionType>, outputTransitions: Set<TransitionType>) {
+    var (inputTransitions, outputTransitions): (Set<TransitionType>, Set<TransitionType>) = ([],[])
+    for transition in transitions {
+      if let p = input[transition]?.keys {
+        if p.contains(place) {
+          inputTransitions.insert(transition)
+        }
+      }
+      if let p = output[transition]?.keys {
+        if p.contains(place) {
+          outputTransitions.insert(transition)
+        }
+      }
+    }
+    return (inputTransitions, outputTransitions)
   }
   
-  public func removalOfSeqTransition(transition: TransitionType, ctl: CTL) -> PetriNet {
+  public func structuralReduction(ctl: CTL) -> PetriNet {
     
-    // IL FAUT EFFACER LA PLACE ET LA TRANSITION ! CEPENDANT IL FAUT PENSER AU COTE RECURSIF POUR EFFACER AU FUR ET A MESURE
-    
+    var newPn = self
     let relatedPlaces = ctl.relatedPlaces()
+    
+    
+    for transition in newPn.transitions {
+      newPn = newPn.removalOfSeqTransition(transition: transition, relatedPlaces: relatedPlaces)
+      if newPn.transitions.contains(transition) {
+        
+      }
+    }
+    
+    for place in newPn.places {
+      newPn = newPn.removalOfSeqPlace(place: place, relatedPlaces: relatedPlaces)
+      if newPn.places.contains(place) {
+        newPn = newPn.removalOfParallelPlace(place: place, relatedPlaces: relatedPlaces)
+      }
+    }
+    
+    var placesToRemove = places.subtracting(relatedPlaces)
+    
+    for transition in transitions {
+      if (input[transition] == [:] || input[transition] == nil) && (output[transition] == [:] || output[transition] == nil) {
+        newPn = newPn.removeTransition(transition: transition)
+      } else {
+        placesToRemove = placesToRemove.subtracting(input[transition]!.keys).subtracting(output[transition]!.keys)
+      }
+    }
+    
+    for place in placesToRemove {
+      newPn = newPn.removePlace(place: place)
+    }
+    
+    return newPn
+  }
+  
+  public func removalOfSeqTransition(transition: TransitionType, relatedPlaces: Set<PlaceType>) -> PetriNet {
+        
     var newInput = input
     var newOutput = output
     
@@ -430,7 +468,6 @@ extension PetriNet {
           if inputPlaceToLabel.count == 1 {
             let (place, label) = inputPlaceToLabel.first!
             if label == 1 {
-              print("OOOOOKKKK")
               var relatedTransitions: Set<TransitionType> = []
               // We navigate into other transitions than the one of the loop
               // We look for other transitions where P0 is their output
@@ -461,15 +498,68 @@ extension PetriNet {
           }
         }
       }
-    print("oops")
     return self
   }
   
-  func removalOfSeqPlace() -> PetriNet {
+  public func removalOfSeqPlace(place: PlaceType, relatedPlaces: Set<PlaceType>) -> PetriNet {
+    if relatedPlaces.contains(place) {
+      return self
+    }
+    
+    // Looking for a transition with an output on "place" and an another transition with an input from "place"
+    for t1 in transitions {
+      if let outputPlaces = output[t1]?.keys {
+        if /*outputPlaces.count == 1 && */ outputPlaces.contains(place) {
+          for t2 in transitions.subtracting([t1]) {
+            if let inputPlaces = input[t2]?.keys {
+              if inputPlaces.count == 1 && inputPlaces.contains(place) {
+                let kw = output[t1]![place]!
+                let w = input[t2]![place]!
+                // If the output label arc is equal to k*w and the input label arc w, we can apply the reduction
+                if kw % w == 0 {
+                  if let t2OutputPlaces = output[t2]?.keys {
+                    var newOutput = output
+                    let k = kw / w
+                    for p1 in t2OutputPlaces {
+                      newOutput[t1]![p1] = newOutput[t2]![p1]! * k
+                    }
+                    var pn = PetriNet(places: places, transitions: transitions, input: input, output: newOutput, capacity: capacity)
+                    pn = pn.removePlace(place: place)
+                    pn = pn.removeTransition(transition: t2)
+                    return pn
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
     return self
   }
   
-  func removalOfParallelPlace() -> PetriNet {
+  public func removalOfParallelPlace(place: PlaceType, relatedPlaces: Set<PlaceType>) -> PetriNet {
+    let (inputTransitions, outputTransitions) = inputAndOutputTransitionsForAPlace(place: place)
+    if inputTransitions.count == 1 && outputTransitions.count == 1 {
+      for p1 in places.subtracting([place]) {
+        let (inputTransitionsForP1, outputTransitionsForP1) = inputAndOutputTransitionsForAPlace(place: p1)
+        if inputTransitions == inputTransitionsForP1 && outputTransitions == outputTransitionsForP1 {
+          let tOutput = outputTransitions.first!
+          let tInput = inputTransitions.first!
+          let labelOutput1 = output[tOutput]![place]!
+          let labelOutput2 = output[tOutput]![p1]!
+          let labelInput1 = input[tInput]![place]!
+          let labelInput2 = input[tInput]![p1]!
+          if labelOutput1 % labelOutput2 == 0 && labelInput1 % labelInput2 == 0 {
+            if labelOutput1 / labelOutput2 == labelInput1 / labelInput2 {
+              var pn = self
+              pn = pn.removePlace(place: place)
+              return pn
+            }
+          }
+        }
+      }
+    }
     return self
   }
   

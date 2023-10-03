@@ -521,13 +521,14 @@ final class CTLTests: XCTestCase {
       .post(from: "t3", to: "p2", labeled: 7),
       .pre(from: "p2", to: "t4", labeled: 2)
     )
-    let ctlFormula: CTL = CTL(formula: .EG(.isFireable("t5")), net: net, canonicityLevel: .full)
+    let ctlFormula1: CTL = CTL(formula: .EG(.isFireable("t5")), net: net, canonicityLevel: .full)
     
-    let n = net.removalOfSeqTransition(transition: "t3", ctl: ctlFormula)
+    let relatedPlaces1 = ctlFormula1.relatedPlaces()
+    let n1 = net.removalOfSeqTransition(transition: "t3", relatedPlaces: relatedPlaces1)
         
     let expectedNet = PetriNet(
       places: ["p1", "p2"],
-      transitions: ["t0", "t1", "t2", "t4"],
+      transitions: ["t0", "t1", "t2", "t4", "t5"],
       arcs: .post(from: "t0", to: "p1", labeled: 46),
       .post(from: "t1", to: "p1", labeled: 8),
       .post(from: "t2", to: "p1", labeled: 10),
@@ -536,7 +537,64 @@ final class CTLTests: XCTestCase {
       .post(from: "t2", to: "p2", labeled: 35),
       .pre(from: "p2", to: "t4", labeled: 2)
     )
-    XCTAssertEqual(expectedNet, n)
+    XCTAssertEqual(expectedNet, n1)
+    
+    let ctlFormula2: CTL = CTL(formula: .EG(.isFireable("t1")), net: net, canonicityLevel: .full)
+    let relatedPlaces2 = ctlFormula2.relatedPlaces()
+    let n2 = net.removalOfSeqTransition(transition: "t3", relatedPlaces: relatedPlaces2)
+    
+    XCTAssertEqual(net, n2)
+  }
+  
+  func testRemovalOfSeqPlace() {
+    let net = PetriNet(
+      places: ["p0", "p1", "p2", "p3"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .post(from: "t0", to: "p0", labeled: 15),
+      .pre(from: "p0", to: "t1", labeled: 5),
+      .post(from: "t1", to: "p1", labeled: 2),
+      .post(from: "t1", to: "p2", labeled: 3),
+      .post(from: "t0", to: "p3", labeled: 100)
+    )
+    
+    let expectedNet = PetriNet(
+      places: ["p1", "p2", "p3"],
+      transitions: ["t0", "t2"],
+      arcs: .post(from: "t0", to: "p1", labeled: 6),
+      .post(from: "t0", to: "p2", labeled: 9),
+      .post(from: "t0", to: "p3", labeled: 100)
+    )
+    
+    let ctlFormula1: CTL = CTL(formula: .EG(.isFireable("t2")), net: net, canonicityLevel: .full)
+    let relatedPlaces1 = ctlFormula1.relatedPlaces()
+    XCTAssertEqual(expectedNet, net.removalOfSeqPlace(place: "p0", relatedPlaces: relatedPlaces1))
+    
+    let ctlFormula2: CTL = CTL(formula: .EG(.isFireable("t1")), net: net, canonicityLevel: .full)
+    let relatedPlaces2 = ctlFormula2.relatedPlaces()
+    XCTAssertEqual(net, net.removalOfSeqPlace(place: "p0", relatedPlaces: relatedPlaces2))
+  }
+  
+  func testRemovalOfParallelPlace() {
+    let net = PetriNet(
+      places: ["p0", "p1"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .post(from: "t0", to: "p0", labeled: 15),
+      .pre(from: "p0", to: "t1", labeled: 20),
+      .post(from: "t0", to: "p1", labeled: 3),
+      .pre(from: "p1", to: "t1", labeled: 4)
+    )
+    
+    let expectedNet = PetriNet(
+      places: ["p1"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .post(from: "t0", to: "p1", labeled: 3),
+      .pre(from: "p1", to: "t1", labeled: 4)
+    )
+    
+    let ctlFormula1: CTL = CTL(formula: .isFireable("t2"), net: net, canonicityLevel: .full)
+    let relatedPlace = ctlFormula1.relatedPlaces()
+    
+    XCTAssertEqual(expectedNet, net.removalOfParallelPlace(place: "p0", relatedPlaces: relatedPlace))
   }
   
 }
