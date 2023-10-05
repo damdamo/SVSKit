@@ -544,16 +544,6 @@ final class PredicateStructureTests: XCTestCase {
     XCTAssertEqual(sps1.union(sps2, canonicityLevel: .full), sps3)
     XCTAssertEqual(sps2.union(sps1, canonicityLevel: .full), sps3)
     
-//    let m3 = Marking(["p0": 9, "p1": 9], net: net)
-//    let m4 = Marking(["p0": 10, "p1": 10], net: net)
-    
-//    let ps3 = PS(value: ([m3],[]), net: net)
-//    let ps4 = PS(value: ([m4],[]), net: net)
-//    let ps5 = PS(value: ([m5],[]), net: net)
-//    XCTAssertEqual(sps1.ndls(ps: ps1), [])
-//    print(sps1.lowPs(net: net))
-    
-//    let sps1 = SPS(values: [ps1,ps2])
   }
   
   func testCanonical() {
@@ -798,41 +788,6 @@ final class PredicateStructureTests: XCTestCase {
     
     XCTAssertEqual(union1, union2)
   }
-  
-//  func testToo() {
-//
-//    let net = PetriNet(
-//      places: ["p0", "p1", "p2"],
-//      transitions: ["t0"],
-//      arcs: .pre(from: "p0", to: "t0", labeled: 1),
-//      .post(from: "t0", to: "p1", labeled: 1)
-//    )
-//    
-//  
-//    let m1 = Marking(["p0": 2, "p1": 2, "p2": 0], net: net)
-//    let m2 = Marking(["p0": 0, "p1": 0, "p2": 7], net: net)
-//    let m3 = Marking(["p0": 3, "p1": 3, "p2": 0], net: net)
-//    let m4 = Marking(["p0": 5, "p1": 5, "p2": 0], net: net)
-//    let m5 = Marking(["p0": 0, "p1": 5, "p2": 5], net: net)
-//    let m6 = Marking(["p0": 2, "p1": 5, "p2": 5], net: net)
-//    
-//    let ps1 = PS(value: ([m1], [m2]), net: net)
-//    let ps2 = PS(value: ([m3], [m4,m5]), net: net)
-//    let ps3 = PS(value: ([m1], [m2,m3]), net: net)
-//    let ps4 = PS(value: ([m4], [m2]), net: net)
-//    let ps5 = PS(value: ([m6], [m2]), net: net)
-//    
-//    let sps3 = SPS(values: [ps3])
-//    let sps4 = SPS(values: [ps4])
-//    let sps5 = SPS(values: [ps5])
-//    
-//    let a = ps1.subtract(ps2, canonicityLevel: .full)
-//    print("Subtraction: \(a)")
-//    print("-----------")
-//    let b = sps3.union(sps4.union(sps5, canonicityLevel: .full), canonicityLevel: .full)
-//    print("Canonical: \(b)")
-//    print(a.isEquiv(b))
-//  }
   
 //  func testThesis() {
 //    let net = PetriNet(
