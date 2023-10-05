@@ -1,5 +1,3 @@
-[![Build Status](https://app.travis-ci.com/damdamo/SVSKit.svg?branch=main)](https://travis-ci.org/damdamo/SVSKit)
-
 # Symbolic Vector Set Kit (SVSKit): CTL Model Checking on Petri nets with Parametric Markings
 
 This package aims at verifying CTL formulas on Petri nets with weighted arcs and potential capacity on places.
