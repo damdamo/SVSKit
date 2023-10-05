@@ -1,0 +1,80 @@
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-00
+  "Automatically generated"
+  is:
+    bound("haveB")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-01
+  "Automatically generated"
+  is:
+    bound("resA")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-02
+  "Automatically generated"
+  is:
+    bound("haveA2")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-03
+  "Automatically generated"
+  is:
+    bound("haveA")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-04
+  "Automatically generated"
+  is:
+    bound("haveA2")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-05
+  "Automatically generated"
+  is:
+    bound("haveA")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-06
+  "Automatically generated"
+  is:
+    bound("haveA2andB")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-07
+  "Automatically generated"
+  is:
+    bound("haveB")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-08
+  "Automatically generated"
+  is:
+    bound("resA")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-09
+  "Automatically generated"
+  is:
+    bound("haveAandB")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-10
+  "Automatically generated"
+  is:
+    bound("haveB")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-11
+  "Automatically generated"
+  is:
+    bound("haveA2")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-12
+  "Automatically generated"
+  is:
+    bound("Clients")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-13
+  "Automatically generated"
+  is:
+    bound("haveA2")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-14
+  "Automatically generated"
+  is:
+    bound("haveAandB")
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-UpperBounds-15
+  "Automatically generated"
+  is:
+    bound("haveA")
+  end.

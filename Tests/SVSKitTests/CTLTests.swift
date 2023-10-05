@@ -1,6 +1,6 @@
 import XCTest
 //@testable import PredicateStructure
-import PredicateStructure
+import SVSKit
 
 final class CTLTests: XCTestCase {
 
@@ -26,13 +26,13 @@ final class CTLTests: XCTestCase {
       capacity: ["p0": 10, "p1": 10, "p2": 10]
     )
     
-    let ps1 = PS(value: ([Marking(["p0": 1, "p1": 2, "p2": 1], net: net)], []), net: net)
-    let ps2 = PS(value: ([net.zeroMarking()], [Marking(["p0": 1, "p1": 0, "p2": 0], net: net), Marking(["p0": 0, "p1": 1, "p2": 0], net: net), Marking(["p0": 0, "p1": 0, "p2": 1], net: net)]), net: net)
-    let ps3 = PS(value: ([Marking(["p0": 0, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 0], net: net), Marking(["p0": 0, "p1": 2, "p2": 1], net: net)]), net: net)
-    let ps4 = PS(value: ([Marking(["p0": 0, "p1": 2, "p2": 1], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
-    let ps5 = PS(value: ([Marking(["p0": 1, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
+    let ps1 = SV(value: ([Marking(["p0": 1, "p1": 2, "p2": 1], net: net)], []), net: net)
+    let ps2 = SV(value: ([net.zeroMarking()], [Marking(["p0": 1, "p1": 0, "p2": 0], net: net), Marking(["p0": 0, "p1": 1, "p2": 0], net: net), Marking(["p0": 0, "p1": 0, "p2": 1], net: net)]), net: net)
+    let ps3 = SV(value: ([Marking(["p0": 0, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 0], net: net), Marking(["p0": 0, "p1": 2, "p2": 1], net: net)]), net: net)
+    let ps4 = SV(value: ([Marking(["p0": 0, "p1": 2, "p2": 1], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
+    let ps5 = SV(value: ([Marking(["p0": 1, "p1": 2, "p2": 0], net: net)], [Marking(["p0": 1, "p1": 2, "p2": 1], net: net)]), net: net)
     
-    let expectedSPS: SPS = [ps1, ps2, ps3, ps4, ps5]
+    let expectedSPS: SVS = [ps1, ps2, ps3, ps4, ps5]
     
     let ctlFormula = CTL(formula: .AX(.isFireable("t2")), net: net, canonicityLevel: .full, simplified: false)
     let sps = ctlFormula.eval()
@@ -62,18 +62,18 @@ final class CTLTests: XCTestCase {
       capacity: ["p1": 10, "p2": 10, "p3": 10, "p4": 10, "p5": 10]
     )
 
-    let ps1 = PS(value: ([Marking(["p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 1], net: net)], []), net: net)
-    let ps2 = PS(value: ([Marking(["p1": 0, "p2": 1, "p3": 1, "p4": 1, "p5": 0], net: net)], []), net: net)
-    let ps3 = PS(value: ([Marking(["p1": 1, "p2": 0, "p3": 1, "p4": 0, "p5": 1], net: net)], []), net: net)
-    let ps4 = PS(value: ([Marking(["p1": 1, "p2": 1, "p3": 2, "p4": 0, "p5": 0], net: net)], []), net: net)
-    let ps5 = PS(value: ([Marking(["p1": 0, "p2": 1, "p3": 0, "p4": 2, "p5": 0], net: net)], []), net: net)
-    let ps6 = PS(value: ([Marking(["p1": 1, "p2": 0, "p3": 0, "p4": 0, "p5": 2], net: net)], []), net: net)
-    let equivSPS: SPS = [ps1, ps2, ps3, ps4, ps5, ps6]
+    let ps1 = SV(value: ([Marking(["p1": 0, "p2": 0, "p3": 0, "p4": 1, "p5": 1], net: net)], []), net: net)
+    let ps2 = SV(value: ([Marking(["p1": 0, "p2": 1, "p3": 1, "p4": 1, "p5": 0], net: net)], []), net: net)
+    let ps3 = SV(value: ([Marking(["p1": 1, "p2": 0, "p3": 1, "p4": 0, "p5": 1], net: net)], []), net: net)
+    let ps4 = SV(value: ([Marking(["p1": 1, "p2": 1, "p3": 2, "p4": 0, "p5": 0], net: net)], []), net: net)
+    let ps5 = SV(value: ([Marking(["p1": 0, "p2": 1, "p3": 0, "p4": 2, "p5": 0], net: net)], []), net: net)
+    let ps6 = SV(value: ([Marking(["p1": 1, "p2": 0, "p3": 0, "p4": 0, "p5": 2], net: net)], []), net: net)
+    let equivSPS: SVS = [ps1, ps2, ps3, ps4, ps5, ps6]
 
     // Compute all markings that breaks the mutual exclusion
     let ctlFormula = CTL(formula: .EF(.and(.isFireable("t4"), .isFireable("t5"))), net: net, canonicityLevel: .full, simplified: false, debug: true)
     let sps = ctlFormula.eval()
-    let sps2 = ctlFormula.eval()
+//    let sps2 = ctlFormula.eval()
     
     let e = equivSPS
     XCTAssertTrue(e.isEquiv(sps))
@@ -105,14 +105,14 @@ final class CTLTests: XCTestCase {
     let sps2 = ctlFormula2.eval()
     let sps3 = ctlFormula3.eval()
 
-    let ps = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
-    let expectedRes: SPS = [ps]
+    let ps = SV(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
+    let expectedRes: SVS = [ps]
     
     let simplifiedSPS1 = sps1.simplified()
     let simplifiedSPS2 = sps2.simplified()
     let simplifiedSPS3 = sps3.simplified()
 
-    let cf: CTL = CTL(formula: .EG(.isFireable("t2")), net: net, canonicityLevel: .semi)
+//    let cf: CTL = CTL(formula: .EG(.isFireable("t2")), net: net, canonicityLevel: .semi)
     
     XCTAssertEqual(simplifiedSPS1, expectedRes)
     XCTAssertEqual(simplifiedSPS2, [])
@@ -152,8 +152,8 @@ final class CTLTests: XCTestCase {
     let sps2 = ctlFormula2.eval()
     let sps3 = ctlFormula3.eval()
 
-    let ps: PS = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
-    let expectedRes: SPS = [ps]
+    let ps: SV = SV(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
+    let expectedRes: SVS = [ps]
 
     let simpliedSPS1 = sps1.simplified()
     let simpliedSPS2 = sps2.simplified()
@@ -199,9 +199,9 @@ final class CTLTests: XCTestCase {
     let sps3 = ctlFormula3.eval()
     let sps4 = ctlFormula4.eval()
 
-    let ps1 = PS(value: ([Marking(["p0": 2, "p1": 0, "p2": 0], net: net)], []), net: net)
-    let ps3 = PS(value: ([net.zeroMarking()], [Marking(["p0": 2, "p1": 0, "p2": 0], net: net)]), net: net)
-    let ps4 = PS(value: ([net.zeroMarking()], [Marking(["p0": 4, "p1": 0, "p2": 0], net: net)]), net: net)
+    let ps1 = SV(value: ([Marking(["p0": 2, "p1": 0, "p2": 0], net: net)], []), net: net)
+    let ps3 = SV(value: ([net.zeroMarking()], [Marking(["p0": 2, "p1": 0, "p2": 0], net: net)]), net: net)
+    let ps4 = SV(value: ([net.zeroMarking()], [Marking(["p0": 4, "p1": 0, "p2": 0], net: net)]), net: net)
 
     let simplifiedSPS1 = sps1.simplified()
     let simplifiedSPS2 = sps2.simplified()
@@ -319,8 +319,8 @@ final class CTLTests: XCTestCase {
     let sps2 = ctlFormula2.eval()
     let sps3 = ctlFormula3.eval()
 
-    let ps: PS = PS(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
-    let expectedRes: SPS = [ps]
+    let ps: SV = SV(value: ([Marking(["p0": 0, "p1": 1], net: net)], []), net: net)
+    let expectedRes: SVS = [ps]
 
     let simpliedSPS1 = sps1.simplified()
     let simpliedSPS2 = sps2.simplified()
@@ -330,7 +330,7 @@ final class CTLTests: XCTestCase {
     XCTAssertEqual(simpliedSPS3, expectedRes)
     
     let ctlFormula4: CTL = CTL(formula: .and(.intExpr(e1: .tokenCount("p0"), operator: .lt, e2: .value(4)), .intExpr(e1: .value(7), operator: .lt, e2: .tokenCount("p1"))), net: net, canonicityLevel: .full)
-    let expectedSPS: SPS = [PS(value: ([Marking(["p0": 0, "p1": 8], net: net)], [Marking(["p0": 4, "p1": 8], net: net)]), net: net)]
+    let expectedSPS: SVS = [SV(value: ([Marking(["p0": 0, "p1": 8], net: net)], [Marking(["p0": 4, "p1": 8], net: net)]), net: net)]
     XCTAssertEqual(expectedSPS, ctlFormula4.eval())
   }
   

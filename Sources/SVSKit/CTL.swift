@@ -156,15 +156,15 @@ public struct CTL {
   ///   - rewrited: An option to specify how to compute the function revertTilde. If it is true, we rewrite revertTilde as `not revert not`. When it is false, we use a specific function to compute it. False by default.
   ///   - simplified: An option to specify if there simplified function must be used or not. True by default.
   /// - Returns: A set of predicate structures that symbolically represents all markings that satisfy the CTL formula.
-  public func eval() -> SPS {
-    var res: SPS
+  public func eval() -> SVS {
+    var res: SVS
     switch formula {
     case .intExpr(e1: _, operator: _, e2: _):
       return evalCardinality()
     case .isFireable(let t):
       if net.transitions.contains(t) {
         res = [
-          PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)
+          SV(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)
         ]
       } else {
         fatalError("Unknown transition")
@@ -172,14 +172,14 @@ public struct CTL {
     case .after(let t):
       if net.transitions.contains(t) {
         res = [
-          PS(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net)
+          SV(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net)
         ]
       } else {
         fatalError("Unknown transition")
       }
     case .true:
       res = [
-        PS(value: ([net.zeroMarking()], []), net: net)
+        SV(value: ([net.zeroMarking()], []), net: net)
       ]
     case .false:
       res = []
@@ -204,7 +204,7 @@ public struct CTL {
         print("Predicate structure number after not: \(res.count)")
       }
     case .deadlock:
-      res = SPS.deadlock(net: net)
+      res = SVS.deadlock(net: net)
     case .EX(let formula):
       let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
       res = ctl1.eval().revert(canonicityLevel: canonicityLevel)
@@ -248,7 +248,7 @@ public struct CTL {
   /// Encode a cardinality formula into a SPS that represents all markings satisfying the condition.
   /// - Parameter net: The corresponding net
   /// - Returns: The resulting set of predicate structures
-  func evalCardinality() -> SPS {
+  func evalCardinality() -> SVS {
     switch formula {
     case .intExpr(e1: .value(_), operator: _, e2: .value(_)):
       return CTL(formula: .true, net: net, canonicityLevel: canonicityLevel, simplified: simplified).eval()
@@ -270,7 +270,7 @@ public struct CTL {
   ///   - e2: Second expression
   ///   - net: The corresponding Petri net
   /// - Returns: The set of predicate structures that encodes all markings that satisfy the condition
-  func evalLeq(e1: Expression, e2: Expression) -> SPS {
+  func evalLeq(e1: Expression, e2: Expression) -> SVS {
     var marking = net.zeroMarking()
     switch (e1, e2) {
     // i <= p
@@ -279,14 +279,14 @@ public struct CTL {
         fatalError("Place \(p) does not exist")
       }
       marking[p] = i
-      return [PS(value: ([marking],[]), net: net)]
+      return [SV(value: ([marking],[]), net: net)]
     // p <= i
     case (.tokenCount(let p), .value(let i)):
       guard net.places.contains(p) else {
         fatalError("Place \(p) does not exist")
       }
       marking[p] = i+1
-      return [PS(value: ([],[marking]), net: net)]
+      return [SV(value: ([],[marking]), net: net)]
     default:
       fatalError("Operators are not managed yet. They cannot be evaluated")
     }
@@ -299,7 +299,7 @@ public struct CTL {
   ///   - e2: Second expression
   ///   - net: The corresponding Petri net
   /// - Returns: The set of predicate structures that encodes all markings that satisfy the condition
-  func evalLt(e1: Expression, e2: Expression) -> SPS {
+  func evalLt(e1: Expression, e2: Expression) -> SVS {
     var marking = net.zeroMarking()
     switch (e1, e2) {
     // i < p
@@ -308,23 +308,23 @@ public struct CTL {
         fatalError("Place \(p) does not exist")
       }
       marking[p] = i+1
-      return [PS(value: ([marking],[]), net: net)]
+      return [SV(value: ([marking],[]), net: net)]
     // p < i
     case (.tokenCount(let p), .value(let i)):
       guard net.places.contains(p) else {
         fatalError("Place \(p) does not exist")
       }
       marking[p] = i
-      return [PS(value: ([],[marking]), net: net)]
+      return [SV(value: ([],[marking]), net: net)]
     default:
       fatalError("Operators are not managed yet. They cannot be evaluated")
     }
   }
   
-  func evalEF() -> SPS {
+  func evalEF() -> SVS {
     let phi = self.eval()
     var res = phi
-    var resTemp: SPS
+    var resTemp: SVS
     if debug {
       print("Predicate structure number at the start of EF evaluation: \(res.count)")
     }
@@ -337,14 +337,14 @@ public struct CTL {
       if debug {
         print("Predicate structure number during EF evaluation: \(res.count)")
       }
-    } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+    } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
     return res
   }
   
-  func evalAF() -> SPS {
+  func evalAF() -> SVS {
     let phi = self.eval()
     var res = phi
-    var resTemp: SPS
+    var resTemp: SVS
     if debug {
       print("Predicate structure number at the start of AF evaluation: \(res.count)")
     }
@@ -361,10 +361,10 @@ public struct CTL {
     return res
   }
   
-  func evalEG() -> SPS {
+  func evalEG() -> SVS {
     let phi = self.eval()
     var res = phi
-    var resTemp: SPS
+    var resTemp: SVS
     if debug {
       print("Predicate structure number at the start of EG evaluation: \(res.count)")
     }
@@ -381,10 +381,10 @@ public struct CTL {
     return res
   }
   
-  func evalAG() -> SPS {
+  func evalAG() -> SVS {
     let phi = self.eval()
     var res = phi
-    var resTemp: SPS
+    var resTemp: SVS
     if debug {
       print("Predicate structure number at the start of AG evaluation: \(res.count)")
     }
@@ -401,7 +401,7 @@ public struct CTL {
     return res
   }
   
-  func evalEU(_ ctl: CTL) -> SPS {
+  func evalEU(_ ctl: CTL) -> SVS {
     let phi = self.eval()
     let psi = ctl.eval()
     var res = psi
@@ -409,7 +409,7 @@ public struct CTL {
       print("Predicate structure number of phi at the start of EU evaluation: \(phi.count)")
       print("Predicate structure number of psi at the start of EU evaluation: \(res.count)")
     }
-    var resTemp: SPS
+    var resTemp: SVS
     repeat {
       resTemp = res
       res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -423,11 +423,11 @@ public struct CTL {
     return res
   }
   
-  func evalAU(_ ctl: CTL) -> SPS {
+  func evalAU(_ ctl: CTL) -> SVS {
     let phi = self.eval()
     let psi = ctl.eval()
     var res = psi
-    var resTemp: SPS
+    var resTemp: SVS
     if debug {
       print("Predicate structure number of phi at the start of AU evaluation: \(phi.count)")
       print("Predicate structure number of psi at the start of AU evaluation: \(res.count)")
@@ -679,13 +679,13 @@ extension CTL {
     case .isFireable(let t):
       if net.transitions.contains(t) {
         return
-          PS(value: ([net.inputMarkingForATransition(transition: t)], []), net: net).contains(marking: marking)
+          SV(value: ([net.inputMarkingForATransition(transition: t)], []), net: net).contains(marking: marking)
       } else {
         fatalError("Unknown transition")
       }
     case .after(let t):
       if net.transitions.contains(t) {
-        return PS(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net).contains(marking: marking)
+        return SV(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net).contains(marking: marking)
       } else {
         fatalError("Unknown transition")
       }
@@ -713,15 +713,15 @@ extension CTL {
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       return ctl1.eval().not(net: net, canonicityLevel: canonicityLevel).contains(marking: marking)
     case .deadlock:
-      return SPS.deadlock(net: net).contains(marking: marking)
+      return SVS.deadlock(net: net).contains(marking: marking)
     case .EX(let formula1):
-      if SPS.deadlock(net: net).contains(marking: marking) {
+      if SVS.deadlock(net: net).contains(marking: marking) {
         return false
       }
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
       return ctl1.eval().revert(canonicityLevel: canonicityLevel).contains(marking: marking)
     case .AX(let formula1):
-      if SPS.deadlock(net: net).contains(marking: marking) {
+      if SVS.deadlock(net: net).contains(marking: marking) {
         return true
       }
       let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
@@ -759,7 +759,7 @@ extension CTL {
     if res.contains(marking: marking) == true {
       return true
     }
-    var resTemp: SPS
+    var resTemp: SVS
     repeat {
       if res.contains(marking: marking) {
         return true
@@ -773,7 +773,7 @@ extension CTL {
       if debug {
         print("Predicate structure number during EF evaluation: \(res.count)")
       }
-    } while !SPS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+    } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
     return res.contains(marking: marking)
   }
   
@@ -786,7 +786,7 @@ extension CTL {
     if res.contains(marking: marking) == true {
       return true
     }
-    var resTemp: SPS
+    var resTemp: SVS
     repeat {
       if res.contains(marking: marking) {
         return true
@@ -814,7 +814,7 @@ extension CTL {
     if res.contains(marking: marking) == false {
       return false
     }
-    var resTemp: SPS
+    var resTemp: SVS
     repeat {
       if !res.contains(marking: marking) {
         return false
@@ -840,7 +840,7 @@ extension CTL {
     if res.contains(marking: marking) == false {
       return false
     }
-    var resTemp: SPS
+    var resTemp: SVS
     repeat {
       if !res.contains(marking: marking) {
         return false
@@ -874,7 +874,7 @@ extension CTL {
       return false
     }
     var res = psi
-    var resTemp: SPS
+    var resTemp: SVS
     
     repeat {
       if res.contains(marking: marking) {
@@ -915,7 +915,7 @@ extension CTL {
       return false
     }
     var res = psi
-    var resTemp: SPS
+    var resTemp: SVS
     repeat {
       if res.contains(marking: marking) {
         return true

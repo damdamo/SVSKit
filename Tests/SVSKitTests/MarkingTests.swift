@@ -1,11 +1,11 @@
 import XCTest
 //@testable import PredicateStructure
-import PredicateStructure
+import SVSKit
 
 final class MarkingTests: XCTestCase {
    
   func testPS() {
-    typealias SPS = Set<PS>
+    typealias SPS = Set<SV>
     
     let net = PetriNet(
       places: ["p1", "p2", "p3"],

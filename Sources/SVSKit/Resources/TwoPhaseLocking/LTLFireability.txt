@@ -1,0 +1,80 @@
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-00
+  "Automatically generated"
+  is:
+    A (("relA"? & !(("relA"? U "relA2"?) U ("relB"? | "relB"?))) | G "lockA2"?)
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-01
+  "Automatically generated"
+  is:
+    A !((X "relA"? & F X !"relA2"?) | F "relA"?)
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-02
+  "Automatically generated"
+  is:
+    A X X G X G ("relA"? & (G "relA"? | X X "relA2"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-03
+  "Automatically generated"
+  is:
+    A ("lockB"? | (G "lockA"? U "relA"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-04
+  "Automatically generated"
+  is:
+    A (G "lockB"? | X (G X "lockA2"? & !("relA2"? | G !"lockB"?)))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-05
+  "Automatically generated"
+  is:
+    A (("lockA2"? & "relB"? & "lockB"?) U ((("relA"? | "relB"?) U !"lockA2"?) U !"relA"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-06
+  "Automatically generated"
+  is:
+    A ((!"relA"? U X "relA"?) | (X F (X "relA"? U F "relA2"?) U "relA"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-07
+  "Automatically generated"
+  is:
+    A ("lockA"? | (("relA"? U "lockA2"?) U "relA"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-08
+  "Automatically generated"
+  is:
+    A G ("lockB"? U !(F "lockA2"? & X X ("lockB"? & "lockB"?)))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-09
+  "Automatically generated"
+  is:
+    A (!"lockA"? U (!("relA"? & "relA2"?) U G X "relA2"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-10
+  "Automatically generated"
+  is:
+    A (X (("relB"? & "relA"?) | X "relA"?) U G ("relA"? & F "relA"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-11
+  "Automatically generated"
+  is:
+    A ("relB"? & G F G (!"relB"? & (X !X "relA2"? | X "relB"?)))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-12
+  "Automatically generated"
+  is:
+    A X !("relA2"? U G F G "relA2"?)
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-13
+  "Automatically generated"
+  is:
+    A G F (!X "relA2"? | X (F "relA"? & !F "lockB"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-14
+  "Automatically generated"
+  is:
+    A X X !(("relB"? & (G "relA2"? U "relA2"?)) U !G ("relA2"? U "relB"?))
+  end.
+Property TwoPhaseLocking-PT-nC00004vD-LTLFireability-15
+  "Automatically generated"
+  is:
+    A (!F !("relB"? | "relA2"? | ("relB"? U "lockA"?)) U ("relB"? | "lockA"?))
+  end.

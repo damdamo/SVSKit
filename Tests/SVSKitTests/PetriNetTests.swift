@@ -1,6 +1,6 @@
 import XCTest
 //@testable import PredicateStructure
-import PredicateStructure
+import SVSKit
 
 final class PetriNetTests: XCTestCase {
   

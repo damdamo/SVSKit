@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<pnml xmlns="http://www.pnml.org/version-2009/grammar/pnml">
+    <net id="ComposedModel" type="http://www.pnml.org/version-2009/grammar/ptnet">
+        <page id="page0">
+            <place id="Entered">
+                <graphics>
+                    <position x="690" y="350"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>Entered</text>
+                </name>
+                <initialMarking>
+                    <text>20</text>
+                </initialMarking>
+            </place>
+            <place id="WaitBag">
+                <graphics>
+                    <position x="850" y="350"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>WaitBag</text>
+                </name>
+                <initialMarking>
+                    <text>0</text>
+                </initialMarking>
+            </place>
+            <place id="InBath">
+                <graphics>
+                    <position x="50" y="350"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>InBath</text>
+                </name>
+                <initialMarking>
+                    <text>0</text>
+                </initialMarking>
+            </place>
+            <place id="Dress">
+                <graphics>
+                    <position x="210" y="350"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>Dress</text>
+                </name>
+                <initialMarking>
+                    <text>0</text>
+                </initialMarking>
+            </place>
+            <place id="Cabins">
+                <graphics>
+                    <position x="130" y="270"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>Cabins</text>
+                </name>
+                <initialMarking>
+                    <text>10</text>
+                </initialMarking>
+            </place>
+            <place id="Bags">
+                <graphics>
+                    <position x="290" y="270"/>
+                </graphics>
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>Bags</text>
+                </name>
+                <initialMarking>
+                    <text>15</text>
+                </initialMarking>
+            </place>
+            <transition id="GetK">
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>GetK</text>
+                </name>
+                <graphics>
+                    <position x="770" y="350"/>
+                </graphics>
+            </transition>
+            <transition id="GetB">
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>GetB</text>
+                </name>
+                <graphics>
+                    <position x="930" y="350"/>
+                </graphics>
+            </transition>
+            <transition id="GetK2">
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>GetK2</text>
+                </name>
+                <graphics>
+                    <position x="130" y="350"/>
+                </graphics>
+            </transition>
+            <transition id="RBag">
+                <name>
+                    <graphics>
+                        <offset x="0" y="-10"/>
+                    </graphics>
+                    <text>RBag</text>
+                </name>
+                <graphics>
+                    <position x="290" y="350"/>
+                </graphics>
+            </transition>
+            <arc id="Entered_to_GetK" source="Entered" target="GetK" type="normal"/>
+            <arc id="Cabins_to_GetK" source="Cabins" target="GetK" type="normal"/>
+            <arc id="WaitBag_to_GetB" source="WaitBag" target="GetB" type="normal"/>
+            <arc id="Bags_to_GetB" source="Bags" target="GetB" type="normal"/>
+            <arc id="InBath_to_GetK2" source="InBath" target="GetK2" type="normal"/>
+            <arc id="Cabins_to_GetK2" source="Cabins" target="GetK2" type="normal"/>
+            <arc id="Dress_to_RBag" source="Dress" target="RBag" type="normal"/>
+            <arc id="GetK_to_WaitBag" source="GetK" target="WaitBag" type="normal"/>
+            <arc id="GetB_to_InBath" source="GetB" target="InBath" type="normal"/>
+            <arc id="GetB_to_Cabins" source="GetB" target="Cabins" type="normal"/>
+            <arc id="GetK2_to_Dress" source="GetK2" target="Dress" type="normal"/>
+            <arc id="RBag_to_Entered" source="RBag" target="Entered" type="normal"/>
+            <arc id="RBag_to_Cabins" source="RBag" target="Cabins" type="normal"/>
+            <arc id="RBag_to_Bags" source="RBag" target="Bags" type="normal"/>
+        </page>
+        <name>
+            <text>ComposedModel</text>
+        </name>
+    </net>
+</pnml>

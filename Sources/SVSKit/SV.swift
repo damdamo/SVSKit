@@ -6,7 +6,7 @@
 /// On the other hand, (0,1), (4,5), (4,42), (42,42) are not valid.
 /// This representation allows to model a potential infinite set of markings in a finite way.
 /// However, for the sake of finite representations and to compute them, we use the Petri net capacity on places to bound them.
-public struct PS {
+public struct SV {
   
 //  public class Memoization {
 //    static public var memoizationRevertTable: [PS: SPS] = [:]
@@ -21,11 +21,11 @@ public struct PS {
   private static var netStatic: PetriNet? = nil
   
   public var net: PetriNet {
-    return PS.netStatic!
+    return SV.netStatic!
   }
   
-  public var zeroPS: PS {
-    return PS(value: emptyValue)
+  public var zeroPS: SV {
+    return SV(value: emptyValue)
   }
     
   public var emptyValue: (inc: Marking, exc: Set<Marking>) {
@@ -37,12 +37,12 @@ public struct PS {
   }
   
   public init(value: (inc: Marking, exc: Set<Marking>), net: PetriNet) {
-    PS.netStatic = net
+    SV.netStatic = net
     self.value = value
   }
   
   public init(value: (inc: Set<Marking>, exc: Set<Marking>), net: PetriNet) {
-    PS.netStatic = net
+    SV.netStatic = net
 
     // If `inc` is an empty set, we replace it by the zero marking, containing 0 for all places
     // It corresponds to the marking accepting all markings.
@@ -66,21 +66,21 @@ public struct PS {
   
   /// Compute the negation of a predicate structure, which is a set of predicate structures
   /// - Returns: Returns the negation of the predicate structure
-  public func not() -> SPS {
+  public func not() -> SVS {
     if self.isEmpty() {
-      return [PS(value: (net.zeroMarking(), []))]
+      return [SV(value: (net.zeroMarking(), []))]
     }
     
-    var sps: Set<PS> = []
-    sps.insert(PS(value: (net.zeroMarking(), [self.value.inc])))
+    var sps: Set<SV> = []
+    sps.insert(SV(value: (net.zeroMarking(), [self.value.inc])))
     for el in value.exc {
-      sps.insert(PS(value: (el, [])))
+      sps.insert(SV(value: (el, [])))
     }
-    return SPS(values: sps)
+    return SVS(values: sps)
   }
   
   // nes: Normalise excluding set
-  public func nes() -> PS {
+  public func nes() -> SV {
     var excludingSet: Set<Marking> = []
     var markingTemp: Marking
     let qa = self.value.inc
@@ -89,11 +89,11 @@ public struct PS {
       markingTemp = Marking.convMax(markings: [qa, qb], net: net)
       excludingSet.insert(markingTemp)
     }
-    return PS(value: (self.value.inc, excludingSet))
+    return SV(value: (self.value.inc, excludingSet))
   }
   
   // mes: minimum excluding set
-  public func mes() -> PS {
+  public func mes() -> SV {
     if self.value == emptyValue {
       return self
     }
@@ -103,20 +103,20 @@ public struct PS {
     })
 
     // The result is the subtraction between the original markings and thus that are already included
-    return PS(value: (qa, newExcludingMarkings))
+    return SV(value: (qa, newExcludingMarkings))
   }
   
   /// Returns the canonical form of a predicate structure. Let suppose (a,b) in PS
   /// By canonical form, we mean reducing a in a singleton, removing all possible inclusions in b, and no marking in b included in a.
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
   /// - Returns: The canonical form of the predicate structure.
-  public func canonised() -> PS {
+  public func canonised() -> SV {
     if self.isEmpty() {
       // In (a,b) ∈ PS, if a marking in b is included in a, it returns the empty predicate structure
-      return PS(value: emptyValue)
+      return SV(value: emptyValue)
     }
     
-    return PS(value: (self.value.inc, self.value.exc)).mes()
+    return SV(value: (self.value.inc, self.value.exc)).mes()
   }
   
   /// Compute all the markings represented by the symbolic representation of a predicate structure.
@@ -190,7 +190,7 @@ public struct PS {
   /// Encode a marking into a predicate structure. This predicate structure encodes a singe marking.
   /// - Parameter marking: The marking to encode
   /// - Returns: The predicate structure that represents the marking
-  public func encodeMarking(_ marking: Marking) -> PS {
+  public func encodeMarking(_ marking: Marking) -> SV {
     var bMarkings: Set<Marking> = []
     var markingTemp = marking
     for place in net.places {
@@ -198,18 +198,18 @@ public struct PS {
       bMarkings.insert(markingTemp)
       markingTemp = marking
     }
-    return PS(value: (marking, bMarkings))
+    return SV(value: (marking, bMarkings))
   }
   
   /// Encode a set of markings into a set of predicate structures.
   /// - Parameter markingSet: The marking set to encode
   /// - Returns: A set of predicate structures that encodes the set of markings
-  public func encodeMarkingSet(_ markingSet: Set<Marking>) -> SPS {
-    var sps: Set<PS> = []
+  public func encodeMarkingSet(_ markingSet: Set<Marking>) -> SVS {
+    var sps: Set<SV> = []
     for marking in markingSet {
       sps.insert(encodeMarking(marking))
     }
-    return SPS(values: sps).simplified()
+    return SVS(values: sps).simplified()
   }
   
   /// Try to merge two predicate structures if they are mergeable.
@@ -218,7 +218,7 @@ public struct PS {
   /// - Parameters:
   ///   - ps: The second predicate structure
   /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
-  public func merge(_ ps: PS, mergeablePreviouslyComputed: Bool = false) -> SPS {
+  public func merge(_ ps: SV, mergeablePreviouslyComputed: Bool = false) -> SVS {
     if !mergeablePreviouslyComputed {
       if !self.mergeable(ps) {
         return [self, ps]
@@ -258,15 +258,15 @@ public struct PS {
       }
     }
     
-    let newPS = PS(value: (qa, convMaxMarkingSet)).mes()
-    return SPS(values: [newPS])
+    let newPS = SV(value: (qa, convMaxMarkingSet)).mes()
+    return SVS(values: [newPS])
   }
   
   
   /// Determine whether two predicate structures are mergable
   /// - Parameter ps: The second predicate structure
   /// - Returns: True if they are, false otherwise
-  public func mergeable(_ ps: PS) -> Bool {
+  public func mergeable(_ ps: SV) -> Bool {
         
     // Be careful: We can avoid to use nes() because functions returns always canonical predicate structures
     var (qa, b) = self.value
@@ -298,7 +298,7 @@ public struct PS {
   /// This common part is mergeable on both predicate structures. This operation is different from the intersection ! In this context, intersection could be empty but the sharing part not.
   /// - Parameter ps: The second predicate structure
   /// - Returns: The common part that could be merged on both predicate structures
-  public func sharingPart(ps: PS) -> PS {
+  public func sharingPart(ps: SV) -> SV {
     var (qa,b) = self.value
     var (qc,d) = ps.value
     
@@ -324,10 +324,10 @@ public struct PS {
       }
     }
     
-    return PS(value: (qMax, d.union(markingToAdd))).canonised()
+    return SV(value: (qMax, d.union(markingToAdd))).canonised()
   }
   
-  func shareable(ps: PS) -> Bool {
+  func shareable(ps: SV) -> Bool {
     var (qa,b) = self.value
     var (qc,d) = ps.value
     
@@ -357,7 +357,7 @@ public struct PS {
   /// Compute the inverse of the fire operation for a given transition. It takes into account the current predicate structure where it consumes tokens for post arcs and produces new ones for pre arcs.
   /// - Parameter transition: The given transition
   /// - Returns: A new predicate structure where the revert operation has been applied.
-  public func revert(transition: String) -> PS? {
+  public func revert(transition: String) -> SV? {
     if self.value == emptyValue {
       return self
     }
@@ -374,20 +374,20 @@ public struct PS {
           }
         }
       }
-      return PS(value: (qaTemp, bTemp))
+      return SV(value: (qaTemp, bTemp))
     }
     return nil
   }
   
   /// General revert operation where all transitions are applied
   /// - Returns: A set of predicate structures resulting from the union of the revert operation on each transition on the current predicate structure.
-  public func revert(canonicityLevel: CanonicityLevel) -> SPS {
+  public func revert(canonicityLevel: CanonicityLevel) -> SVS {
     
 //    if let res = Memoization.memoizationRevertTable[self] {
 //      return res
 //    }
     
-    var res: SPS = []
+    var res: SVS = []
     for transition in net.transitions {
       if let rev = self.revert(transition: transition)?.canonised() {
         if !rev.isEmpty() {
@@ -406,7 +406,7 @@ public struct PS {
   ///   - ps: The second predicate structure to intersect
   ///   - isCanonical: A boolean to specifiy if each predicate structure is canonised during the process.
   /// - Returns: The result of the intersection
-  public func intersection(_ ps: PS, isCanonical: Bool) -> PS {
+  public func intersection(_ ps: SV, isCanonical: Bool) -> SV {
     
     if self.isEmpty() {
       return self
@@ -417,10 +417,10 @@ public struct PS {
     let convMax = Marking.convMax(markings: [self.value.inc, ps.value.inc], net: net)
     
     if isCanonical {
-      return PS(value: (convMax, self.value.exc.union(ps.value.exc))).canonised()
+      return SV(value: (convMax, self.value.exc.union(ps.value.exc))).canonised()
     }
     
-    return PS(value: (convMax, self.value.exc.union(ps.value.exc)))
+    return SV(value: (convMax, self.value.exc.union(ps.value.exc)))
   }
   
   /// To know if a marking belongs to a predicate structure
@@ -450,15 +450,15 @@ public struct PS {
   ///   - ps: The ps to subtract
   ///   - canonicityLevel: The level of canonicity
   /// - Returns: A sps containing no value of ps
-  public func subtract(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
+  public func subtract(_ ps: SV, canonicityLevel: CanonicityLevel) -> SVS {
     if self == ps || self.isEmpty() {
       return []
     } else if ps.isEmpty() {
-      return SPS(values: [self])
+      return SVS(values: [self])
     }
 
     if self.intersection(ps, isCanonical: false).isEmpty() {
-      return SPS(values: [self])
+      return SVS(values: [self])
     }
 
     let qa = self.value.inc
@@ -474,8 +474,8 @@ public struct PS {
     }
     let qc = nesPS.value.inc
     let d = nesPS.value.exc
-    var res: Set<PS> = []
-    let newPS = PS(value: (qa, b.union([qc])))
+    var res: Set<SV> = []
+    let newPS = SV(value: (qa, b.union([qc])))
     if !newPS.isEmpty() {
       res.insert(newPS.mes())
     }
@@ -483,13 +483,13 @@ public struct PS {
     var markingSetConstrained: Set<Marking> = b
     for qd in d.sorted(by: {$0.leq($1)}) {
       let newQa = Marking.convMax(markings: [qa, qd], net: net)
-      let newPS = PS(value: (newQa, markingSetConstrained))
+      let newPS = SV(value: (newQa, markingSetConstrained))
       if !newPS.isEmpty() {
         markingSetConstrained.insert(qd)
         res.insert(newPS.mes())
       }
     }
-    return SPS(values: res)
+    return SVS(values: res)
   }
   
   /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
@@ -497,10 +497,10 @@ public struct PS {
   ///   - sps: The set of predicate structures to subtract
   ///   - canonicityLevel: The level of canonicity
   /// - Returns: A set of predicate structures where all elements of sps have been removed from ps
-  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
+  public func subtract(_ sps: SVS, canonicityLevel: CanonicityLevel) -> SVS {
     if canonicityLevel == .none {
-      var res: Set<PS> = [self]
-      var spsTemp: Set<PS>
+      var res: Set<SV> = [self]
+      var spsTemp: Set<SV>
       for ps in sps {
         spsTemp = []
         for psTemp in res {
@@ -508,17 +508,17 @@ public struct PS {
         }
         res = spsTemp
       }
-      return SPS(values: res)
+      return SVS(values: res)
     }
     var spsValues = sps.values
     let psp = spsValues.removeFirst()
-    return self.subtract(psp, canonicityLevel: canonicityLevel).subtract(SPS(values: spsValues), canonicityLevel: canonicityLevel)
+    return self.subtract(psp, canonicityLevel: canonicityLevel).subtract(SVS(values: spsValues), canonicityLevel: canonicityLevel)
   }
   
   /// Is a predicate structure included in another one ?
   /// - Parameter ps: The predicate structure to check if self is contained
   /// - Returns: True if it is contained, false otherwise.
-  public func isIncluded(_ ps: PS) -> Bool {
+  public func isIncluded(_ ps: SV) -> Bool {
     return self.subtract(ps, canonicityLevel: .none) == []
   }
   
@@ -533,8 +533,8 @@ public struct PS {
 
 }
 
-extension PS: Hashable {
-  public static func == (lhs: PS, rhs: PS) -> Bool {
+extension SV: Hashable {
+  public static func == (lhs: SV, rhs: SV) -> Bool {
     return lhs.value.inc == rhs.value.inc && lhs.value.exc == rhs.value.exc
   }
 
@@ -544,7 +544,7 @@ extension PS: Hashable {
   }
 }
 
-extension PS: CustomStringConvertible {
+extension SV: CustomStringConvertible {
   public var description: String {
     if value == emptyValue {
       return "∅"

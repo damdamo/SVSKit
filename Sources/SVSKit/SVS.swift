@@ -1,36 +1,36 @@
 /// Set of predicate structures (SPS) are a set of PS that contains specific functions
 /// Some of them are different from the usual set operations, such as intersection.
-public struct SPS {
+public struct SVS {
   
   /// The set of predicate structures
-  public let values: Set<PS>
+  public let values: Set<SV>
   
 //  public class Memoization {
 //    static public var memoizationRevertTable: [SPS: SPS] = [:]
 //    static public var memoizationRevertTildeTable: [SPS: SPS] = [:]
 //  }
   
-  public init(values: Set<PS>) {
+  public init(values: Set<SV>) {
     self.values = values
   }
   
   /// Return all the predicate structure in a set of predicate structures that shared a part that could be moved from ps to the other predicate structures of self
   /// - Parameter ps: The compared predicate structure
   /// - Returns: All predicate structures where sharingPart exists
-  func sharingSps(ps: PS) -> SPS {
-    var res: Set<PS> = []
+  func sharingSps(ps: SV) -> SVS {
+    var res: Set<SV> = []
     for psp in self {
       if ps.shareable(ps: psp) {
         res.insert(psp)
       }
     }
-    return SPS(values: res)
+    return SVS(values: res)
   }
   
   /// Find the first predicate structure in self that shares a part with ps. This is to avoid computing every shareable ps in sps
   /// - Parameter ps: The related predicate structure
   /// - Returns: The first predicate structure that shares a common part with ps. If not, returns nil.  
-  func firstSharingPS(ps: PS) -> (PS, PS)? {
+  func firstSharingPS(ps: SV) -> (SV, SV)? {
     for psp in self {
       let shared = ps.sharingPart(ps: psp)
       if !shared.isEmpty() {
@@ -45,49 +45,49 @@ public struct SPS {
   ///   - ps: The predicate structure to add
   ///   - canonicityLevel: The form of canonicity required
   /// - Returns: The new set of predicate structures containing the new predicate structure
-  func add(_ ps: PS, canonicityLevel: CanonicityLevel) -> SPS {
+  func add(_ ps: SV, canonicityLevel: CanonicityLevel) -> SVS {
 
     if self.isEmpty {
       if ps.isEmpty() {
-        return SPS(values: [ps.zeroPS])
+        return SVS(values: [ps.zeroPS])
       }
-       return SPS(values: [ps])
+       return SVS(values: [ps])
     } else if ps.isEmpty() {
        return self
     }
 
     if canonicityLevel == .none {
-      return SPS(values: self.values.union([ps]))
+      return SVS(values: self.values.union([ps]))
     }
 
     var sharedSPS = self.sharingSps(ps: ps).values
     
     if !sharedSPS.isEmpty {
-      let spsWithoutSharedSPS = SPS(values: self.values.subtracting(sharedSPS))
+      let spsWithoutSharedSPS = SVS(values: self.values.subtracting(sharedSPS))
       let psp = sharedSPS.removeFirst()
       let shared = ps.sharingPart(ps: psp)
 //    if let (psp, shared) = firstSharingPS(ps: ps) {
 //      let spsWithoutShared = SPS(values: self.values.subtracting([psp]))
-      var res: SPS = []
+      var res: SVS = []
       
       if ps.value.inc.leq(psp.value.inc) {
         let merged = ps.merge(shared, mergeablePreviouslyComputed: true)
         if merged.count > 1 {
           fatalError("Should not be possible")
         }
-        res = psp.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none).union(SPS(values: sharedSPS), canonicityLevel: .full)
+        res = psp.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none).union(SVS(values: sharedSPS), canonicityLevel: .full)
       } else {
         let merged = psp.merge(shared, mergeablePreviouslyComputed: true)
         if merged.count > 1 {
           fatalError("Should not be possible")
         }
-        res = ps.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none).union(SPS(values: sharedSPS), canonicityLevel: .full)
+        res = ps.subtract(shared, canonicityLevel: .full).add(merged.first!, canonicityLevel: .none).union(SVS(values: sharedSPS), canonicityLevel: .full)
       }
       return res.union(spsWithoutSharedSPS, canonicityLevel: .full)
     }
     // If some of the predicate structures are not canonical, the result could contain non canonical predicate structures. In this case, it would be required to add mes()
     // return SPS(values: self.values.union([ps.mes()]))
-    return SPS(values: self.values.union([ps]))
+    return SVS(values: self.values.union([ps]))
   }
   
   
@@ -96,7 +96,7 @@ public struct SPS {
   ///   - sps: The set of predicate structures on which the union is applied
   ///   - canonicityLevel: The level of the canonicity
   /// - Returns: The result of the union.
-  public func union(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
+  public func union(_ sps: SVS, canonicityLevel: CanonicityLevel) -> SVS {
     if self.isEmpty {
       return sps
     } else if sps.isEmpty{
@@ -107,12 +107,12 @@ public struct SPS {
     
     if canonicityLevel == .none {
       var union = self.values.union(sps.values)
-      if union.contains(PS(value: ps.emptyValue, net: ps.net)) {
-        union.remove(PS(value: ps.emptyValue, net: ps.net))
+      if union.contains(SV(value: ps.emptyValue, net: ps.net)) {
+        union.remove(SV(value: ps.emptyValue, net: ps.net))
       }
-      return SPS(values: union)
+      return SVS(values: union)
     }
-    let selfWithoutPS = SPS(values: self.values.subtracting([ps]))
+    let selfWithoutPS = SVS(values: self.values.subtracting([ps]))
     let addPsToSps = sps.add(ps, canonicityLevel: canonicityLevel)
     return selfWithoutPS.union(addPsToSps, canonicityLevel: canonicityLevel)
   }
@@ -122,13 +122,13 @@ public struct SPS {
   ///   - sps: The set of predicate structures on which the intersection is applied
   ///   - canonicityLevel: The level of the canonicity.
   /// - Returns: The result of the intersection.
-  public func intersection(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
+  public func intersection(_ sps: SVS, canonicityLevel: CanonicityLevel) -> SVS {
     if self.isEmpty || sps.isEmpty {
       return []
     }
     
     if canonicityLevel == .none {
-      var res: Set<PS> = []
+      var res: Set<SV> = []
       for ps1 in self {
         for ps2 in sps {
           let intersect = ps1.intersection(ps2, isCanonical: true)
@@ -138,10 +138,10 @@ public struct SPS {
         }
       }
   
-      return SPS(values: res)
+      return SVS(values: res)
     }
     
-    var res: SPS = []
+    var res: SVS = []
     for ps1 in self {
       for ps2 in sps {
         let intersect = ps1.intersection(ps2, isCanonical: true)
@@ -155,7 +155,7 @@ public struct SPS {
   }
   
   /// An efficient function to compute whether intersection of two sets of predicate structures is empty.
-  func emptyIntersection(_ sps: SPS) -> Bool {
+  func emptyIntersection(_ sps: SVS) -> Bool {
     for ps in self {
       for psp in sps {
         if !ps.intersection(psp, isCanonical: false).isEmpty() {
@@ -171,7 +171,7 @@ public struct SPS {
   ///   - sps: The set of predicate structures to subtract
   ///   - canonicityLevel: The level of the canonicity
   /// - Returns: The resulting set of predicate structures
-  public func subtract(_ sps: SPS, canonicityLevel: CanonicityLevel) -> SPS {
+  public func subtract(_ sps: SVS, canonicityLevel: CanonicityLevel) -> SVS {
     if self == sps || self.isEmpty {
       return []
     } else if sps.isEmpty {
@@ -179,16 +179,16 @@ public struct SPS {
     }
 
     if canonicityLevel == .none {
-      var res: Set<PS> = []
+      var res: Set<SV> = []
       for ps in self {
         if !ps.isEmpty() {
           res = res.union(ps.subtract(sps, canonicityLevel: canonicityLevel).values)
         }
       }
-      return SPS(values: res)
+      return SVS(values: res)
     }
 
-    var res: SPS = []
+    var res: SVS = []
     for ps in self {
       if !ps.isEmpty() {
         res = res.union(ps.subtract(sps, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -202,23 +202,23 @@ public struct SPS {
   ///   - net: The current Petri net
   ///   - canonicityLevel: The level of the canonicity
   /// - Returns: The negation of a set of predicate structures
-  public func not(net: PetriNet, canonicityLevel: CanonicityLevel) -> SPS {
+  public func not(net: PetriNet, canonicityLevel: CanonicityLevel) -> SVS {
     if self.isEmpty {
-      return SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
+      return SVS(values: [SV(value: ([net.zeroMarking()], []), net: net)])
     }
     // The singleton containing the predicate structure that represents all markings subtract to the current sps
-    return SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)]).subtract(self, canonicityLevel: canonicityLevel)
+    return SVS(values: [SV(value: ([net.zeroMarking()], []), net: net)]).subtract(self, canonicityLevel: canonicityLevel)
   }
   
   // All mergeable markings with ps
-  public func mergeable(_ ps: PS) -> SPS {
-    var res: Set<PS> = []
+  public func mergeable(_ ps: SV) -> SVS {
+    var res: Set<SV> = []
     for ps1 in self {
       if ps.mergeable(ps1) {
         res.insert(ps1)
       }
     }
-    return SPS(values: res)
+    return SVS(values: res)
   }
   
   /// Compute all of the underlying markings for a set of predicate structures.
@@ -236,7 +236,7 @@ public struct SPS {
   /// - Parameters:
   ///   - sps: The right set of predicate structures
   /// - Returns: True if it is included, false otherwise
-  public func isIncluded(_ sps: SPS) -> Bool {
+  public func isIncluded(_ sps: SVS) -> Bool {
     if self.isEmpty {
       return true
     }
@@ -256,7 +256,7 @@ public struct SPS {
   /// - Parameters:
   ///   - sps: The set of predicate structures on which the equivalence is checked
   /// - Returns: True is they are equivalentm false otherwise
-  public func isEquiv(_ sps: SPS) -> Bool {
+  public func isEquiv(_ sps: SVS) -> Bool {
     return self.isIncluded(sps) && sps.isIncluded(self)
   }
   
@@ -265,8 +265,8 @@ public struct SPS {
   /// - Parameters:
   ///   - ps: The predicate structure to check
   /// - Returns: True if the predicate structure belongs to the set of predicate structures, false otherwise
-  public func contains(ps: PS) -> Bool {
-    return SPS(values: [ps]).isIncluded(self)
+  public func contains(ps: SV) -> Bool {
+    return SVS(values: [ps]).isIncluded(self)
   }
   
   
@@ -286,21 +286,21 @@ public struct SPS {
   /// Compute the revert function on all markings of each predicate structures
   /// - Parameter canonicityLevel: The level of the canonicity
   /// - Returns: A new set of predicate structures after the revert application
-  public func revert(canonicityLevel: CanonicityLevel) -> SPS {
+  public func revert(canonicityLevel: CanonicityLevel) -> SVS {
     
 //    if let res = Memoization.memoizationRevertTable[self] {
 //      return res
 //    }
     
     if canonicityLevel == .none {
-      var res: Set<PS> = []
+      var res: Set<SV> = []
       for ps in self {
         res = res.union(ps.revert(canonicityLevel: canonicityLevel).values)
       }
-      return SPS(values: res)
+      return SVS(values: res)
     }
 
-    var res: SPS = []
+    var res: SVS = []
     for ps in self {
       res = res.union(ps.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
     }
@@ -315,7 +315,7 @@ public struct SPS {
   ///   - net: The current Petri net
   ///   - canonicityLevel: The level of canonicity
   /// - Returns: A new set of predicate structures
-  public func revertTilde(net: PetriNet, canonicityLevel: CanonicityLevel) -> SPS {
+  public func revertTilde(net: PetriNet, canonicityLevel: CanonicityLevel) -> SVS {
     
 //    if let res = Memoization.memoizationRevertTildeTable[self] {
 //      return res
@@ -346,16 +346,16 @@ public struct SPS {
   /// {([(p0: 1, p1: 2, p2: 0)], [(p0: 1, p1: 2, p2: 1)]), ([(p0: 0, p1: 2, p2: 1)], [])}
   /// - Parameter sps: The set of predicate structures to simplify
   /// - Returns: The simplified version of the sps.
-  public func simplified() -> SPS {
+  public func simplified() -> SVS {
     if self.isEmpty {
       return self
     }
 
-    var spsCanonised: Set<PS> = []
-    var spsReduced: Set<PS> = []
-    var spsMerged: Set<PS> = []
-    var psFirst: PS
-    var psFirstTemp: PS
+    var spsCanonised: Set<SV> = []
+    var spsReduced: Set<SV> = []
+    var spsMerged: Set<SV> = []
+    var psFirst: SV
+    var psFirstTemp: SV
 
     for ps in self {
       let can = ps.canonised()
@@ -386,34 +386,34 @@ public struct SPS {
     
     while !spsMerged.isEmpty {
       let firstPS = spsMerged.removeFirst()
-      if !SPS(values: [firstPS]).isIncluded(SPS(values: spsMerged)) {
+      if !SVS(values: [firstPS]).isIncluded(SVS(values: spsMerged)) {
         spsReduced.insert(firstPS)
       }
     }
     
-    return SPS(values: spsReduced)
+    return SVS(values: spsReduced)
   }
   
 
   /// Create a set of predicate structures to represent all markings such as no transition are fireable.
   /// - Parameter net: The Petri net
   /// - Returns: The corresponding set of predicate structures
-  public static func deadlock(net: PetriNet, canonicityLevel: CanonicityLevel = .semi) -> SPS {
+  public static func deadlock(net: PetriNet, canonicityLevel: CanonicityLevel = .semi) -> SVS {
     var markings: Set<Marking> = []
     for transition in net.transitions {
       markings.insert(net.inputMarkingForATransition(transition: transition))
     }
-    let ps = PS(value: ([net.zeroMarking()], markings), net: net).canonised()
+    let ps = SV(value: ([net.zeroMarking()], markings), net: net).canonised()
     if ps.value != ps.emptyValue {
-      return SPS(values: [PS(value: ([net.zeroMarking()], markings), net: net).canonised()])
+      return SVS(values: [SV(value: ([net.zeroMarking()], markings), net: net).canonised()])
     }
     return []
   }
   
-  public func canonised() -> SPS {
-    var res: SPS = []
+  public func canonised() -> SVS {
+    var res: SVS = []
     for el in self {
-      res = res.union(SPS(values: [el]), canonicityLevel: .full)
+      res = res.union(SVS(values: [el]), canonicityLevel: .full)
     }
     return res
   }
@@ -421,8 +421,8 @@ public struct SPS {
 }
 
 /// Allow the comparison between SPS.
-extension SPS: Hashable {
-  public static func == (lhs: SPS, rhs: SPS) -> Bool {
+extension SVS: Hashable {
+  public static func == (lhs: SVS, rhs: SVS) -> Bool {
     return lhs.values == rhs.values
   }
 
@@ -432,27 +432,27 @@ extension SPS: Hashable {
 }
 
 /// Allow to use for .. in .. .
-extension SPS: Sequence {
-  public func makeIterator() -> Set<PS>.Iterator {
+extension SVS: Sequence {
+  public func makeIterator() -> Set<SV>.Iterator {
       return values.makeIterator()
   }
 }
 
 /// Allow to get the first element of a collection.
-extension SPS: Collection {
-  public var startIndex: Set<PS>.Index {
+extension SVS: Collection {
+  public var startIndex: Set<SV>.Index {
     return values.startIndex
   }
   
-  public var endIndex: Set<PS>.Index {
+  public var endIndex: Set<SV>.Index {
     return values.endIndex
   }
   
-  public subscript(position: Set<PS>.Index) -> PS {
+  public subscript(position: Set<SV>.Index) -> SV {
     return values[position]
   }
   
-  public func index(after i: Set<PS>.Index) -> Set<PS>.Index {
+  public func index(after i: Set<SV>.Index) -> Set<SV>.Index {
     return values.index(after: i)
   }
   
@@ -467,14 +467,14 @@ extension SPS: Collection {
 }
 
 /// Allow to express a set of PS as an array which is converted into a set.
-extension SPS: ExpressibleByArrayLiteral {
-  public typealias ArrayLiteralElement = PS
-  public init(arrayLiteral elements: PS...) {
+extension SVS: ExpressibleByArrayLiteral {
+  public typealias ArrayLiteralElement = SV
+  public init(arrayLiteral elements: SV...) {
     self.values = Set(elements)
   }
 }
 
-extension SPS: CustomStringConvertible {
+extension SVS: CustomStringConvertible {
   public var description: String {
     if values.isEmpty {
       return "{}"
