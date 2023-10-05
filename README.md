@@ -1,10 +1,10 @@
-[![Build Status](https://app.travis-ci.com/damdamo/PredicateStructure.svg?branch=main)](https://travis-ci.org/damdamo/Teri)
+[![Build Status](https://app.travis-ci.com/damdamo/SVSKit.svg?branch=main)](https://travis-ci.org/damdamo/SVSKit)
 
-# Predicate Structure: CTL Model Checking on Petri nets with Parametric Markings
+# Symbolic Vector Set Kit (SVSKit): CTL Model Checking on Petri nets with Parametric Markings
 
 This package aims at verifying CTL formulas on Petri nets with weighted arcs and potential capacity on places.
 Unlike the usual technique where an initial marking is required, this is not the case here.
-It can create the set of all markings that satisfy a CTL formula, using a symbolic representation called **Predicate structure**.
+It can create the set of all markings that satisfy a CTL formula, using a symbolic representation called **Symbolic vector set**.
 Furthermore, this structure allows to represent finite and infinite sets of markings.
 This means that the number of markings can be unbounded.
 
@@ -13,31 +13,34 @@ In addition to the first theory, a canonical form has been invented in order to 
 Currently, this canonical form does not provide results that are more efficient than the usual technique.
 However, the current state will be evolving and thanks to the canonical form new optimisations will be made.
 
-## What are Predicate structures ?
+## What are symbolic vectors and symbolic vector sets ?
 
-A predicate structure is a couple `(a,b)`:
-- `a` is a set of markings
-- `b` is a set of markings
+A symbolic vector is a couple `(a,b)`:
+- `a` is a set of markings (vectors)
+- `b` is a set of markings (vectors)
 
-A marking `m` belongs to a predicate structure if all markings of `a` are included in `m` and all markings of `b` are not included in `m`.
+A marking `m` belongs to a symbolic vector if all markings of `a` are included in `m` and all markings of `b` are not included in `m`.
 Formally writing:
 m ∈ (a,b) ⟺ ∀ m_a ∈ a, ∀ m_b ∈ b, m_a ⊆ m, m_b ⊈ m
+
+A symbolic vector set is a set containing multiple symbolic vectors.
+A symbolic vector is not sufficient to represent all sets of markings, which is the reason of why we need to introduce an additional layer.
 
 
 Example of a Petri net:  
  <img src="Images/petri_net.png"  width="30%" height="30%">
 
-For example, the predicate structure that represents all markings such as `t2` is fireable is `({(0,2)}, {})`.
+For example, the symbolic vector that represents all markings such as `t2` is fireable is `({(0,2)}, {})`.
 Thus, accepting markings are of the form `(0,x), x ∈ [2,∞)`.
-If we want all markings such as `t2` is fireable but not `t0`, we get the following predicate structure: `({(0,2)}, {(1,0)})`.
+If we want all markings such as `t2` is fireable but not `t0`, we get the following symbolic vector: `({(0,2)}, {(1,0)})`.
 It means that if there is at least one token in `p0`, the marking is not accepted.
 
-For a set of predicate structures `sps`, a marking `m` belongs to it if there is at least one predicate structure `ps` such as `m ∈ ps`.
+For a symbolic vector set `svs`, a marking `m` belongs to it if there is at least one symbolic vector `ps` such as `m ∈ ps`.
 
 ## What functionalities are available ?
 
 - Create a Petri net / fire a transition.
-- Create a set of predicate structures containing all markings that satisfy a CTL formula / return a set of predicate structures as a set of markings.
+- Create a symbolic vector set containing all markings that satisfy a CTL formula / return a symbolic vector set as a set of markings.
 - Check if a marking satisfies a CTL formula.
 - PNML parser to import Petri nets from `pnml` file from a local source or a url.
 - XML parser to import CTL formulas.
@@ -115,11 +118,11 @@ Therefore, an example such as `p1 < p2` is not supported.
 The below example, based on the previous Petri net, shows how to:
 - Create a petri net
 - Create CTL formulas
-- Evaluate CTL formulas from a marking or without it.
-- Get all the markings encoded by a set of predicate structures
+- Evaluate CTL formulas from a marking or without it
+- Get all the markings encoded by a symbolic vector set
 
 ```Swift
-import PredicateStructure
+import SVSKit
 
 // Same Petri net as before
 let net = PetriNet(
@@ -148,7 +151,7 @@ print(ctlFormula2.eval(marking: marking))
 // Return: false
 print(ctlFormula3.eval(marking: marking))
 
-// To obtain the sets of predicate structures that represent all markings:
+// To obtain the symbolic vector set that represent all markings:
 let eval1 = ctlFormula1.eval()
 // Return:
 // {
@@ -172,7 +175,7 @@ print(ctlFormula2.eval())
 print(ctlFormula3.eval())
 ```
 
-For more examples, look at `Tests/PredicateStructureTests/CTLTests.swift` file.
+For more examples, look at `Tests/SVSKitTests/CTLTests.swift` file.
 
 The signatures of the `eval` function are the following:
 
@@ -183,11 +186,11 @@ If we want to obtain all markings:
 `eval() -> SPS`
 
 Two parameters are optionals when you create a ctl formula and can be modified:
-- simplified: false by default. Another way of reducing the number of predicate structures. This is unnecessary if the level of canonicality is set to `.full'. This can be used to compare performance when every effort is made to preserve a canonical form, and when minimal effort is made to avoid certain redundancies.
-- debug: false by default. Display number of predicate structures between each step of the computation.
+- simplified: false by default. Another way of reducing the number of symbolic vectors. This is unnecessary if the level of canonicality is set to `.full'. This can be used to compare performance when every effort is made to preserve a canonical form, and when minimal effort is made to avoid certain redundancies.
+- debug: false by default. Display number of symbolic vectors between each step of the computation.
 
-To get all the underlying markings of a set of predicate structures, you should use the function `underlyingMarkings`, which works on predicate structure and set of predicate structures.
-Because a predicate structure can represent an infinite number of markings, the place capacity is used to bound the number of solutions.
+To get all the underlying markings of a symbolic vector set, you should use the function `underlyingMarkings`, which works on symbolic vectors and symbolic vector sets.
+Because a symbolic vector can represent an infinite number of markings, the place capacity is used to bound the number of solutions.
 The capacity is set by default to 20 for each place, but may be adapted as in the previous example with `capacity: ["p0": 4, "p1": 4]`.
 
 ### Example 2
@@ -238,12 +241,12 @@ Here is a complete example of the definition of a package:
 let package = Package(
     name: "Test",
     dependencies: [
-        .package(url: "https://github.com/damdamo/PredicateStructure.git", .branch("main")),
+        .package(url: "https://github.com/damdamo/SVSKit.git", .branch("main")),
     ],
     targets: [
         .executableTarget(
             name: "Test",
-            dependencies: ["PredicateStructure"],
+            dependencies: ["SVSKit"],
             resources: [.process("Resources/")]
         ),
         .testTarget(
@@ -260,13 +263,13 @@ let parser = PnmlParser()
 let (net, marking) = parser.loadPN(filePath: "nameOfYourFile.pnml")
 ```
 
-For examples, look at the folder `Tests/PredicateStructureTests` and the file `ListExampleTests.swift`.
+For examples, look at the folder `Tests/SVSKitTests` and the file `ListExampleTests.swift`.
 
 ## TODO:
 
-- Integrate linear expressions with Predicate structure. For now, linear expressions can be written but not be evaluated.
+<!--- Integrate linear expressions with Predicate structure. For now, linear expressions can be written but not be evaluated.-->
 - When a Petri net contains a transition without a pre arc and only a post arc, the old function pre for all returns a result when it should be empty. The reason is we cannot avoid to fire this transition, thus the logic of pre for all cannot be handled.
-- Uniformise with a the Petri net bound between two versions of pre for all (example test in ListExampleTests)
+<!--- Uniformise with a the Petri net bound between two versions of pre for all (example test in ListExampleTests)-->
 
 ## References
 
