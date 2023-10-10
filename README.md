@@ -239,7 +239,7 @@ Here is a complete example of the definition of a package:
 let package = Package(
     name: "Test",
     dependencies: [
-        .package(url: "https://github.com/damdamo/SVSKit.git", .branch("main")),
+        .package(url: "https://github.com/damdamo/SVSKit.git", branch :"main"),
     ],
     targets: [
         .executableTarget(
