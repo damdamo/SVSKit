@@ -16,10 +16,23 @@ public class PnmlParser: NSObject, XMLParserDelegate {
   /// Load a Petri net from a local pnml file.
   /// - Parameter filePath: The path name in the Resource folder
   /// - Returns: The corresponding Petri net and its  initial marking
+//  public func loadPN(filePath: String) -> (PetriNet, Marking) {
+//    reset()
+//    if let url = Bundle.module.url(forResource: filePath, withExtension: nil) {
+//      let parser = XMLParser(contentsOf: url)!
+//      parser.delegate = self
+//      parser.parse()
+//    } else {
+//      print("Did not find a file to parse")
+//    }
+//    return createPN()
+//  }
   public func loadPN(filePath: String) -> (PetriNet, Marking) {
     reset()
-    if let url = Bundle.module.url(forResource: filePath, withExtension: nil) {
-      let parser = XMLParser(contentsOf: url)!
+    // Attempt to read the file
+    if let data = FileManager.default.contents(atPath: filePath) {
+        // Initialize an XMLParser with the XML data
+      let parser = XMLParser(data: data)
       parser.delegate = self
       parser.parse()
     } else {
@@ -27,7 +40,7 @@ public class PnmlParser: NSObject, XMLParserDelegate {
     }
     return createPN()
   }
-  
+
   /// Load a Petri net in a pnml format from an url.
   /// - Parameter filePath: The url of the pnml file
   /// - Returns: The corresponding Petri net and its  initial marking
