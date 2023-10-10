@@ -1,21 +1,17 @@
-/// A Predicate structure (PS) is a symbolic structure to represent set of markings.
-/// In a formal way, PS is a couple (a,b) ∈ PS, such as a,b ∈ Set<Marking>
-/// A marking that is accepted by such a predicate structure must be included in all markings of "a" and not included in all markings of "b".
+/// A Symbolic vector (SV) is a symbolic structure to represent set of markings.
+/// In a formal way, SV is a couple (a,b) ∈ SV, such that a,b ∈ Set<Marking>
+/// A marking that is accepted by such a symbolic vector must be included in all markings of "a" and not included in all markings of "b".
 /// e.g.: ({(0,2)}, {(4,5)}).
 /// (0,4), (2, 42), (42, 4) are valid markings, because (0,2) is included but not (4,5)
 /// On the other hand, (0,1), (4,5), (4,42), (42,42) are not valid.
 /// This representation allows to model a potential infinite set of markings in a finite way.
 /// However, for the sake of finite representations and to compute them, we use the Petri net capacity on places to bound them.
 public struct SV {
-  
-//  public class Memoization {
-//    static public var memoizationRevertTable: [PS: SPS] = [:]
-//  }
 
   public typealias PlaceType = String
   public typealias TransitionType = String
   
-  /// The couple that represents the predicate structure
+  /// The couple that represents the symbolic vector
   public let value: (inc: Marking, exc: Set<Marking>)
   /// The related Petri net
   private static var netStatic: PetriNet? = nil
@@ -24,7 +20,7 @@ public struct SV {
     return SV.netStatic!
   }
   
-  public var zeroPS: SV {
+  public var zeroSV: SV {
     return SV(value: emptyValue)
   }
     
@@ -64,19 +60,19 @@ public struct SV {
     return false
   }
   
-  /// Compute the negation of a predicate structure, which is a set of predicate structures
-  /// - Returns: Returns the negation of the predicate structure
+  /// Compute the negation of a symbolic vector, which is a symbolic vector set
+  /// - Returns: Returns the negation of the symbolic vector
   public func not() -> SVS {
     if self.isEmpty() {
       return [SV(value: (net.zeroMarking(), []))]
     }
     
-    var sps: Set<SV> = []
-    sps.insert(SV(value: (net.zeroMarking(), [self.value.inc])))
+    var svs: Set<SV> = []
+    svs.insert(SV(value: (net.zeroMarking(), [self.value.inc])))
     for el in value.exc {
-      sps.insert(SV(value: (el, [])))
+      svs.insert(SV(value: (el, [])))
     }
-    return SVS(values: sps)
+    return SVS(values: svs)
   }
   
   // nes: Normalise excluding set
@@ -106,23 +102,23 @@ public struct SV {
     return SV(value: (qa, newExcludingMarkings))
   }
   
-  /// Returns the canonical form of a predicate structure. Let suppose (a,b) in PS
+  /// Returns the canonical form of a symbolic vector. Let suppose (a,b) in SV
   /// By canonical form, we mean reducing a in a singleton, removing all possible inclusions in b, and no marking in b included in a.
   /// In addition, when a value of a place in a marking "a" is greater than one of "b", the value of "b" marking is changed to the value of "a".
-  /// - Returns: The canonical form of the predicate structure.
+  /// - Returns: The canonical form of the symbolic vector.
   public func canonised() -> SV {
     if self.isEmpty() {
-      // In (a,b) ∈ PS, if a marking in b is included in a, it returns the empty predicate structure
+      // In (a,b) ∈ SV, if a marking in b is included in a, it returns the empty symbolic vector
       return SV(value: emptyValue)
     }
     
     return SV(value: (self.value.inc, self.value.exc)).mes()
   }
   
-  /// Compute all the markings represented by the symbolic representation of a predicate structure.
+  /// Compute all the markings represented by the symbolic representation of a symbolic vector.
   /// - Returns: The set of all possible markings, also known as the state space.
   public func underlyingMarkings() -> Set<Marking> {
-    let canonizedPS = self.canonised()
+    let canonizedSV = self.canonised()
     var placeSetValues: [PlaceType: Set<Int>] = [:]
     var res: Set<[PlaceType: Int]> = []
     var resTemp = res
@@ -130,11 +126,11 @@ public struct SV {
     var upperBound: Int
     var am: Marking
     
-    if canonizedPS.value == emptyValue {
+    if canonizedSV.value == emptyValue {
       return []
     }
     // Create a dictionnary where the key is the place and whose values is a set of all possibles integers that can be taken
-    let can = canonizedPS.value
+    let can = canonizedSV.value
     am = can.inc
     for place in net.places {
       lowerBound = am[place]!
@@ -175,7 +171,7 @@ public struct SV {
       Marking(el, net: net)
     }))
     
-    for mb in canonizedPS.value.exc {
+    for mb in canonizedSV.value.exc {
       for marking in markingSet {
         if mb <= marking {
           markingSet.remove(marking)
@@ -187,9 +183,9 @@ public struct SV {
   }
   
   
-  /// Encode a marking into a predicate structure. This predicate structure encodes a singe marking.
+  /// Encode a marking into a symbolic vector. This symbolic vector encodes a singe marking.
   /// - Parameter marking: The marking to encode
-  /// - Returns: The predicate structure that represents the marking
+  /// - Returns: The symbolic vector that represents the marking
   public func encodeMarking(_ marking: Marking) -> SV {
     var bMarkings: Set<Marking> = []
     var markingTemp = marking
@@ -201,32 +197,32 @@ public struct SV {
     return SV(value: (marking, bMarkings))
   }
   
-  /// Encode a set of markings into a set of predicate structures.
+  /// Encode a set of markings into a symbolic vector set.
   /// - Parameter markingSet: The marking set to encode
-  /// - Returns: A set of predicate structures that encodes the set of markings
+  /// - Returns: A symbolic vector set that encodes the set of markings
   public func encodeMarkingSet(_ markingSet: Set<Marking>) -> SVS {
-    var sps: Set<SV> = []
+    var svs: Set<SV> = []
     for marking in markingSet {
-      sps.insert(encodeMarking(marking))
+      svs.insert(encodeMarking(marking))
     }
-    return SVS(values: sps).simplified()
+    return SVS(values: svs).simplified()
   }
   
-  /// Try to merge two predicate structures if they are mergeable.
+  /// Try to merge two symbolic vectors if they are mergeable.
   /// The principle is similar to intervals, where the goal is to reunified intervals if they can be merged.
   /// Otherwise, nothing is changed.
   /// - Parameters:
-  ///   - ps: The second predicate structure
-  /// - Returns: The result of the merged. If this is not possible, returns the original predicate structures.
-  public func merge(_ ps: SV, mergeablePreviouslyComputed: Bool = false) -> SVS {
+  ///   - sv: The second symbolic vector
+  /// - Returns: The result of the merged. If this is not possible, returns the original symbolic vectors.
+  public func merge(_ sv: SV, mergeablePreviouslyComputed: Bool = false) -> SVS {
     if !mergeablePreviouslyComputed {
-      if !self.mergeable(ps) {
-        return [self, ps]
+      if !self.mergeable(sv) {
+        return [self, sv]
       }
     }
 
     var (qa, b) = self.value
-    var (qc, d) = ps.value
+    var (qc, d) = sv.value
     
     if qc <= qa {
       let temp = (qa, b)
@@ -258,19 +254,19 @@ public struct SV {
       }
     }
     
-    let newPS = SV(value: (qa, convMaxMarkingSet)).mes()
-    return SVS(values: [newPS])
+    let newSV = SV(value: (qa, convMaxMarkingSet)).mes()
+    return SVS(values: [newSV])
   }
   
   
-  /// Determine whether two predicate structures are mergable
-  /// - Parameter ps: The second predicate structure
+  /// Determine whether two symbolic vectors are mergable
+  /// - Parameter sv: The second symbolic vector
   /// - Returns: True if they are, false otherwise
-  public func mergeable(_ ps: SV) -> Bool {
+  public func mergeable(_ sv: SV) -> Bool {
         
-    // Be careful: We can avoid to use nes() because functions returns always canonical predicate structures
+    // Be careful: We can avoid to use nes() because functions returns always canonical symbolic vectors
     var (qa, b) = self.value
-    var (qc, d) = ps.value
+    var (qc, d) = sv.value
     
     if qc <= qa {
       let temp = (qa, b)
@@ -294,13 +290,13 @@ public struct SV {
   }
   
   
-  /// Compute the potential part that could be moved from one predicate structure to the other.
-  /// This common part is mergeable on both predicate structures. This operation is different from the intersection ! In this context, intersection could be empty but the sharing part not.
-  /// - Parameter ps: The second predicate structure
-  /// - Returns: The common part that could be merged on both predicate structures
-  public func sharingPart(ps: SV) -> SV {
+  /// Compute the potential part that could be moved from one symbolic vector to the other.
+  /// This common part is mergeable on both symbolic vectors. This operation is different from the intersection ! In this context, intersection could be empty but the sharing part not.
+  /// - Parameter sv: The second symbolic vector
+  /// - Returns: The common part that could be merged on both symbolic vectors
+  public func sharingPart(sv: SV) -> SV {
     var (qa,b) = self.value
-    var (qc,d) = ps.value
+    var (qc,d) = sv.value
     
     if !qa.leq(qc) {
       let temp = (qa, b)
@@ -308,28 +304,25 @@ public struct SV {
       (qc, d) = temp
     }
     
-    let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
+    let qMax = Marking.convMax(markings: [qa,qc], net: sv.net)
     var markingToAdd: Set<Marking> = []
     
     for qb in b {
       if !(qc <= qb) {
-//        let convMax = Marking.convMax(markings: [qb,qc], net: ps.net)
-//        if !d.contains(where: {$0 <= convMax}) {
-          // Small optimisation to finish as soon as possible if the result is the empty ps
+          // Small optimisation to finish as soon as possible if the result is the empty sv
           if qb <= qMax {
-            return zeroPS
+            return zeroSV
           }
           markingToAdd.insert(qb)
-//        }
       }
     }
     
     return SV(value: (qMax, d.union(markingToAdd))).canonised()
   }
   
-  func shareable(ps: SV) -> Bool {
+  func shareable(sv: SV) -> Bool {
     var (qa,b) = self.value
-    var (qc,d) = ps.value
+    var (qc,d) = sv.value
     
     if !qa.leq(qc) {
       let temp = (qa, b)
@@ -337,7 +330,7 @@ public struct SV {
       (qc, d) = temp
     }
     
-    let qMax = Marking.convMax(markings: [qa,qc], net: ps.net)
+    let qMax = Marking.convMax(markings: [qa,qc], net: sv.net)
     
     for qb in b {
         if qb <= qMax && qb != qMax {
@@ -354,9 +347,9 @@ public struct SV {
     return true
   }
   
-  /// Compute the inverse of the fire operation for a given transition. It takes into account the current predicate structure where it consumes tokens for post arcs and produces new ones for pre arcs.
+  /// Compute the inverse of the fire operation for a given transition. It takes into account the current symbolic vector where it consumes tokens for post arcs and produces new ones for pre arcs.
   /// - Parameter transition: The given transition
-  /// - Returns: A new predicate structure where the revert operation has been applied.
+  /// - Returns: A new symbolic vector where the revert operation has been applied.
   public func revert(transition: String) -> SV? {
     if self.value == emptyValue {
       return self
@@ -380,7 +373,7 @@ public struct SV {
   }
   
   /// General revert operation where all transitions are applied
-  /// - Returns: A set of predicate structures resulting from the union of the revert operation on each transition on the current predicate structure.
+  /// - Returns: A symbolic vector set resulting from the union of the revert operation on each transition on the current symbolic vector.
   public func revert(canonicityLevel: CanonicityLevel) -> SVS {
     
 //    if let res = Memoization.memoizationRevertTable[self] {
@@ -401,30 +394,30 @@ public struct SV {
     return res
   }
   
-  /// Apply the intersection between two predicate structures
+  /// Apply the intersection between two symbolic vectors
   /// - Parameters:
-  ///   - ps: The second predicate structure to intersect
-  ///   - isCanonical: A boolean to specifiy if each predicate structure is canonised during the process.
+  ///   - sv: The second symbolic vector to intersect
+  ///   - isCanonical: A boolean to specifiy if each symbolic vector is canonised during the process.
   /// - Returns: The result of the intersection
-  public func intersection(_ ps: SV, isCanonical: Bool) -> SV {
+  public func intersection(_ sv: SV, isCanonical: Bool) -> SV {
     
     if self.isEmpty() {
       return self
-    } else if ps.isEmpty() {
-      return ps
+    } else if sv.isEmpty() {
+      return sv
     }
     
-    let convMax = Marking.convMax(markings: [self.value.inc, ps.value.inc], net: net)
+    let convMax = Marking.convMax(markings: [self.value.inc, sv.value.inc], net: net)
     
     if isCanonical {
-      return SV(value: (convMax, self.value.exc.union(ps.value.exc))).canonised()
+      return SV(value: (convMax, self.value.exc.union(sv.value.exc))).canonised()
     }
     
-    return SV(value: (convMax, self.value.exc.union(ps.value.exc)))
+    return SV(value: (convMax, self.value.exc.union(sv.value.exc)))
   }
   
-  /// To know if a marking belongs to a predicate structure
-  /// - Parameter marking: The marking to check if it belongs to the ps
+  /// To know if a marking belongs to a symbolic vector
+  /// - Parameter marking: The marking to check if it belongs to the sv
   /// - Returns: True if the marking belongs, false otherwise
   public func contains(marking: Marking) -> Bool {
     if self.value == emptyValue {
@@ -445,85 +438,85 @@ public struct SV {
   }
   
   
-  /// Subtract two PS, by removing all markings for the right PS into the left PS
+  /// Subtract two SV, by removing all markings for the right SV into the left SV
   /// - Parameters:
-  ///   - ps: The ps to subtract
+  ///   - sv: The sv to subtract
   ///   - canonicityLevel: The level of canonicity
-  /// - Returns: A sps containing no value of ps
-  public func subtract(_ ps: SV, canonicityLevel: CanonicityLevel) -> SVS {
-    if self == ps || self.isEmpty() {
+  /// - Returns: A svs containing no value of sv
+  public func subtract(_ sv: SV, canonicityLevel: CanonicityLevel) -> SVS {
+    if self == sv || self.isEmpty() {
       return []
-    } else if ps.isEmpty() {
+    } else if sv.isEmpty() {
       return SVS(values: [self])
     }
 
-    if self.intersection(ps, isCanonical: false).isEmpty() {
+    if self.intersection(sv, isCanonical: false).isEmpty() {
       return SVS(values: [self])
     }
 
     let qa = self.value.inc
     let b = self.value.exc
 
-    // Important to normalise the right predicate structure
+    // Important to normalise the right symbolic vector
     // We want to move some constraints of the right marking into the left marking.
     // If we do not normalise it, it means that we could remove values that we should not.
     // For more information, look at the thesis document (operation nes).
-    var nesPS = ps
+    var nesSV = sv
     if canonicityLevel == .none {
-      nesPS = nesPS.nes()
+      nesSV = nesSV.nes()
     }
-    let qc = nesPS.value.inc
-    let d = nesPS.value.exc
+    let qc = nesSV.value.inc
+    let d = nesSV.value.exc
     var res: Set<SV> = []
-    let newPS = SV(value: (qa, b.union([qc])))
-    if !newPS.isEmpty() {
-      res.insert(newPS.mes())
+    let newSV = SV(value: (qa, b.union([qc])))
+    if !newSV.isEmpty() {
+      res.insert(newSV.mes())
     }
 
     var markingSetConstrained: Set<Marking> = b
     for qd in d.sorted(by: {$0.leq($1)}) {
       let newQa = Marking.convMax(markings: [qa, qd], net: net)
-      let newPS = SV(value: (newQa, markingSetConstrained))
-      if !newPS.isEmpty() {
+      let newSV = SV(value: (newQa, markingSetConstrained))
+      if !newSV.isEmpty() {
         markingSetConstrained.insert(qd)
-        res.insert(newPS.mes())
+        res.insert(newSV.mes())
       }
     }
     return SVS(values: res)
   }
   
-  /// Subtract a ps with a set of predicate structures, by recursively applying the subtraction on the new elements.
+  /// Subtract a sv with a symbolic vector set, by recursively applying the subtraction on the new elements.
   /// - Parameters:
-  ///   - sps: The set of predicate structures to subtract
+  ///   - svs: The symbolic vector set to subtract
   ///   - canonicityLevel: The level of canonicity
-  /// - Returns: A set of predicate structures where all elements of sps have been removed from ps
-  public func subtract(_ sps: SVS, canonicityLevel: CanonicityLevel) -> SVS {
+  /// - Returns: A symbolic vector set where all elements of svs have been removed from sv
+  public func subtract(_ svs: SVS, canonicityLevel: CanonicityLevel) -> SVS {
     if canonicityLevel == .none {
       var res: Set<SV> = [self]
-      var spsTemp: Set<SV>
-      for ps in sps {
-        spsTemp = []
-        for psTemp in res {
-          spsTemp = spsTemp.union(psTemp.subtract(ps, canonicityLevel: canonicityLevel).values)
+      var svsTemp: Set<SV>
+      for sv in svs {
+        svsTemp = []
+        for svTemp in res {
+          svsTemp = svsTemp.union(svTemp.subtract(sv, canonicityLevel: canonicityLevel).values)
         }
-        res = spsTemp
+        res = svsTemp
       }
       return SVS(values: res)
     }
-    var spsValues = sps.values
-    let psp = spsValues.removeFirst()
-    return self.subtract(psp, canonicityLevel: canonicityLevel).subtract(SVS(values: spsValues), canonicityLevel: canonicityLevel)
+    var svsValues = svs.values
+    let svp = svsValues.removeFirst()
+    return self.subtract(svp, canonicityLevel: canonicityLevel).subtract(SVS(values: svsValues), canonicityLevel: canonicityLevel)
   }
   
-  /// Is a predicate structure included in another one ?
-  /// - Parameter ps: The predicate structure to check if self is contained
+  /// Is a symbolic vector included in another one ?
+  /// - Parameter sv: The symbolic vector to check if self is contained
   /// - Returns: True if it is contained, false otherwise.
-  public func isIncluded(_ ps: SV) -> Bool {
-    return self.subtract(ps, canonicityLevel: .none) == []
+  public func isIncluded(_ sv: SV) -> Bool {
+    return self.subtract(sv, canonicityLevel: .none) == []
   }
   
-  /// Count the number of markings that composes the predicate structure.
-  /// - Returns: Marking number of a predicate structure
+  /// Count the number of markings that composes the symbolic vector.
+  /// - Returns: Marking number of a symbolic vector
   public func countMarking() -> Int {
     if self.value == emptyValue {
       return 0

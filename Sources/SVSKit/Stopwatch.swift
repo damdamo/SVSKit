@@ -60,6 +60,18 @@ public struct Stopwatch {
       minutes = minutes % 60
       return "\(hours)h \(minutes)m \(seconds)s"
     }
+    
+    public var toSec: Double {
+      let seconds = Double(ns) / Double(1_000_000_000)
+
+      return seconds
+    }
+    
+    public var toMs: Double {
+      let seconds = Double(ns) / Double(1_000_000)
+
+      return seconds
+    }
 
     public static func< (lhs: TimeInterval, rhs: TimeInterval) -> Bool {
       lhs.ns < rhs.ns

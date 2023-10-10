@@ -123,7 +123,7 @@ final class SVTests: XCTestCase {
     // {({(4,5)}, {(9,10)})} ⊆ {({(3,5)}, {(7,7)}), ({(6,4)}, {(14,11)})}
     XCTAssertTrue(sps1.isIncluded(sps2))
     // ({(4,5)}, {(9,10)}) ∈ {({(3,5)}, {(7,7)}), ({(6,4)}, {(14,11)})}
-    XCTAssertTrue(sps2.contains(ps: SV(value: ([marking1], [marking2]), net: net)))
+    XCTAssertTrue(sps2.contains(sv: SV(value: ([marking1], [marking2]), net: net)))
 
     // ∅ ⊆ {({(4,5)}, {(9,10)})}
     XCTAssertTrue(SVS(values: []).isIncluded(sps1))
@@ -652,9 +652,9 @@ final class SVTests: XCTestCase {
     
     let ps1 = SV(value: ([m1], []), net: net)
     let ps2 = SV(value: ([m2], [m3]), net: net)
-    XCTAssertEqual(ps1.sharingPart(ps: ps1), ps1)
-    XCTAssertEqual(ps1.sharingPart(ps: ps2), ps2)
-    XCTAssertEqual(ps2.sharingPart(ps: ps1), ps2)
+    XCTAssertEqual(ps1.sharingPart(sv: ps1), ps1)
+    XCTAssertEqual(ps1.sharingPart(sv: ps2), ps2)
+    XCTAssertEqual(ps2.sharingPart(sv: ps1), ps2)
         
     let m4 = Marking(["p0": 0, "p1": 1, "p2": 0], net: net)
     let m5 = Marking(["p0": 1, "p1": 1, "p2": 0], net: net)
@@ -667,7 +667,7 @@ final class SVTests: XCTestCase {
     let expectedSharingPS = SV(value: ([m7],[m8]), net: net)
     
     XCTAssertFalse(ps3.mergeable(ps4))
-    XCTAssertEqual(ps3.sharingPart(ps: ps4), expectedSharingPS)
+    XCTAssertEqual(ps3.sharingPart(sv: ps4), expectedSharingPS)
     
     let m9 = Marking(["p0": 0, "p1": 1, "p2": 1], net: net)
     let m10 = Marking(["p0": 1, "p1": 1, "p2": 1], net: net)
@@ -677,7 +677,7 @@ final class SVTests: XCTestCase {
     let ps6 = SV(value: ([m11],[]), net: net)
     let ps7 = SV(value: ([m10],[]), net: net)
     
-    XCTAssertEqual(ps5.sharingPart(ps: ps6), ps7)
+    XCTAssertEqual(ps5.sharingPart(sv: ps6), ps7)
   }
   
 //  func testShareable() {

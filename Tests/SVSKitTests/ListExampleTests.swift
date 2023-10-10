@@ -1,9 +1,61 @@
 //import XCTest
 ////@testable import PredicateStructure
-//import PredicateStructure
+//import SVSKit
 //
 //final class ListExampleTests: XCTestCase {
 //
+//  func standardDeviationUInt64(seq:[UInt64]) -> Double {
+//    
+//    var listDouble: [Double] = []
+//    for v in seq {
+//      listDouble.append(Stopwatch.TimeInterval(ns: v).toMs)
+//    }
+//          
+//    let size: Double = Double(seq.count)
+//    var sum = 0.0
+//    var SD = 0.0
+//    var S = 0.0
+//    var resultSD = 0.0
+//
+//    // Calculating the mean
+//    for x in 0 ..< Int(size) {
+//      sum += listDouble[x]
+//    }
+//    let meanValue = sum/size
+//
+//    // Calculating standard deviation
+//    for y in 0 ..< Int(size) {
+//      SD += pow(Double(listDouble[y] - meanValue), 2)
+//    }
+//    S = SD/Double(size)
+//    resultSD = sqrt(S)
+//    
+//    return Double(resultSD)
+//  }
+//  
+//  func standardDeviationInt(seq:[Int]) -> Double {
+//     let size = seq.count
+//     var sum = 0
+//     var SD = 0.0
+//     var S = 0.0
+//     var resultSD = 0.0
+//     
+//     // Calculating the mean
+//     for x in 0..<size{
+//        sum += seq[x]
+//     }
+//     let meanValue = sum/size
+//     
+//     // Calculating standard deviation
+//     for y in 0..<size{
+//        SD += pow(Double(seq[y] - meanValue), 2)
+//     }
+//     S = SD/Double(size)
+//     resultSD = sqrt(S)
+//     
+//     return resultSD
+//  }
+//  
 ////  func testSwimmingPool() {
 ////    let parser = PnmlParser()
 ////    var (net1, marking1) = parser.loadPN(filePath: "SwimmingPool-1.pnml")
@@ -46,7 +98,7 @@
 //
 //    print("Transitions: \(net1.transitions)")
 //    var answers: [String: Bool] = [:]
-////    var answers: [String: SPS] = [:]
+////    var answers: [String: SVS] = [:]
 //    var times: [String: String] = [:]
 //    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
 //      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
@@ -123,11 +175,11 @@
 //////    print("----------------------")
 //////    print(e2)
 //////    print("----------------------")
-//////    print(SPS(values: e1.values.subtracting(e2.values)))
+//////    print(SVS(values: e1.values.subtracting(e2.values)))
 //////
 //////    print(e1 == e2)
 //////    print(e1.isEquiv(e2))
-////    var oldT2: SPS = []
+////    var oldT2: SVS = []
 ////    for _ in 0 ..< 10 {
 ////      let t1 = e1.not(net: net1, canonicityLevel: .full)
 ////      print("t1 count: \(t1.count)")
@@ -199,8 +251,97 @@
 //
 //    print(s.elapsed.humanFormat)
 //  }
-//////
-//////
+//
+//  
+//  func testERKBenchmarkGeneral() {
+//    let parserPN = PnmlParser()
+//    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+//    var s = Stopwatch()
+//    let loopNb: UInt64 = 10
+//
+//    let parserCTL = CTLParser()
+//    let dicCTL = parserCTL.loadCTL(filePath: "ERK-CTLFireability.xml")
+//
+//    s.reset()
+//
+//    var answers: [String: SVS] = [:]
+//    var times: [String: [UInt64]] = [:]
+//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: false).queryReduction()
+//      print("-------------------------------")
+//      print(key)
+//      for _ in 0 ..< loopNb {
+//        s.reset()
+//        answers[key] = ctlReduced.eval()
+//        if let x = times[key] {
+//          times[key]!.append(s.elapsed.ns)
+//        } else {
+//          times[key] = [s.elapsed.ns]
+//        }
+//        
+//      }
+//      print(s.elapsed.humanFormat)
+//      print("-------------------------------")
+//    }
+//
+//    var avgTime = 0.0
+//    var avgSTD = 0.0
+//    for (key, _) in answers.sorted(by: {$0.key < $1.key}) {
+//      let t = times[key]!.reduce(0, {$0 + $1})/loopNb
+//      let time = Stopwatch.TimeInterval(ns: t)
+//      let std = standardDeviationUInt64(seq: times[key]!)
+//      print("Formula \(key) is: \(time.humanFormat)")
+//      print("Standard deviation: \(std) ms")
+//      avgTime += time.s
+//      avgSTD += std
+//    }
+//
+//    print("AVG TIME: \(avgTime/Double(times.keys.count)) s")
+//    print("AVG STD: \(avgSTD/Double(times.keys.count)) ms")
+//  }
+//  
+//  func testERKBenchmarkReachability() {
+//    let parserPN = PnmlParser()
+//    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
+//    var s = Stopwatch()
+//    let loopNb: UInt64 = 10
+//
+//    let parserCTL = CTLParser()
+//    let dicCTL = parserCTL.loadCTL(filePath: "ERK-ReachabilityFireability.xml")
+//
+//    s.reset()
+//
+//    var answers: [String: SVS] = [:]
+//    var times: [String: [UInt64]] = [:]
+//    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
+//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: false).queryReduction()
+//      print("-------------------------------")
+//      print(key)
+//      for _ in 0 ..< loopNb {
+//        s.reset()
+//        answers[key] = ctlReduced.eval()
+//        if let x = times[key] {
+//          times[key]!.append(s.elapsed.ns)
+//        } else {
+//          times[key] = [s.elapsed.ns]
+//        }
+//        
+//      }
+//      print(s.elapsed.humanFormat)
+//      print("-------------------------------")
+//    }
+//
+//    for (key, _) in answers.sorted(by: {$0.key < $1.key}) {
+//      let t = times[key]!.reduce(0, {$0 + $1})/loopNb
+//      let time = Stopwatch.TimeInterval(ns: t)
+//      print("Formula \(key) is: \(time.humanFormat)")
+//      print("Standard deviation: \(standardDeviationUInt64(seq: times[key]!)) ms")
+//    }
+//
+//    print(s.elapsed.humanFormat)
+//  }
+//  
+//  
 //  func testERK() {
 //    let parserPN = PnmlParser()
 //    let (net1, marking1) = parserPN.loadPN(filePath: "ERK-CTLFireability.pnml")
@@ -211,28 +352,44 @@
 //
 //    s.reset()
 //
-//    var answers: [String: Bool] = [:]
-////    var answers: [String: SPS] = [:]
+////    var answers: [String: Bool] = [:]
+//    var answers: [String: SVS] = [:]
 //    var times: [String: String] = [:]
 //    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
 //      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
 //      print("-------------------------------")
 //      print(key)
 //      s.reset()
-//      answers[key] = ctlReduced.eval(marking: marking1)
-////      answers[key] = ctlReduced.eval()
+////      answers[key] = ctlReduced.eval(marking: marking1)
+//      answers[key] = ctlReduced.eval()
 //      print(answers[key]!)
 //      times[key] = s.elapsed.humanFormat
 //      print(s.elapsed.humanFormat)
 //      print("-------------------------------")
 //    }
 //
+//    var svNumbers: [Int] = []
+//    var markingNumbers: [Int] = []
+////    var count = 0
+//    
 //    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
-//      print("Formula \(key) is: \(b) (\(times[key]!))")
-////      print("Formula \(key) is: \(times[key]!)")
+////      print("Formula \(key) is: \(b) (\(times[key]!))")
+//      print("Formula \(key) is: \(times[key]!)")
+//      print("Nb of sv: \(answers[key]!.count)")
+//      svNumbers.append(answers[key]!.count)
+//      for sv in answers[key]! {
+////        count += 1
+//        markingNumbers.append(1 + sv.value.exc.count)
+//      }
 //    }
 //
-//    print(s.elapsed.humanFormat)
+//    let avgMarking = Double(markingNumbers.reduce(0, {$0+$1})) / Double(markingNumbers.count)
+//    let avgSV = Double(svNumbers.reduce(0, {$0+$1})) / Double(svNumbers.count)
+//  
+//    print("Nb average SV: \(avgSV)")
+//    print("Nb average marking: \(avgMarking)")
+//    print("Std sv: \(standardDeviationInt(seq: svNumbers))")
+//    print("Std marking: \(standardDeviationInt(seq: markingNumbers))")
 //  }
 //  
 //  //           0123456789012345
@@ -262,7 +419,7 @@
 //    print(ctlReduced.eval(marking: marking1))
 //    
 ////    var answers: [String: Bool] = [:]
-//////    var answers: [String: SPS] = [:]
+//////    var answers: [String: SVS] = [:]
 ////    var times: [String: String] = [:]
 ////    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
 ////      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
@@ -297,7 +454,7 @@
 //    s.reset()
 //
 //    var answers: [String: Bool] = [:]
-////    var answers: [String: SPS] = [:]
+////    var answers: [String: SVS] = [:]
 //    var times: [String: String] = [:]
 //    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
 //      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: false).queryReduction()
@@ -371,7 +528,7 @@
 ////    s.reset()
 ////
 ////    var answers: [String: Bool] = [:]
-//////    var answers: [String: SPS] = [:]
+//////    var answers: [String: SVS] = [:]
 ////    var times: [String: String] = [:]
 ////    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
 ////      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
@@ -442,7 +599,7 @@
 //      s.reset()
 //
 ////      var answers: [String: Bool] = [:]
-//      var answers: [String: SPS] = [:]
+//      var answers: [String: SVS] = [:]
 //      var times: [String: String] = [:]
 //      for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
 //        let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
@@ -487,18 +644,18 @@
 //    
 //    s.reset()
 //    
-//    let sps = ctl.eval()
+//    let svs = ctl.eval()
 //
 //    print(s.elapsed.humanFormat)
 //    
-//    print(sps.count)
-//    print(sps.contains(marking: marking1))
+//    print(svs.count)
+//    print(svs.contains(marking: marking1))
 //    
 //    s.reset()
-//    let can = sps.canonised()
+//    let can = svs.canonised()
 //    print(s.elapsed.humanFormat)
 //    
-//    print(sps == can)
+//    print(svs == can)
 //
 //  }
 //  

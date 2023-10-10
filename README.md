@@ -33,7 +33,7 @@ Thus, accepting markings are of the form `(0,x), x ∈ [2,∞)`.
 If we want all markings such as `t2` is fireable but not `t0`, we get the following symbolic vector: `({(0,2)}, {(1,0)})`.
 It means that if there is at least one token in `p0`, the marking is not accepted.
 
-For a symbolic vector set `svs`, a marking `m` belongs to it if there is at least one symbolic vector `ps` such as `m ∈ ps`.
+For a symbolic vector set `svs`, a marking `m` belongs to it if there is at least one symbolic vector `sv` such as `m ∈ sv`.
 
 ## What functionalities are available ?
 
@@ -181,7 +181,7 @@ If we want to check for a marking:
 `eval(marking: Marking) -> Bool`
 
 If we want to obtain all markings:
-`eval() -> SPS`
+`eval() -> SVS`
 
 Two parameters are optionals when you create a ctl formula and can be modified:
 - simplified: false by default. Another way of reducing the number of symbolic vectors. This is unnecessary if the level of canonicality is set to `.full'. This can be used to compare performance when every effort is made to preserve a canonical form, and when minimal effort is made to avoid certain redundancies.

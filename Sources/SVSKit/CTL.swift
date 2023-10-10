@@ -7,7 +7,7 @@ public struct CTL {
   let formula: Formula
   /// Related Petri net
   private static var netStatic: PetriNet? = nil
-  /// Option to decide if the simplification function should be called during execution. It removes redundancy in sps and ps.
+  /// Option to decide if the simplification function should be called during execution. It removes redundancy in svs and sv.
   /// Set to true
   private static var simplifiedStatic: Bool = true
   /// Option to print the state number in fixpoint loop.
@@ -155,7 +155,7 @@ public struct CTL {
   ///   - net: The current Petri net
   ///   - rewrited: An option to specify how to compute the function revertTilde. If it is true, we rewrite revertTilde as `not revert not`. When it is false, we use a specific function to compute it. False by default.
   ///   - simplified: An option to specify if there simplified function must be used or not. True by default.
-  /// - Returns: A set of predicate structures that symbolically represents all markings that satisfy the CTL formula.
+  /// - Returns: A symbolic vector set that symbolically represents all markings that satisfy the CTL formula.
   public func eval() -> SVS {
     var res: SVS
     switch formula {
@@ -245,9 +245,9 @@ public struct CTL {
     return res
   }
   
-  /// Encode a cardinality formula into a SPS that represents all markings satisfying the condition.
+  /// Encode a cardinality formula into a SVS that represents all markings satisfying the condition.
   /// - Parameter net: The corresponding net
-  /// - Returns: The resulting set of predicate structures
+  /// - Returns: The resulting symbolic vector set
   func evalCardinality() -> SVS {
     switch formula {
     case .intExpr(e1: .value(_), operator: _, e2: .value(_)):
@@ -263,13 +263,13 @@ public struct CTL {
     }
   }
   
-  /// Evaluate a "less than or equal to" expression and it creates the equivalent set of predicate structures which satisfies the condition.
+  /// Evaluate a "less than or equal to" expression and it creates the equivalent symbolic vector set which satisfies the condition.
   ///  e.g.: `p1 ≤ 2`, `3 ≤ p2`
   /// - Parameters:
   ///   - e1: First expression
   ///   - e2: Second expression
   ///   - net: The corresponding Petri net
-  /// - Returns: The set of predicate structures that encodes all markings that satisfy the condition
+  /// - Returns: The symbolic vector set that encodes all markings that satisfy the condition
   func evalLeq(e1: Expression, e2: Expression) -> SVS {
     var marking = net.zeroMarking()
     switch (e1, e2) {
@@ -292,13 +292,13 @@ public struct CTL {
     }
   }
   
-  /// Evaluate a "less than expression and it creates the equivalent set of predicate structures which satisfies the condition.
+  /// Evaluate a "less than expression and it creates the equivalent symbolic vector set which satisfies the condition.
   ///  e.g.: `p1 < 2`, `3 < p2`
   /// - Parameters:
   ///   - e1: First expression
   ///   - e2: Second expression
   ///   - net: The corresponding Petri net
-  /// - Returns: The set of predicate structures that encodes all markings that satisfy the condition
+  /// - Returns: The symbolic vector set that encodes all markings that satisfy the condition
   func evalLt(e1: Expression, e2: Expression) -> SVS {
     var marking = net.zeroMarking()
     switch (e1, e2) {
