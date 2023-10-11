@@ -42,8 +42,10 @@ final class PetriNetTests: XCTestCase {
   }
   
   func testLoadPN() {
+    let resourcesDirectory = "/Users/damienmorard/Developer/Github/SymbolicVectorSet/Sources/SVSKit/Resources/"
+    let path1 = resourcesDirectory + "SwimmingPool/SwimmingPool-1.pnml"
     let p1 = PnmlParser()
-    let (net1, _) = p1.loadPN(filePath: "SwimmingPool-1.pnml")
+    let (net1, _) = p1.loadPN(filePath: path1)
     var countArcs = 0
     for (_, arcs) in net1.input {
       countArcs += arcs.count
@@ -56,7 +58,8 @@ final class PetriNetTests: XCTestCase {
     XCTAssertEqual(countArcs, 20)
     
     let p2 = PnmlParser()
-    let (net2, _) = p2.loadPN(filePath: "NQueens-PT-05.xml")
+    let path2 = resourcesDirectory + "NQueens/NQueens-PT-05.xml"
+    let (net2, _) = p2.loadPN(filePath: path2)
     countArcs = 0
     for (_, arcs) in net2.input {
       countArcs += arcs.count

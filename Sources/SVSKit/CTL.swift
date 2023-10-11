@@ -6,7 +6,7 @@ public struct CTL {
   /// CTL formula
   let formula: Formula
   /// Related Petri net
-  private static var netStatic: PetriNet? = nil
+//  private static var netStatic: PetriNet? = nil
   /// Option to decide if the simplification function should be called during execution. It removes redundancy in svs and sv.
   /// Set to true
   private static var simplifiedStatic: Bool = true
@@ -16,9 +16,10 @@ public struct CTL {
   
   private let canonicityLevel: CanonicityLevel
   
-  public var net: PetriNet {
-    return CTL.netStatic!
-  }
+//  public var net: PetriNet {
+//    return CTL.netStatic!
+//  }
+  public let net: PetriNet
 
   var simplified: Bool {
     return CTL.simplifiedStatic
@@ -29,15 +30,16 @@ public struct CTL {
   
   public init(formula: Formula, net: PetriNet, canonicityLevel: CanonicityLevel, simplified: Bool = true, debug: Bool = false) {
     self.formula = formula
-    CTL.netStatic = net
+    self.net = net
     CTL.simplifiedStatic = simplified
     CTL.debugStatic = debug
     
     self.canonicityLevel = canonicityLevel
   }
   
-  private init(formula: Formula, canonicityLevel: CanonicityLevel) {
+  private init(formula: Formula, net: PetriNet, canonicityLevel: CanonicityLevel) {
     self.formula = formula
+    self.net = net
     self.canonicityLevel = canonicityLevel
   }
     
@@ -184,21 +186,21 @@ public struct CTL {
     case .false:
       res = []
     case .and(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.eval().intersection(ctl2.eval(), canonicityLevel: canonicityLevel)
       if debug {
         print("Predicate structure number after and: \(res.count)")
       }
     case .or(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel).eval()
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel).eval()
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel).eval()
+      let ctl2 = CTL(formula: formula2, net: net, canonicityLevel: canonicityLevel).eval()
       res = ctl1.union(ctl2, canonicityLevel: canonicityLevel)
       if debug {
         print("Predicate structure number after or: \(res.count)")
       }
     case .not(let formula):
-      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.eval().not(net: net, canonicityLevel: canonicityLevel)
       if debug {
         print("Predicate structure number after not: \(res.count)")
@@ -206,36 +208,36 @@ public struct CTL {
     case .deadlock:
       res = SVS.deadlock(net: net)
     case .EX(let formula):
-      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.eval().revert(canonicityLevel: canonicityLevel)
       if debug {
         print("Predicate structure number after EX: \(res.count)")
       }
     case .AX(let formula):
-      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel)
       if debug {
         print("Predicate structure number after AX: \(res.count)")
       }
     case .EF(let formula):
-      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.evalEF()
     case .AF(let formula):
-      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.evalAF()
     case .EG(let formula):
-      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.evalEG()
     case .AG(let formula):
-      let ctl1 = CTL(formula: formula, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.evalAG()
     case .EU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.evalEU(ctl2)
     case .AU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, net: net, canonicityLevel: canonicityLevel)
       res = ctl1.evalAU(ctl2)
     }
     
@@ -449,7 +451,7 @@ public struct CTL {
   /// for Efficient Model Checking of Petri Nets from Frederik Bønneland & al. .
   /// - Returns: The reduced CTL
   public func queryReduction() -> CTL {
-    return CTL(formula: queryReduction(formula), canonicityLevel: canonicityLevel)
+    return CTL(formula: queryReduction(formula), net: net, canonicityLevel: canonicityLevel)
   }
   
   
@@ -694,23 +696,23 @@ extension CTL {
     case .false:
       return false
     case .and(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       let evalCTL1 = ctl1.eval(marking: marking)
       if evalCTL1 == false {
         return false
       }
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, net: net, canonicityLevel: canonicityLevel)
       return ctl2.eval(marking: marking)
     case .or(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       let evalCTL1 = ctl1.eval(marking: marking)
       if evalCTL1 == true {
         return true
       }
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, net: net, canonicityLevel: canonicityLevel)
       return (ctl2.eval(marking: marking))
     case .not(let formula1):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       return ctl1.eval().not(net: net, canonicityLevel: canonicityLevel).contains(marking: marking)
     case .deadlock:
       return SVS.deadlock(net: net).contains(marking: marking)
@@ -718,33 +720,33 @@ extension CTL {
       if SVS.deadlock(net: net).contains(marking: marking) {
         return false
       }
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       return ctl1.eval().revert(canonicityLevel: canonicityLevel).contains(marking: marking)
     case .AX(let formula1):
       if SVS.deadlock(net: net).contains(marking: marking) {
         return true
       }
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       return ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel).contains(marking: marking)
     case .EF(let formula1):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       return ctl1.evalEF(marking: marking)
     case .AF(let formula1):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       return ctl1.evalAF(marking: marking)
     case .EG(let formula1):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       return ctl1.evalEG(marking: marking)
     case .AG(let formula1):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       return ctl1.evalAG(marking: marking)
     case .EU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, net: net, canonicityLevel: canonicityLevel)
       return ctl1.evalEU(ctl2, marking: marking)
     case .AU(let formula1, let formula2):
-      let ctl1 = CTL(formula: formula1, canonicityLevel: canonicityLevel)
-      let ctl2 = CTL(formula: formula2, canonicityLevel: canonicityLevel)
+      let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
+      let ctl2 = CTL(formula: formula2, net: net, canonicityLevel: canonicityLevel)
       return ctl1.evalAU(ctl2, marking: marking)
     }
     
@@ -964,27 +966,27 @@ extension CTL {
     case .false:
       return net.places
     case .and(let formula1, let formula2):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, canonicityLevel: .none).relatedPlaces())
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, net: net, canonicityLevel: .none).relatedPlaces())
     case .or(let formula1, let formula2):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, canonicityLevel: .none).relatedPlaces())
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, net: net, canonicityLevel: .none).relatedPlaces())
     case .not(let formula1):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces()
     case .EX(let formula1):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces()
     case .EF(let formula1):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces()
     case .EG(let formula1):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces()
     case .AX(let formula1):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces()
     case .AF(let formula1):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces()
     case .AG(let formula1):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces()
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces()
     case .EU(let formula1, let formula2):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, canonicityLevel: .none).relatedPlaces())
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, net: net, canonicityLevel: .none).relatedPlaces())
     case .AU(let formula1, let formula2):
-      return CTL(formula: formula1, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, canonicityLevel: .none).relatedPlaces())
+      return CTL(formula: formula1, net: net, canonicityLevel: .none).relatedPlaces().union(CTL(formula: formula2, net: net, canonicityLevel: .none).relatedPlaces())
     }
   }
   

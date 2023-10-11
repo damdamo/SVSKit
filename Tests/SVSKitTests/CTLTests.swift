@@ -336,13 +336,16 @@ final class CTLTests: XCTestCase {
   
   func testLoadCTL() {
     let ctlParser = CTLParser()
-    let ctlDic1 = ctlParser.loadCTL(filePath: "CTLFireabilitySwimmingPool-1.xml")
+    let resourcesDirectory = "/Users/damienmorard/Developer/Github/SymbolicVectorSet/Sources/SVSKit/Resources/"
+    let path1 = resourcesDirectory + "SwimmingPool/CTLFireabilitySwimmingPool-1.xml"
+    let ctlDic1 = ctlParser.loadCTL(filePath: path1)
     var expectedCTL1: CTL.Formula = .AX(.or(.isFireable("RKey"), .AF(.EG(.or(.AG(.isFireable("RelK")), .isFireable("GetB"))))))
     var expectedCTL2: CTL.Formula = .AG(.EF(.AF(.AG(.isFireable("GetK")))))
     XCTAssertEqual(ctlDic1["SwimmingPool-PT-01-CTLFireability-02"]!, expectedCTL1)
     XCTAssertEqual(ctlDic1["SwimmingPool-PT-01-CTLFireability-09"]!, expectedCTL2)
     
-    let ctlDic2 = ctlParser.loadCTL(filePath: "CTLCardinalitySwimmingPool-1.xml")
+    let path2 = resourcesDirectory + "SwimmingPool/CTLCardinalitySwimmingPool-1.xml"
+    let ctlDic2 = ctlParser.loadCTL(filePath: path2)
     expectedCTL1 = .AF(.AG(.intExpr(e1: .value(5), operator: .leq, e2: .tokenCount("Bags"))))
     expectedCTL2 = .AF(.EU(.intExpr(e1: .tokenCount("Undress"), operator: .leq, e2: .tokenCount("Dressed")), .intExpr(e1: .value(6), operator: .leq, e2: .tokenCount("InBath"))))
     XCTAssertEqual(ctlDic2["SwimmingPool-PT-01-CTLCardinality-04"]!, expectedCTL1)
