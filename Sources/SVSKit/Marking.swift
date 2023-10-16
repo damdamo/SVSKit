@@ -131,6 +131,20 @@ public struct Marking {
     return markings.subtracting(invalidMarkings)
   }
   
+  public static func numberOfCombinations(forLimits markingLimits: Marking) -> Int {
+    let limits = markingLimits.storage.values.sorted()
+    var totalCombinations = 1
+    for limit in limits {
+        totalCombinations *= (limit + 1)
+    }
+    return totalCombinations
+  }
+  
+  public func minus(_ marking: Marking) -> Marking {
+    let result = self.storage.merging(marking.storage) { $0 - $1 }
+    return Marking(result, net: net)
+  }
+  
 }
 
 extension Marking: Equatable {

@@ -214,6 +214,14 @@ public struct SVS {
     return SVS(values: res)
   }
   
+  public func nbOfMarkings() -> Int {
+    var res: Int = 0
+    for sv in self.values {
+      res += sv.nbOfMarkings()
+    }
+    return res
+  }
+  
   /// Compute all of the underlying markings for a symbolic vector set.
   /// - Returns: All the markings encoded by a symbolic vector set
   public func underlyingMarkings() -> Set<Marking> {

@@ -115,6 +115,32 @@ public struct SV {
     return SV(value: (self.value.inc, self.value.exc)).mes()
   }
   
+  
+  
+  public func nbOfMarkings() -> Int {
+    let markingCapacity = Marking(net.capacity, net: net)
+    var b = self.value.exc
+    if b == [] {
+      b.insert(markingCapacity)
+    }
+
+    var markingNumber = 0
+    var ps = self
+    
+    while !b.isEmpty {
+      let qa = ps.value.inc
+      let qb = b.removeFirst()
+      
+      let markingCountAll = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qa))
+      let markingToSubtract = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qb))
+      markingNumber = markingNumber + markingCountAll - markingToSubtract
+      
+      ps = SV(value: (qa,b)).intersection(SV(value: (qb,[])), isCanonical: true)
+    }
+    
+    return markingNumber >= 0 ? markingNumber + 1 : 0
+  }
+ 
   /// Compute all the markings represented by the symbolic representation of a symbolic vector.
   /// - Returns: The set of all possible markings, also known as the state space.
   public func underlyingMarkings() -> Set<Marking> {
