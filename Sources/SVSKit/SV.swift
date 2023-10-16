@@ -135,12 +135,16 @@ public struct SV {
     for place in net.places {
       lowerBound = am[place]!
       upperBound = net.capacity[place]!
-      for i in lowerBound ..< upperBound+1 {
-        if let _ = placeSetValues[place] {
-          placeSetValues[place]!.insert(i)
-        } else {
-          placeSetValues[place] = [i]
+      if lowerBound <= upperBound {
+        for i in lowerBound ..< upperBound+1 {
+          if let _ = placeSetValues[place] {
+            placeSetValues[place]!.insert(i)
+          } else {
+            placeSetValues[place] = [i]
+          }
         }
+      } else {
+        placeSetValues[place] = [lowerBound]
       }
     }
     
