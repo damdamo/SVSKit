@@ -131,11 +131,11 @@ public struct Marking {
     return markings.subtracting(invalidMarkings)
   }
   
-  public static func numberOfCombinations(forLimits markingLimits: Marking) -> Int {
+  public static func numberOfCombinations(forLimits markingLimits: Marking) -> Double {
     let limits = markingLimits.storage.values.sorted()
-    var totalCombinations = 1
+    var totalCombinations: Double = 1
     for limit in limits {
-        totalCombinations *= (limit + 1)
+        totalCombinations *= (Double(limit) + 1)
     }
     return totalCombinations
   }

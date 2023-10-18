@@ -115,7 +115,7 @@ public struct SV {
     return SV(value: (self.value.inc, self.value.exc)).mes()
   }
   
-  public func nbOfMarkings() -> Int {
+  public func nbOfMarkings() -> Double {
 //    var capacityConstraints: Set<Marking> = []
 //    for (key, value) in net.capacity {
 //      var storageMarking: [String: Int] = [:]
@@ -152,7 +152,7 @@ public struct SV {
     return SV(value: (self.value.inc, newB)).canonised().nbOfMarkingsRecursive()
   }
   
-  public func nbOfMarkingsRecursive() -> Int {
+  public func nbOfMarkingsRecursive() -> Double {
     let markingCapacity = Marking(net.capacity, net: net)
     var b = self.value.exc
     let qa = self.value.inc
@@ -163,7 +163,7 @@ public struct SV {
       let qb = b.first!
       let markingCountAll = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qa))
       let markingCountToSubtract = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qb))
-      let markingNumber: Int
+      let markingNumber: Double
 //      print(self)
 //      print("MarkingCountAll: \(markingCountAll)")
 //      print("MarkingCountToSubtract: \(markingCountToSubtract)")
@@ -175,7 +175,7 @@ public struct SV {
       return markingNumber
     }
 
-    var markingNumber = 0
+    var markingNumber: Double = 0
     
     var keepConstraints: Set<Marking> = []
     for qb in b {
