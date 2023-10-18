@@ -225,8 +225,7 @@ public struct SVS {
       res += sv.nbOfMarkings()
     }
     
-    return res
-//    return self.contains(marking: markingCapacity) ? res + 1 : res
+    return self.contains(marking: markingCapacity) ? res + 1 : res
   }
   
   /// Compute all of the underlying markings for a symbolic vector set.

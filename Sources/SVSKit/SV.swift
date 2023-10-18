@@ -115,8 +115,44 @@ public struct SV {
     return SV(value: (self.value.inc, self.value.exc)).mes()
   }
   
-  
   public func nbOfMarkings() -> Int {
+//    var capacityConstraints: Set<Marking> = []
+//    for (key, value) in net.capacity {
+//      var storageMarking: [String: Int] = [:]
+//      for place in net.places {
+//        if place == key {
+//          storageMarking[key] = value
+//        } else {
+//          storageMarking[place] = 0
+//        }
+//      }
+//      capacityConstraints.insert(Marking(storageMarking, net: net))
+//    }
+//
+//    let newB = self.value.exc.union(capacityConstraints)
+//    let psWithCapacities = SV(value: (self.value.inc, newB)).canonised()
+//
+//    return psWithCapacities.nbOfMarkings()
+    var newB: Set<Marking> = []
+    
+    for qb in self.value.exc {
+      var storage: [String: Int] = [:]
+      for (key, value) in qb.storage {
+        if qb[key]! > net.capacity[key]! {
+          storage[key] = net.capacity[key]! + 1
+        } else {
+          storage[key] = value
+        }
+      }
+      newB.insert(Marking(storage, net: net))
+    }
+    
+//    print(newB)
+        
+    return SV(value: (self.value.inc, newB)).canonised().nbOfMarkingsRecursive()
+  }
+  
+  public func nbOfMarkingsRecursive() -> Int {
     let markingCapacity = Marking(net.capacity, net: net)
     var b = self.value.exc
     let qa = self.value.inc
@@ -128,9 +164,9 @@ public struct SV {
       let markingCountAll = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qa))
       let markingCountToSubtract = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qb))
       let markingNumber: Int
-      print(self)
-      print("MarkingCountAll: \(markingCountAll)")
-      print("MarkingCountToSubtract: \(markingCountToSubtract)")
+//      print(self)
+//      print("MarkingCountAll: \(markingCountAll)")
+//      print("MarkingCountToSubtract: \(markingCountToSubtract)")
       if markingCountToSubtract >= 0 {
         markingNumber = markingCountAll - markingCountToSubtract
       } else {
@@ -143,14 +179,14 @@ public struct SV {
     
     var keepConstraints: Set<Marking> = []
     for qb in b {
-      print("Keep constraints: \(keepConstraints)")
+//      print("Keep constraints: \(keepConstraints)")
       if keepConstraints.isEmpty {
         let sv = SV(value: (qa, [qb])).canonised()
-        markingNumber = sv.nbOfMarkings()
+        markingNumber = sv.nbOfMarkingsRecursive()
         keepConstraints.insert(qb)
       } else {
         let sv = SV(value: (qb, keepConstraints)).canonised()
-        markingNumber -= sv.nbOfMarkings()
+        markingNumber -= sv.nbOfMarkingsRecursive()
         keepConstraints.insert(qb)
       }
 
@@ -158,6 +194,50 @@ public struct SV {
     
     return markingNumber
   }
+
+  
+//  public func nbOfMarkings() -> Int {
+//    let markingCapacity = Marking(net.capacity, net: net)
+//    var b = self.value.exc
+//    let qa = self.value.inc
+//
+//    if b.isEmpty {
+//      b.insert(markingCapacity)
+//    } else if b.count == 1 {
+//      let qb = b.first!
+//      let markingCountAll = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qa))
+//      let markingCountToSubtract = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qb))
+//      let markingNumber: Int
+//      print(self)
+//      print("MarkingCountAll: \(markingCountAll)")
+//      print("MarkingCountToSubtract: \(markingCountToSubtract)")
+//      if markingCountToSubtract >= 0 {
+//        markingNumber = markingCountAll - markingCountToSubtract
+//      } else {
+//        markingNumber = markingCountAll
+//      }
+//      return markingNumber
+//    }
+//
+//    var markingNumber = 0
+//
+//    var keepConstraints: Set<Marking> = []
+//    for qb in b {
+//      print("Keep constraints: \(keepConstraints)")
+//      if keepConstraints.isEmpty {
+//        let sv = SV(value: (qa, [qb])).canonised()
+//        markingNumber = sv.nbOfMarkings()
+//        keepConstraints.insert(qb)
+//      } else {
+//        let sv = SV(value: (qb, keepConstraints)).canonised()
+//        markingNumber -= sv.nbOfMarkings()
+//        keepConstraints.insert(qb)
+//      }
+//
+//    }
+//
+//    return markingNumber
+//  }
 
   
   /// Compute all the markings represented by the symbolic representation of a symbolic vector.
