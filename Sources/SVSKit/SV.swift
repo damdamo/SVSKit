@@ -116,31 +116,50 @@ public struct SV {
   }
   
   
-  
   public func nbOfMarkings() -> Int {
     let markingCapacity = Marking(net.capacity, net: net)
     var b = self.value.exc
-    if b == [] {
+    let qa = self.value.inc
+    
+    if b.isEmpty {
       b.insert(markingCapacity)
+    } else if b.count == 1 {
+      let qb = b.first!
+      let markingCountAll = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qa))
+      let markingCountToSubtract = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qb))
+      let markingNumber: Int
+      print(self)
+      print("MarkingCountAll: \(markingCountAll)")
+      print("MarkingCountToSubtract: \(markingCountToSubtract)")
+      if markingCountToSubtract >= 0 {
+        markingNumber = markingCountAll - markingCountToSubtract
+      } else {
+        markingNumber = markingCountAll
+      }
+      return markingNumber
     }
 
     var markingNumber = 0
-    var ps = self
     
-    while !b.isEmpty {
-      let qa = ps.value.inc
-      let qb = b.removeFirst()
-      
-      let markingCountAll = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qa))
-      let markingToSubtract = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qb))
-      markingNumber = markingNumber + markingCountAll - markingToSubtract
-      
-      ps = SV(value: (qa,b)).intersection(SV(value: (qb,[])), isCanonical: true)
+    var keepConstraints: Set<Marking> = []
+    for qb in b {
+      print("Keep constraints: \(keepConstraints)")
+      if keepConstraints.isEmpty {
+        let sv = SV(value: (qa, [qb])).canonised()
+        markingNumber = sv.nbOfMarkings()
+        keepConstraints.insert(qb)
+      } else {
+        let sv = SV(value: (qb, keepConstraints)).canonised()
+        markingNumber -= sv.nbOfMarkings()
+        keepConstraints.insert(qb)
+      }
+
     }
     
-    return markingNumber >= 0 ? markingNumber + 1 : 0
+    return markingNumber
   }
- 
+
+  
   /// Compute all the markings represented by the symbolic representation of a symbolic vector.
   /// - Returns: The set of all possible markings, also known as the state space.
   public func underlyingMarkings() -> Set<Marking> {

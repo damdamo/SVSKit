@@ -215,11 +215,18 @@ public struct SVS {
   }
   
   public func nbOfMarkings() -> Int {
+    if self.isEmpty {
+      return 0
+    }
+    let net = self.first!.net
+    let markingCapacity = Marking(net.capacity, net: net)
     var res: Int = 0
     for sv in self.values {
       res += sv.nbOfMarkings()
     }
+    
     return res
+//    return self.contains(marking: markingCapacity) ? res + 1 : res
   }
   
   /// Compute all of the underlying markings for a symbolic vector set.
