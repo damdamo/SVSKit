@@ -1,0 +1,80 @@
+Property CircadianClock-PT-000001-LTLFireability-00
+  "Automatically generated"
+  is:
+    A !X (!X F !"transc_da_a"? | G (("transc_da_a"? | G "transc_da_a"?) U "transc_da_a"?))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-01
+  "Automatically generated"
+  is:
+    A F ((!"deg_mr"? & G F "transc_dr_a"?) | F "deg_mr"?)
+  end.
+Property CircadianClock-PT-000001-LTLFireability-02
+  "Automatically generated"
+  is:
+    A ("deg_c"? | G "transl_a"? | X G "transl_a"? | F "transc_da_a"?)
+  end.
+Property CircadianClock-PT-000001-LTLFireability-03
+  "Automatically generated"
+  is:
+    A F X (!F ("transc_dr"? & "deg_c"?) | (G "deg_c"? U G F !"transc_dr"?))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-04
+  "Automatically generated"
+  is:
+    A (G X "deactive"? U ("deactive"? | (X "rel_r"? U "deg_ma"?)))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-05
+  "Automatically generated"
+  is:
+    A (!("transl_r"? | F !"bind_r"?) & F (G "transl_r"? & F ("rel_r"? & "rel_a"?)))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-06
+  "Automatically generated"
+  is:
+    A G !G (G X "deg_ma"? U F ("deg_mr"? & "bind_r"?))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-07
+  "Automatically generated"
+  is:
+    A (!F X "rel_r"? U (((!"bind_r"? | X "bind_r"?) U "transc_da_a"?) U "bind_r"?))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-08
+  "Automatically generated"
+  is:
+    A (X X ("transc_da_a"? & !"transc_da_a"?) | X ("rel_a"? | X ("bind_a"? | G "deg_a"?)))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-09
+  "Automatically generated"
+  is:
+    A ("transl_a"? | G !("rel_r"? & !X "deg_c"?))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-10
+  "Automatically generated"
+  is:
+    A X ("transc_dr"? U F (X "deg_ma"? | G X (G F "deg_ma"? U F "deg_ma"?)))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-11
+  "Automatically generated"
+  is:
+    A F !X ("transl_r"? & (F G "transl_r"? | ("rel_a"? & X !F "transl_r"?)))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-12
+  "Automatically generated"
+  is:
+    A F (G (G "transl_r"? | ("deactive"? & F "transc_dr_a"?)) U G ("transl_r"? U "deg_r"?))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-13
+  "Automatically generated"
+  is:
+    A F (G !"deg_r"? & (!"deactive"? U X X X X !G "deg_r"?))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-14
+  "Automatically generated"
+  is:
+    A (X (("deg_mr"? U "transc_da_a"?) U X !"deg_r"?) & X (("deg_mr"? & "rel_r"?) U "bind_a"?))
+  end.
+Property CircadianClock-PT-000001-LTLFireability-15
+  "Automatically generated"
+  is:
+    A G ("transc_dr"? & "deg_a"?)
+  end.

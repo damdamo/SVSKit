@@ -1,0 +1,80 @@
+Property CircadianClock-PT-000001-LTLCardinality-00
+  "Automatically generated"
+  is:
+    A F G (G (((2) <= (#tokens("r"))) U ((#tokens("a")) <= (#tokens("r")))) | (G ((#tokens("a")) <= (#tokens("r"))) & X ((#tokens("a")) <= (#tokens("r")))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-01
+  "Automatically generated"
+  is:
+    A (((#tokens("mr")) <= (#tokens("c_cap"))) | (!((2) <= (#tokens("r_cap"))) & ((#tokens("da_a")) <= (#tokens("ma"))) & X G (((#tokens("mr")) <= (#tokens("c_cap"))) | G ((#tokens("mr")) <= (#tokens("c_cap"))))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-02
+  "Automatically generated"
+  is:
+    A X !(G ((0) <= (#tokens("a_cap"))) U (((#tokens("da_a")) <= (#tokens("dr_a"))) | X F (!((0) <= (#tokens("a_cap"))) | G ((#tokens("mr")) <= (#tokens("da_a"))))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-03
+  "Automatically generated"
+  is:
+    A !F ((((1) <= (#tokens("r_cap"))) | (((1) <= (#tokens("r_cap"))) & ((0) <= (#tokens("c"))))) & X F !X !F ((0) <= (#tokens("c"))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-04
+  "Automatically generated"
+  is:
+    A F !F ((G ((2) <= (#tokens("a_cap"))) U G ((#tokens("r")) <= (#tokens("dr_a")))) U (F ((#tokens("r")) <= (#tokens("dr_a"))) U G ((2) <= (#tokens("a_cap")))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-05
+  "Automatically generated"
+  is:
+    A F !(!G F ((#tokens("c_cap")) <= (#tokens("a_cap"))) | (F ((1) <= (#tokens("ma_cap"))) & X X ((2) <= (#tokens("ma")))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-06
+  "Automatically generated"
+  is:
+    A (G F ((#tokens("c")) <= (#tokens("r"))) U G ((#tokens("c")) <= (#tokens("r"))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-07
+  "Automatically generated"
+  is:
+    A X (G ((#tokens("a_cap")) <= (#tokens("mr"))) U X ((#tokens("mr_cap")) <= (#tokens("dr"))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-08
+  "Automatically generated"
+  is:
+    A ((((2) <= (#tokens("da_a"))) & F ((#tokens("r")) <= (#tokens("r_cap")))) | !(((3) <= (#tokens("a_cap"))) | X (((0) <= (#tokens("c"))) U X ((3) <= (#tokens("a_cap"))))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-09
+  "Automatically generated"
+  is:
+    A !(((3) <= (#tokens("dr"))) U ((1) <= (#tokens("a_cap"))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-10
+  "Automatically generated"
+  is:
+    A F (F ((#tokens("dr_a")) <= (#tokens("da_a"))) | F X (((#tokens("c")) <= (#tokens("dr_a"))) U ((#tokens("dr_a")) <= (#tokens("da_a")))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-11
+  "Automatically generated"
+  is:
+    A (!((#tokens("ma_cap")) <= (#tokens("mr_cap"))) & ((0) <= (#tokens("r_cap"))) & !(((0) <= (#tokens("r_cap"))) U G !F X (((1) <= (#tokens("da_a"))) U ((0) <= (#tokens("r_cap"))))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-12
+  "Automatically generated"
+  is:
+    A F (X (F ((#tokens("r_cap")) <= (#tokens("dr_a"))) U X F ((2) <= (#tokens("c")))) & (((#tokens("r")) <= (#tokens("ma_cap"))) U X ((2) <= (#tokens("c")))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-13
+  "Automatically generated"
+  is:
+    A (!F ((3) <= (#tokens("ma"))) U F (!F ((#tokens("ma")) <= (#tokens("a_cap"))) & G ((#tokens("a_cap")) <= (#tokens("mr_cap")))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-14
+  "Automatically generated"
+  is:
+    A F (F (F ((#tokens("dr")) <= (#tokens("da"))) & F (((#tokens("c_cap")) <= (#tokens("ma"))) | !((1) <= (#tokens("c_cap"))))) & (((#tokens("r")) <= (#tokens("a"))) | X ((#tokens("r")) <= (#tokens("a")))))
+  end.
+Property CircadianClock-PT-000001-LTLCardinality-15
+  "Automatically generated"
+  is:
+    A F !G (G X F ((#tokens("c")) <= (#tokens("da_a"))) | G ((2) <= (#tokens("a"))))
+  end.
