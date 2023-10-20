@@ -13,6 +13,9 @@ public struct CTL {
   /// Option to print the state number in fixpoint loop.
   /// Set to false
   private static var debugStatic: Bool = false
+  /// Option to sature each step of the fixed point computation using capacity of a PN.
+  /// Instead of starting by computing the whole set, it will start by a cardinality one, then two, until reaching the current cardinality. It converges faster by creationg the set of solutions required at each step of the cardinality.
+  private static var saturatedStatic: Bool = true
   
   private let canonicityLevel: CanonicityLevel
   
@@ -27,12 +30,16 @@ public struct CTL {
   var debug: Bool {
     return CTL.debugStatic
   }
+  var saturated: Bool {
+    return CTL.saturatedStatic
+  }
   
-  public init(formula: Formula, net: PetriNet, canonicityLevel: CanonicityLevel, simplified: Bool = true, debug: Bool = false) {
+  public init(formula: Formula, net: PetriNet, canonicityLevel: CanonicityLevel, simplified: Bool = true, saturated: Bool = true, debug: Bool = false) {
     self.formula = formula
     self.net = net
     CTL.simplifiedStatic = simplified
     CTL.debugStatic = debug
+    CTL.saturatedStatic = saturated
     
     self.canonicityLevel = canonicityLevel
   }
@@ -209,13 +216,13 @@ public struct CTL {
       res = SVS.deadlock(net: net)
     case .EX(let formula):
       let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
-      res = ctl1.eval().revert(canonicityLevel: canonicityLevel)
+      res = ctl1.eval().revert(canonicityLevel: canonicityLevel, capacity: net.capacity)
       if debug {
         print("Predicate structure number after EX: \(res.count)")
       }
     case .AX(let formula):
       let ctl1 = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
-      res = ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel)
+      res = ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: net.capacity)
       if debug {
         print("Predicate structure number after AX: \(res.count)")
       }
@@ -330,16 +337,22 @@ public struct CTL {
     if debug {
       print("Predicate structure number at the start of EF evaluation: \(res.count)")
     }
-    repeat {
-      resTemp = res
-      res = phi.union(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during EF evaluation: \(res.count)")
-      }
-    } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+    
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        resTemp = res
+        res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during EF evaluation: \(res.count)")
+        }
+      } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+    }
     return res
   }
   
@@ -350,16 +363,21 @@ public struct CTL {
     if debug {
       print("Predicate structure number at the start of AF evaluation: \(res.count)")
     }
-    repeat {
-      resTemp = res
-      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during AF evaluation: \(res.count)")
-      }
-    } while !res.isIncluded(resTemp)
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        resTemp = res
+        res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during AF evaluation: \(res.count)")
+        }
+      } while !res.isIncluded(resTemp)
+    }
     return res
   }
   
@@ -370,16 +388,22 @@ public struct CTL {
     if debug {
       print("Predicate structure number at the start of EG evaluation: \(res.count)")
     }
-    repeat {
-      resTemp = res
-      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during EG evaluation: \(res.count)")
-      }
-    } while !resTemp.isIncluded(res)
+    
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        resTemp = res
+        res = phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).union(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during EG evaluation: \(res.count)")
+        }
+      } while !resTemp.isIncluded(res)
+    }
     return res
   }
   
@@ -390,16 +414,22 @@ public struct CTL {
     if debug {
       print("Predicate structure number at the start of AG evaluation: \(res.count)")
     }
-    repeat {
-      resTemp = res
-      res = phi.intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during AG evaluation: \(res.count)")
-      }
-    } while !resTemp.isIncluded(res)
+    
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        resTemp = res
+        res = phi.intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during AG evaluation: \(res.count)")
+        }
+      } while !resTemp.isIncluded(res)
+    }
     return res
   }
   
@@ -412,16 +442,22 @@ public struct CTL {
       print("Predicate structure number of psi at the start of EU evaluation: \(res.count)")
     }
     var resTemp: SVS
-    repeat {
-      resTemp = res
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during EU evaluation: \(res.count)")
-      }
-    } while !res.isIncluded(resTemp)
+    
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        resTemp = res
+        res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during EU evaluation: \(res.count)")
+        }
+      } while !res.isIncluded(resTemp)
+    }
     return res
   }
   
@@ -434,16 +470,22 @@ public struct CTL {
       print("Predicate structure number of phi at the start of AU evaluation: \(phi.count)")
       print("Predicate structure number of psi at the start of AU evaluation: \(res.count)")
     }
-    repeat {
-      resTemp = res
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during AU evaluation: \(res.count)")
-      }
-    } while !res.isIncluded(resTemp)
+    
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        resTemp = res
+        res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during AU evaluation: \(res.count)")
+        }
+      } while !res.isIncluded(resTemp)
+    }
     return res
   }
   
@@ -721,13 +763,13 @@ extension CTL {
         return false
       }
       let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
-      return ctl1.eval().revert(canonicityLevel: canonicityLevel).contains(marking: marking)
+      return ctl1.eval().revert(canonicityLevel: canonicityLevel, capacity: net.capacity).contains(marking: marking)
     case .AX(let formula1):
       if SVS.deadlock(net: net).contains(marking: marking) {
         return true
       }
       let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
-      return ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel).contains(marking: marking)
+      return ctl1.eval().revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: net.capacity).contains(marking: marking)
     case .EF(let formula1):
       let ctl1 = CTL(formula: formula1, net: net, canonicityLevel: canonicityLevel)
       return ctl1.evalEF(marking: marking)
@@ -752,6 +794,32 @@ extension CTL {
     
   }
 
+//  func evalEF(marking: Marking) -> Bool {
+//    let phi = self.eval()
+//    var res = phi
+//    if debug {
+//      print("Predicate structure number at the start of EF evaluation: \(res.count)")
+//    }
+//    if res.contains(marking: marking) == true {
+//      return true
+//    }
+//    var resTemp: SVS
+//    repeat {
+//      if res.contains(marking: marking) {
+//        return true
+//      }
+//      resTemp = res
+//      res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: net.capacity), canonicityLevel: canonicityLevel)
+//
+//      if simplified {
+//        res = res.simplified()
+//      }
+//      if debug {
+//        print("Predicate structure number during EF evaluation: \(res.count)")
+//      }
+//    } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+//    return res.contains(marking: marking)
+//  }
   func evalEF(marking: Marking) -> Bool {
     let phi = self.eval()
     var res = phi
@@ -762,20 +830,26 @@ extension CTL {
       return true
     }
     var resTemp: SVS
-    repeat {
-      if res.contains(marking: marking) {
-        return true
-      }
-      resTemp = res
-      res = phi.union(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during EF evaluation: \(res.count)")
-      }
-    } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+    
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        if res.contains(marking: marking) {
+          return true
+        }
+        resTemp = res
+        res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel)
+        
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during EF evaluation: \(res.count)")
+        }
+      } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+    }
     return res.contains(marking: marking)
   }
   
@@ -789,21 +863,26 @@ extension CTL {
       return true
     }
     var resTemp: SVS
-    repeat {
-      if res.contains(marking: marking) {
-        return true
-      }
-      resTemp = res
-      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
-      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = phi.union(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during AF evaluation: \(res.count)")
-      }
-    } while !res.isIncluded(resTemp)
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        if res.contains(marking: marking) {
+          return true
+        }
+        resTemp = res
+        // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
+        // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
+        res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during AF evaluation: \(res.count)")
+        }
+      } while !res.isIncluded(resTemp)
+    }
     return res.contains(marking: marking)
   }
   
@@ -817,19 +896,24 @@ extension CTL {
       return false
     }
     var resTemp: SVS
-    repeat {
-      if !res.contains(marking: marking) {
-        return false
-      }
-      resTemp = res
-      res = phi.intersection(res.revert(canonicityLevel: canonicityLevel).union(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during EG evaluation: \(res.count)")
-      }
-    } while !resTemp.isIncluded(res)
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        if !res.contains(marking: marking) {
+          return false
+        }
+        resTemp = res
+        res = phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).union(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during EG evaluation: \(res.count)")
+        }
+      } while !resTemp.isIncluded(res)
+    }
     return res.contains(marking: marking)
   }
   
@@ -843,19 +927,25 @@ extension CTL {
       return false
     }
     var resTemp: SVS
-    repeat {
-      if !res.contains(marking: marking) {
-        return false
-      }
-      resTemp = res
-      res = phi.intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during AG evaluation: \(res.count)")
-      }
-    } while !resTemp.isIncluded(res)
+    
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        if !res.contains(marking: marking) {
+          return false
+        }
+        resTemp = res
+        res = phi.intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during AG evaluation: \(res.count)")
+        }
+      } while !resTemp.isIncluded(res)
+    }
     return res.contains(marking: marking)
   }
   
@@ -878,25 +968,30 @@ extension CTL {
     var res = psi
     var resTemp: SVS
     
-    repeat {
-      if res.contains(marking: marking) {
-        return true
-      }
-      resTemp = res
-      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
-      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-//      let res1 = res.revert(canonicityLevel: canonicityLevel)
-//      let res2 = phi.intersection(res1, canonicityLevel: canonicityLevel)
-//      let res = psi.union(res2, canonicityLevel: canonicityLevel)
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-//      print(res)
-      if debug {
-        print("Predicate structure number during EU evaluation: \(res.count)")
-      }
-    } while !res.isIncluded(resTemp)
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        if res.contains(marking: marking) {
+          return true
+        }
+        resTemp = res
+        // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
+        // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
+        //      let res1 = res.revert(canonicityLevel: canonicityLevel)
+        //      let res2 = phi.intersection(res1, canonicityLevel: canonicityLevel)
+        //      let res = psi.union(res2, canonicityLevel: canonicityLevel)
+        res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        //      print(res)
+        if debug {
+          print("Predicate structure number during EU evaluation: \(res.count)")
+        }
+      } while !res.isIncluded(resTemp)
+    }
     return res.contains(marking: marking)
   }
   
@@ -918,21 +1013,26 @@ extension CTL {
     }
     var res = psi
     var resTemp: SVS
-    repeat {
-      if res.contains(marking: marking) {
-        return true
-      }
-      resTemp = res
-      // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
-      // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-      res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-      if simplified {
-        res = res.simplified()
-      }
-      if debug {
-        print("Predicate structure number during AU evaluation: \(res.count)")
-      }
-    } while !res.isIncluded(resTemp)
+    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    
+    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+      let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      repeat {
+        if res.contains(marking: marking) {
+          return true
+        }
+        resTemp = res
+        // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
+        // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
+        res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+        if simplified {
+          res = res.simplified()
+        }
+        if debug {
+          print("Predicate structure number during AU evaluation: \(res.count)")
+        }
+      } while !res.isIncluded(resTemp)
+    }
     return res.contains(marking: marking)
   }
   

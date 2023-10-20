@@ -62,11 +62,17 @@
 //    let parserPN = PnmlParser()
 //    let pnmlPath = resourcesDirectory + "SwimmingPool/SwimmingPool-1.pnml"
 //    
-//    let (net1, marking1) = parserPN.loadPN(filePath: pnmlPath)
+//    var (net1, marking1) = parserPN.loadPN(filePath: pnmlPath)
 //    print(net1)
 //    print(marking1)
 //    var s = Stopwatch()
 //
+//    var storage: [String: Int] = [:]
+//    for place in net1.places {
+//      storage[place] = 20
+//    }
+//    net1.capacity = storage
+//    
 //    let ctlPath = resourcesDirectory + "SwimmingPool/ReachabilityFireabilitySwimmingPool.xml"
 //    let parserCTL = CTLParser()
 //    let dicCTL = parserCTL.loadCTL(filePath: ctlPath)
@@ -348,7 +354,7 @@
 //    let (net1, marking1) = parserPN.loadPN(filePath: pnmlPath)
 //    var s = Stopwatch()
 //
-//    let ctlPath = resourcesDirectory + "ERK/ERK-CTLFireability.xml"
+//    let ctlPath = resourcesDirectory + "ERK/ERK-ReachabilityFireability.xml"
 //    let parserCTL = CTLParser()
 //    let dicCTL = parserCTL.loadCTL(filePath: ctlPath)
 //
@@ -443,7 +449,7 @@
 //        print("Query: \(ctlReduced)")
 //        s.reset()
 ////        answers[key] = ctlReduced.eval(marking: marking1)
-////        answers[key] = ctlReduced.eval()
+//        answers[key] = ctlReduced.eval()
 ////        print(answers[key]!)
 //        times[key] = s.elapsed.humanFormat
 //        print(s.elapsed.humanFormat)
@@ -498,31 +504,40 @@
 //  
 //  func testCircadianClock() {
 //    let parserPN = PnmlParser()
-//    let pnmlPath = resourcesDirectory + "CircadianClock-PT-000001/model.pnml"
-//    let (net1, marking1) = parserPN.loadPN(filePath: pnmlPath)
+//    let pnmlPath = resourcesDirectory + "CircadianClock-PT-000010/model.pnml"
+//    var (net1, marking1) = parserPN.loadPN(filePath: pnmlPath)
 //    var s = Stopwatch()
 //
-//    let ctlPath = resourcesDirectory + "CircadianClock-PT-000001/ReachabilityFireability.xml"
+//    let ctlPath = resourcesDirectory + "CircadianClock-PT-000010/ReachabilityFireability.xml"
 //    let parserCTL = CTLParser()
-//    let dicCTL = parserCTL.loadCTL(filePath: ctlPath)
+//    var dicCTL = parserCTL.loadCTL(filePath: ctlPath)
+//    
+//    dicCTL.removeValue(forKey: "CircadianClock-PT-000010-ReachabilityFireability-03")
 //    
 //    s.reset()
+//    
+//    var storage: [String: Int] = [:]
+//    for place in net1.places {
+//      storage[place] = 10
+//    }
+//    net1.capacity = storage
 //
-////    var answers: [String: Bool] = [:]
-//    var answers: [String: SVS] = [:]
+//    var answers: [String: Bool] = [:]
+////    var answers: [String: SVS] = [:]
 //    var times: [String: String] = [:]
 //    for (key, formula) in dicCTL.sorted(by: {$0.key < $1.key}) {
-//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: false).queryReduction()
+//      let ctlReduced = CTL(formula: formula, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
 //      print("-------------------------------")
 //      print(key)
-//      answers[key] = ctlReduced.eval()
+////      answers[key] = ctlReduced.eval()
 //      s.reset()
-//      print("Nb sv: \(answers[key]!.count)")
-//      print("Nb markings Expected: \(answers[key]!.underlyingMarkings().count)")
-//      print("Nb markings formula: \(answers[key]!.nbOfMarkings())")
+//      answers[key] = ctlReduced.eval(marking: marking1)
+////      print("Nb sv: \(answers[key]!.count)")
+////      print("Nb markings Expected: \(answers[key]!.underlyingMarkings().count)")
+////      print("Nb markings formula: \(answers[key]!.nbOfMarkings())")
 ////      print(answers[key]!)
 //      times[key] = s.elapsed.humanFormat
-//      print(s.elapsed.humanFormat)
+//      print(times[key]!)
 //      print("-------------------------------")
 //    }
 //
@@ -531,30 +546,25 @@
 ////    var count = 0
 //    
 //    for (key, b) in answers.sorted(by: {$0.key < $1.key}) {
-////      print("Formula \(key) is: \(b) (\(times[key]!))")
-//      print("Formula \(key) is: \(times[key]!)")
-//      print("Nb of sv: \(answers[key]!.count)")
-//      svNumbers.append(answers[key]!.count)
-//      for sv in answers[key]! {
-////        count += 1
-//        markingNumbers.append(1 + sv.value.exc.count)
-//      }
+//      print("Formula \(key) is: \(b) (\(times[key]!))")
+////      print("Formula \(key) is: \(times[key]!)")
+////      print("Nb of sv: \(answers[key]!.count)")
 //    }
 //
 //    let avgMarking = Double(markingNumbers.reduce(0, {$0+$1})) / Double(markingNumbers.count)
 //    let avgSV = Double(svNumbers.reduce(0, {$0+$1})) / Double(svNumbers.count)
 //  
-//    print("Nb average SV: \(avgSV)")
-//    print("Nb average marking: \(avgMarking)")
-//    print("Std sv: \(standardDeviationInt(seq: svNumbers))")
-//    print("Std marking: \(standardDeviationInt(seq: markingNumbers))")
+////    print("Nb average SV: \(avgSV)")
+////    print("Nb average marking: \(avgMarking)")
+////    print("Std sv: \(standardDeviationInt(seq: svNumbers))")
+////    print("Std marking: \(standardDeviationInt(seq: markingNumbers))")
 //  }
 //  
 ////  func evalEF(formula: Formula) -> SVS {
 ////    let phi = CTL(formula: formula, net: net, canonicityLevel: canonicityLevel)
 ////    var res = phi
 ////    var resTemp: SVS
-////    
+////
 ////    var newNet = net
 ////    var storage: [String: Int] = [:]
 ////    for i in 1 ..< net.capacity.first!.value + 1 {
@@ -562,7 +572,7 @@
 ////        storage[place] = i
 ////      }
 ////      newNet.capacity = storage
-////      
+////
 ////    }
 ////  }
 //  
@@ -576,31 +586,22 @@
 //    let parserCTL = CTLParser()
 //    let dicCTL = parserCTL.loadCTL(filePath: ctlPath)
 //    
+////    let key = "CircadianClock-PT-000001-ReachabilityFireability-14"
 //    let key = "CircadianClock-PT-000001-ReachabilityFireability-14"
-//    let ctlReduced = CTL(formula: dicCTL[key]!, net: net1, canonicityLevel: .full, simplified: false, debug: true).queryReduction()
 //      
-//    s.reset()
-//    let r1 = ctlReduced.eval()
-//    print(s.elapsed.humanFormat)
-//    
-//    var storage: [String: Int] = [:]
-//    for place in net1.places {
-//      storage[place] = 2
+//    for i in 4 ..< 5 {
+//      var storage: [String: Int] = [:]
+//      for place in net1.places {
+//        storage[place] = i
+//      }
+//      var net = net1
+//      net.capacity = storage
+//      let ctlReduced = CTL(formula: dicCTL[key]!, net: net, canonicityLevel: .full, simplified: false, saturated: false, debug: true).queryReduction()
+//      s.reset()
+//      print(i)
+//      let r = ctlReduced.eval()
+//      print(s.elapsed.humanFormat)
 //    }
-//    net1.capacity = storage
-//    s.reset()
-//    let r2 = ctlReduced.eval()
-//    print(s.elapsed.humanFormat)
-//    print("Are r1 and r2 equal ? \(r1 == r2)")
-//    
-//    for place in net1.places {
-//      storage[place] = 3
-//    }
-//    net1.capacity = storage
-//    s.reset()
-//    let r3 = ctlReduced.eval()
-//    print(s.elapsed.humanFormat)
-//    print("Are r1 and r3 equal ? \(r1 == r3)")
 //  }
 //  
 //}

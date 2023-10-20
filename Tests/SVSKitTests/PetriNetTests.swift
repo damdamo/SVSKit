@@ -19,10 +19,10 @@ final class PetriNetTests: XCTestCase {
     let marking = Marking(["p0": 0, "p1": 1], net: pn)
     let revertT0 = Marking(["p0": 2, "p1": 0], net: pn)
     let revertT1 = Marking(["p0": 1, "p1": 2], net: pn)
-    XCTAssertEqual(pn.revert(marking: marking, transition: "t0"), revertT0)
-    XCTAssertEqual(pn.revert(marking: marking, transition: "t1"), revertT1)
-    XCTAssertEqual(pn.revert(marking: marking), [revertT0, revertT1])
-    XCTAssertEqual(pn.revert(markings: [marking]), [revertT0, revertT1])
+    XCTAssertEqual(pn.revert(marking: marking, transition: "t0", capacity: pn.capacity), revertT0)
+    XCTAssertEqual(pn.revert(marking: marking, transition: "t1", capacity: pn.capacity), revertT1)
+    XCTAssertEqual(pn.revert(marking: marking, capacity: pn.capacity), [revertT0, revertT1])
+    XCTAssertEqual(pn.revert(markings: [marking], capacity: pn.capacity), [revertT0, revertT1])
   }
   
   func testCapacity() {

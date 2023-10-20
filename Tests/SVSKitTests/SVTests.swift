@@ -186,9 +186,9 @@ final class SVTests: XCTestCase {
     let ps4 = SV(value: ([marking1, marking2], []), net: net)
     let ps5 = SV(value: ([revertT1, revertT2], []), net: net)
 
-    XCTAssertEqual(ps1.revert(transition: "t0"), ps2)
-    XCTAssertEqual(ps1.revert(transition: "t1"), ps3)
-    XCTAssertEqual(ps4.revert(transition: "t1"), ps5)
+    XCTAssertEqual(ps1.revert(transition: "t0", capacity: net.capacity), ps2)
+    XCTAssertEqual(ps1.revert(transition: "t1", capacity: net.capacity), ps3)
+    XCTAssertEqual(ps4.revert(transition: "t1", capacity: net.capacity), ps5)
   }
 
   func testUnderlyingMarking() {
