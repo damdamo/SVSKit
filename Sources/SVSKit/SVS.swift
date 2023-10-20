@@ -293,7 +293,7 @@ public struct SVS {
   /// Compute the revert function on all markings of each symbolic vectors
   /// - Parameter canonicityLevel: The level of the canonicity
   /// - Returns: A new symbolic vector set after the revert application
-  public func revert(canonicityLevel: CanonicityLevel) -> SVS {
+  public func revert(canonicityLevel: CanonicityLevel, capacity: [String: Int]) -> SVS {
     
 //    if let res = Memoization.memoizationRevertTable[self] {
 //      return res
@@ -302,14 +302,14 @@ public struct SVS {
     if canonicityLevel == .none {
       var res: Set<SV> = []
       for sv in self {
-        res = res.union(sv.revert(canonicityLevel: canonicityLevel).values)
+        res = res.union(sv.revert(canonicityLevel: canonicityLevel, capacity: capacity).values)
       }
       return SVS(values: res)
     }
 
     var res: SVS = []
     for sv in self {
-      res = res.union(sv.revert(canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
+      res = res.union(sv.revert(canonicityLevel: canonicityLevel, capacity: capacity), canonicityLevel: canonicityLevel)
     }
     
 //    Memoization.memoizationRevertTable[self] = res
@@ -322,7 +322,7 @@ public struct SVS {
   ///   - net: The current Petri net
   ///   - canonicityLevel: The level of canonicity
   /// - Returns: A new symbolic vector set
-  public func revertTilde(net: PetriNet, canonicityLevel: CanonicityLevel) -> SVS {
+  public func revertTilde(net: PetriNet, canonicityLevel: CanonicityLevel, capacity: [String: Int]) -> SVS {
     
 //    if let res = Memoization.memoizationRevertTildeTable[self] {
 //      return res
@@ -334,7 +334,7 @@ public struct SVS {
     
     // AX Φ ≡ ¬ EX ¬ Φ
     let step1 = self.not(net: net, canonicityLevel: canonicityLevel)
-    let step2 = step1.revert(canonicityLevel: canonicityLevel)
+    let step2 = step1.revert(canonicityLevel: canonicityLevel, capacity: capacity)
     let step3 = step2.not(net: net, canonicityLevel: canonicityLevel)
     
 //    Memoization.memoizationRevertTildeTable[self] = step3

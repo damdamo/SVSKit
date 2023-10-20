@@ -479,19 +479,19 @@ public struct SV {
   /// Compute the inverse of the fire operation for a given transition. It takes into account the current symbolic vector where it consumes tokens for post arcs and produces new ones for pre arcs.
   /// - Parameter transition: The given transition
   /// - Returns: A new symbolic vector where the revert operation has been applied.
-  public func revert(transition: String) -> SV? {
+  public func revert(transition: String, capacity: [PlaceType: Int]) -> SV? {
     if self.value == emptyValue {
       return self
     }
     
-    if let qaTemp = net.revert(marking: value.inc, transition: transition) {
+    if let qaTemp = net.revert(marking: value.inc, transition: transition, capacity: capacity) {
       var bTemp: Set<Marking> = []
       
       if value.exc == [] {
         bTemp = []
       } else {
         for marking in value.exc {
-          if let rev = net.revert(marking: marking, transition: transition) {
+          if let rev = net.revert(marking: marking, transition: transition, capacity: capacity) {
             bTemp.insert(rev)
           }
         }
@@ -503,7 +503,7 @@ public struct SV {
   
   /// General revert operation where all transitions are applied
   /// - Returns: A symbolic vector set resulting from the union of the revert operation on each transition on the current symbolic vector.
-  public func revert(canonicityLevel: CanonicityLevel) -> SVS {
+  public func revert(canonicityLevel: CanonicityLevel, capacity: [PlaceType: Int]) -> SVS {
     
 //    if let res = Memoization.memoizationRevertTable[self] {
 //      return res
@@ -511,7 +511,7 @@ public struct SV {
     
     var res: SVS = []
     for transition in net.transitions {
-      if let rev = self.revert(transition: transition)?.canonised() {
+      if let rev = self.revert(transition: transition, capacity: capacity)?.canonised() {
         if !rev.isEmpty() {
           res = res.add(rev, canonicityLevel: canonicityLevel)
         }

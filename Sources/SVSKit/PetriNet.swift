@@ -224,6 +224,17 @@ public class PetriNet
       matrix[arc.transition] = [arc.place: arc.label]
     }
   }
+  
+  public func createCapacityVectorBasedOnANat(n: Int) -> [PlaceType: Int] {
+    guard n >= 0 else {
+      fatalError("The capacity cannot be negative")
+    }
+    var storage: [String: Int] = [:]
+    for place in places {
+      storage[place] = n
+    }
+    return storage
+  }
 
 }
 
@@ -235,7 +246,7 @@ extension PetriNet {
   ///   - marking: The marking
   ///   - transition: The transition
   /// - Returns: The new marking after the revert firing.
-  public func revert(marking: Marking, transition: TransitionType) -> Marking? {
+  public func revert(marking: Marking, transition: TransitionType, capacity: [PlaceType: Int]) -> Marking? {
     var markingRes = marking
     for place in places {
       if let pre = input[transition]?[place] {
@@ -267,10 +278,10 @@ extension PetriNet {
   /// Apply the revert function for all transitions
   /// - Parameter marking: The marking
   /// - Returns: A set of markings that contains each new marking for each transition
-  public func revert(marking: Marking) -> Set<Marking> {
+  public func revert(marking: Marking, capacity: [PlaceType: Int]) -> Set<Marking> {
     var res: Set<Marking> = []
     for transition in transitions {
-      if let rev = revert(marking: marking, transition: transition) {
+      if let rev = revert(marking: marking, transition: transition, capacity: capacity) {
         res.insert(rev)
       }
     }
@@ -280,10 +291,10 @@ extension PetriNet {
   /// Apply the revert on a set of markings.
   /// - Parameter markings: The set of markings
   /// - Returns: The new sets of markings, which is a union of all revert firing for each marking.
-  public func revert(markings: Set<Marking>) -> Set<Marking> {
+  public func revert(markings: Set<Marking>, capacity: [PlaceType: Int]) -> Set<Marking> {
     var res: Set<Marking> = []
     for marking in markings {
-      res = res.union(revert(marking: marking))
+      res = res.union(revert(marking: marking, capacity: capacity))
     }
     return res
   }
