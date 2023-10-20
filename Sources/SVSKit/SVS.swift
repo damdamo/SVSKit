@@ -295,10 +295,6 @@ public struct SVS {
   /// - Returns: A new symbolic vector set after the revert application
   public func revert(canonicityLevel: CanonicityLevel, capacity: [String: Int]) -> SVS {
     
-//    if let res = Memoization.memoizationRevertTable[self] {
-//      return res
-//    }
-    
     if canonicityLevel == .none {
       var res: Set<SV> = []
       for sv in self {
@@ -311,9 +307,7 @@ public struct SVS {
     for sv in self {
       res = res.union(sv.revert(canonicityLevel: canonicityLevel, capacity: capacity), canonicityLevel: canonicityLevel)
     }
-    
-//    Memoization.memoizationRevertTable[self] = res
-    
+        
     return res
   }
   
@@ -323,11 +317,7 @@ public struct SVS {
   ///   - canonicityLevel: The level of canonicity
   /// - Returns: A new symbolic vector set
   public func revertTilde(net: PetriNet, canonicityLevel: CanonicityLevel, capacity: [String: Int]) -> SVS {
-    
-//    if let res = Memoization.memoizationRevertTildeTable[self] {
-//      return res
-//    }
-    
+
     if self.values.isEmpty {
       return []
     }
@@ -336,9 +326,7 @@ public struct SVS {
     let step1 = self.not(net: net, canonicityLevel: canonicityLevel)
     let step2 = step1.revert(canonicityLevel: canonicityLevel, capacity: capacity)
     let step3 = step2.not(net: net, canonicityLevel: canonicityLevel)
-    
-//    Memoization.memoizationRevertTildeTable[self] = step3
-    
+        
     return step3
   }
   

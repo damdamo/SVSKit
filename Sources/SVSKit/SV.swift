@@ -115,24 +115,9 @@ public struct SV {
     return SV(value: (self.value.inc, self.value.exc)).mes()
   }
   
+  /// Compute the number of markings for a given symbol vector.
+  /// - Returns: The number of markings encoded by the symbol vector
   public func nbOfMarkings() -> Double {
-//    var capacityConstraints: Set<Marking> = []
-//    for (key, value) in net.capacity {
-//      var storageMarking: [String: Int] = [:]
-//      for place in net.places {
-//        if place == key {
-//          storageMarking[key] = value
-//        } else {
-//          storageMarking[place] = 0
-//        }
-//      }
-//      capacityConstraints.insert(Marking(storageMarking, net: net))
-//    }
-//
-//    let newB = self.value.exc.union(capacityConstraints)
-//    let psWithCapacities = SV(value: (self.value.inc, newB)).canonised()
-//
-//    return psWithCapacities.nbOfMarkings()
     var newB: Set<Marking> = []
     
     for qb in self.value.exc {
@@ -146,13 +131,15 @@ public struct SV {
       }
       newB.insert(Marking(storage, net: net))
     }
-    
-//    print(newB)
-        
     return SV(value: (self.value.inc, newB)).canonised().nbOfMarkingsRecursive()
   }
   
-  public func nbOfMarkingsRecursive() -> Double {
+  /// The computation of the number of markings within a symbolic vector is carried out symbolically, meaning it does not rely on the underlying marking function for decoding and counting.
+  /// The approach involves taking each constraint of the symbolic vector and subtracting them from the complete result without constraints.
+  /// Furthermore, to prevent multiple removals of the same value (as multiple constraints may prohibit the same value), we propagate the constraints to calculate the number of markings restricted by each constraint.
+  /// This method helps eliminate redundancy in deducing values from the overall result.
+  /// - Returns: The number of markings
+  func nbOfMarkingsRecursive() -> Double {
     let markingCapacity = Marking(net.capacity, net: net)
     var b = self.value.exc
     let qa = self.value.inc
@@ -164,9 +151,6 @@ public struct SV {
       let markingCountAll = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qa))
       let markingCountToSubtract = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qb))
       let markingNumber: Double
-//      print(self)
-//      print("MarkingCountAll: \(markingCountAll)")
-//      print("MarkingCountToSubtract: \(markingCountToSubtract)")
       if markingCountToSubtract >= 0 {
         markingNumber = markingCountAll - markingCountToSubtract
       } else {
@@ -179,7 +163,6 @@ public struct SV {
     
     var keepConstraints: Set<Marking> = []
     for qb in b {
-//      print("Keep constraints: \(keepConstraints)")
       if keepConstraints.isEmpty {
         let sv = SV(value: (qa, [qb])).canonised()
         markingNumber = sv.nbOfMarkingsRecursive()
@@ -189,56 +172,9 @@ public struct SV {
         markingNumber -= sv.nbOfMarkingsRecursive()
         keepConstraints.insert(qb)
       }
-
     }
-    
     return markingNumber
   }
-
-  
-//  public func nbOfMarkings() -> Int {
-//    let markingCapacity = Marking(net.capacity, net: net)
-//    var b = self.value.exc
-//    let qa = self.value.inc
-//
-//    if b.isEmpty {
-//      b.insert(markingCapacity)
-//    } else if b.count == 1 {
-//      let qb = b.first!
-//      let markingCountAll = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qa))
-//      let markingCountToSubtract = Marking.numberOfCombinations(forLimits: markingCapacity.minus(qb))
-//      let markingNumber: Int
-//      print(self)
-//      print("MarkingCountAll: \(markingCountAll)")
-//      print("MarkingCountToSubtract: \(markingCountToSubtract)")
-//      if markingCountToSubtract >= 0 {
-//        markingNumber = markingCountAll - markingCountToSubtract
-//      } else {
-//        markingNumber = markingCountAll
-//      }
-//      return markingNumber
-//    }
-//
-//    var markingNumber = 0
-//
-//    var keepConstraints: Set<Marking> = []
-//    for qb in b {
-//      print("Keep constraints: \(keepConstraints)")
-//      if keepConstraints.isEmpty {
-//        let sv = SV(value: (qa, [qb])).canonised()
-//        markingNumber = sv.nbOfMarkings()
-//        keepConstraints.insert(qb)
-//      } else {
-//        let sv = SV(value: (qb, keepConstraints)).canonised()
-//        markingNumber -= sv.nbOfMarkings()
-//        keepConstraints.insert(qb)
-//      }
-//
-//    }
-//
-//    return markingNumber
-//  }
-
   
   /// Compute all the markings represented by the symbolic representation of a symbolic vector.
   /// - Returns: The set of all possible markings, also known as the state space.
@@ -504,11 +440,6 @@ public struct SV {
   /// General revert operation where all transitions are applied
   /// - Returns: A symbolic vector set resulting from the union of the revert operation on each transition on the current symbolic vector.
   public func revert(canonicityLevel: CanonicityLevel, capacity: [PlaceType: Int]) -> SVS {
-    
-//    if let res = Memoization.memoizationRevertTable[self] {
-//      return res
-//    }
-    
     var res: SVS = []
     for transition in net.transitions {
       if let rev = self.revert(transition: transition, capacity: capacity)?.canonised() {
@@ -517,9 +448,6 @@ public struct SV {
         }
       }
     }
-    
-//    Memoization.memoizationRevertTable[self] = res
-    
     return res
   }
   

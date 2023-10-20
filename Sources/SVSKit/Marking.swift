@@ -131,6 +131,9 @@ public struct Marking {
     return markings.subtracting(invalidMarkings)
   }
   
+  /// Compute the total number of combinations for a vector/marking which represents the maximum number of tokens for each place. This function is a combinatorial computation. For example, a Petri net with 10 places and where each place has a limit of 6 will have: (6+1)^10 possible combinations. The +1 is used to count 0.
+  /// - Parameter markingLimits: A marking that binds each place with a maximum number of tokens.
+  /// - Returns: A double that represents the number of possibilities
   public static func numberOfCombinations(forLimits markingLimits: Marking) -> Double {
     let limits = markingLimits.storage.values.sorted()
     var totalCombinations: Double = 1
@@ -140,6 +143,9 @@ public struct Marking {
     return totalCombinations
   }
   
+  /// Subtract two markings
+  /// - Parameter marking: The marking to subtract
+  /// - Returns: The subtracted marking
   public func minus(_ marking: Marking) -> Marking {
     let result = self.storage.merging(marking.storage) { $0 - $1 }
     return Marking(result, net: net)

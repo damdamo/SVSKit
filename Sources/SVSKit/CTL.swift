@@ -34,7 +34,15 @@ public struct CTL {
     return CTL.saturatedStatic
   }
   
-  public init(formula: Formula, net: PetriNet, canonicityLevel: CanonicityLevel, simplified: Bool = true, saturated: Bool = true, debug: Bool = false) {
+  /// The initialiser for a CTL formula
+  /// - Parameters:
+  ///   - formula: The formula expressed using the enum Formula
+  ///   - net: The corresponding Petri net
+  ///   - canonicityLevel: Select between .none and .full depending on whether the SVS and SV should be canonical.
+  ///   - simplified: Old option, should not be modified
+  ///   - saturated: Enable the saturation for the fixed point computation. Increase the performance and should be left `true`
+  ///   - debug: Enable a printing to help debug or observe the number of symbol vectors evolving through computation
+  public init(formula: Formula, net: PetriNet, canonicityLevel: CanonicityLevel, simplified: Bool = false, saturated: Bool = true, debug: Bool = false) {
     self.formula = formula
     self.net = net
     CTL.simplifiedStatic = simplified
@@ -794,32 +802,6 @@ extension CTL {
     
   }
 
-//  func evalEF(marking: Marking) -> Bool {
-//    let phi = self.eval()
-//    var res = phi
-//    if debug {
-//      print("Predicate structure number at the start of EF evaluation: \(res.count)")
-//    }
-//    if res.contains(marking: marking) == true {
-//      return true
-//    }
-//    var resTemp: SVS
-//    repeat {
-//      if res.contains(marking: marking) {
-//        return true
-//      }
-//      resTemp = res
-//      res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: net.capacity), canonicityLevel: canonicityLevel)
-//
-//      if simplified {
-//        res = res.simplified()
-//      }
-//      if debug {
-//        print("Predicate structure number during EF evaluation: \(res.count)")
-//      }
-//    } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
-//    return res.contains(marking: marking)
-//  }
   func evalEF(marking: Marking) -> Bool {
     let phi = self.eval()
     var res = phi
