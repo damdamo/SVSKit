@@ -34,6 +34,23 @@ public struct CTL {
     return CTL.saturatedStatic
   }
   
+  /// Computed property that returns an ordered set of weights in the net.
+  /// This information is useful for the fixed point computation of CTL
+  public var orderedNetWeightArray: [Int] {
+    var weightSet: Set<Int> = []
+    for (_, placeToArcLabel) in net.input {
+      for (_, label) in placeToArcLabel {
+        weightSet.insert(label)
+      }
+    }
+    for (_, placeToArcLabel) in net.output {
+      for (_, label) in placeToArcLabel {
+        weightSet.insert(label)
+      }
+    }
+    return weightSet.sorted(by: {$0 < $1})
+  }
+  
   /// The initialiser for a CTL formula
   /// - Parameters:
   ///   - formula: The formula expressed using the enum Formula
@@ -180,17 +197,33 @@ public struct CTL {
       return evalCardinality()
     case .isFireable(let t):
       if net.transitions.contains(t) {
-        res = [
-          SV(value: ([net.inputMarkingForATransition(transition: t)], []), net: net)
-        ]
+        let marking = net.inputMarkingForATransition(transition: t)
+        // If the marking has a place that does not satisfy place capacities, we return the empty symbolic vector
+        if net.places.allSatisfy({marking[$0]! <= net.capacity[$0]!}) {
+          res = [
+            SV(value: (marking, []), net: net)
+          ]
+        } else {
+          res = [
+            SV(value: (net.zeroMarking(), [net.zeroMarking()]), net: net)
+          ]
+        }
       } else {
         fatalError("Unknown transition")
       }
     case .after(let t):
       if net.transitions.contains(t) {
-        res = [
-          SV(value:  ([], [net.outputMarkingForATransition(transition: t)]), net: net)
-        ]
+        let marking = net.outputMarkingForATransition(transition: t)
+        // If the marking has a place that does not satisfy place capacities, we return the empty symbolic vector
+        if net.places.allSatisfy({marking[$0]! <= net.capacity[$0]!}) {
+          res = [
+            SV(value: (marking, []), net: net)
+          ]
+        } else {
+          res = [
+            SV(value: (net.zeroMarking(), [net.zeroMarking()]), net: net)
+          ]
+        }
       } else {
         fatalError("Unknown transition")
       }
@@ -342,14 +375,16 @@ public struct CTL {
     let phi = self.eval()
     var res = phi
     var resTemp: SVS
+    var resFixedPointCardinality: SVS
     if debug {
       print("Predicate structure number at the start of EF evaluation: \(res.count)")
     }
     
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         resTemp = res
         res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel)
@@ -359,7 +394,18 @@ public struct CTL {
         if debug {
           print("Predicate structure number during EF evaluation: \(res.count)")
         }
-      } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+      } while !res.isIncluded(resTemp)
+      
+      if res.isIncluded(resFixedPointCardinality) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res
   }
@@ -368,13 +414,16 @@ public struct CTL {
     let phi = self.eval()
     var res = phi
     var resTemp: SVS
+    var resFixedPointCardinality: SVS
     if debug {
       print("Predicate structure number at the start of AF evaluation: \(res.count)")
     }
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    var n = saturated ? 1 : net.capacity.first!.value
+    
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         resTemp = res
         res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -385,6 +434,16 @@ public struct CTL {
           print("Predicate structure number during AF evaluation: \(res.count)")
         }
       } while !res.isIncluded(resTemp)
+      
+      if res.isIncluded(resFixedPointCardinality) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
     }
     return res
   }
@@ -393,14 +452,17 @@ public struct CTL {
     let phi = self.eval()
     var res = phi
     var resTemp: SVS
+    var resFixedPointCardinality: SVS
+    
     if debug {
       print("Predicate structure number at the start of EG evaluation: \(res.count)")
     }
     
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         resTemp = res
         res = phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).union(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -411,6 +473,17 @@ public struct CTL {
           print("Predicate structure number during EG evaluation: \(res.count)")
         }
       } while !resTemp.isIncluded(res)
+      
+      if resFixedPointCardinality.isIncluded(res) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res
   }
@@ -419,14 +492,17 @@ public struct CTL {
     let phi = self.eval()
     var res = phi
     var resTemp: SVS
+    var resFixedPointCardinality: SVS
+
     if debug {
       print("Predicate structure number at the start of AG evaluation: \(res.count)")
     }
     
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         resTemp = res
         res = phi.intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel)
@@ -437,6 +513,17 @@ public struct CTL {
           print("Predicate structure number during AG evaluation: \(res.count)")
         }
       } while !resTemp.isIncluded(res)
+      
+      if resFixedPointCardinality.isIncluded(res) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res
   }
@@ -445,16 +532,19 @@ public struct CTL {
     let phi = self.eval()
     let psi = ctl.eval()
     var res = psi
+    var resTemp: SVS
+    var resFixedPointCardinality: SVS
+
     if debug {
       print("Predicate structure number of phi at the start of EU evaluation: \(phi.count)")
       print("Predicate structure number of psi at the start of EU evaluation: \(res.count)")
     }
-    var resTemp: SVS
     
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         resTemp = res
         res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -465,6 +555,17 @@ public struct CTL {
           print("Predicate structure number during EU evaluation: \(res.count)")
         }
       } while !res.isIncluded(resTemp)
+      
+      if res.isIncluded(resFixedPointCardinality) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res
   }
@@ -474,15 +575,18 @@ public struct CTL {
     let psi = ctl.eval()
     var res = psi
     var resTemp: SVS
+    var resFixedPointCardinality: SVS
+
     if debug {
       print("Predicate structure number of phi at the start of AU evaluation: \(phi.count)")
       print("Predicate structure number of psi at the start of AU evaluation: \(res.count)")
     }
     
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         resTemp = res
         res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -493,6 +597,17 @@ public struct CTL {
           print("Predicate structure number during AU evaluation: \(res.count)")
         }
       } while !res.isIncluded(resTemp)
+      
+      if res.isIncluded(resFixedPointCardinality) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res
   }
@@ -805,6 +920,7 @@ extension CTL {
   func evalEF(marking: Marking) -> Bool {
     let phi = self.eval()
     var res = phi
+
     if debug {
       print("Predicate structure number at the start of EF evaluation: \(res.count)")
     }
@@ -812,11 +928,12 @@ extension CTL {
       return true
     }
     var resTemp: SVS
+    var resFixedPointCardinality: SVS
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
-    
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         if res.contains(marking: marking) {
           return true
@@ -831,6 +948,17 @@ extension CTL {
           print("Predicate structure number during EF evaluation: \(res.count)")
         }
       } while !SVS(values: Set(res.filter({!resTemp.contains($0)}))).isIncluded(resTemp)
+      
+      if res.isIncluded(resFixedPointCardinality) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res.contains(marking: marking)
   }
@@ -845,10 +973,12 @@ extension CTL {
       return true
     }
     var resTemp: SVS
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    var resFixedPointCardinality: SVS
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         if res.contains(marking: marking) {
           return true
@@ -864,6 +994,17 @@ extension CTL {
           print("Predicate structure number during AF evaluation: \(res.count)")
         }
       } while !res.isIncluded(resTemp)
+      
+      if res.isIncluded(resFixedPointCardinality) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res.contains(marking: marking)
   }
@@ -878,10 +1019,12 @@ extension CTL {
       return false
     }
     var resTemp: SVS
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    var resFixedPointCardinality: SVS
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         if !res.contains(marking: marking) {
           return false
@@ -895,6 +1038,17 @@ extension CTL {
           print("Predicate structure number during EG evaluation: \(res.count)")
         }
       } while !resTemp.isIncluded(res)
+      
+      if resFixedPointCardinality.isIncluded(res) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res.contains(marking: marking)
   }
@@ -909,11 +1063,12 @@ extension CTL {
       return false
     }
     var resTemp: SVS
+    var resFixedPointCardinality: SVS
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
-    
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         if !res.contains(marking: marking) {
           return false
@@ -927,6 +1082,17 @@ extension CTL {
           print("Predicate structure number during AG evaluation: \(res.count)")
         }
       } while !resTemp.isIncluded(res)
+      
+      if resFixedPointCardinality.isIncluded(res) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res.contains(marking: marking)
   }
@@ -949,11 +1115,12 @@ extension CTL {
     }
     var res = psi
     var resTemp: SVS
+    var resFixedPointCardinality: SVS
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
-    
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         if res.contains(marking: marking) {
           return true
@@ -973,6 +1140,17 @@ extension CTL {
           print("Predicate structure number during EU evaluation: \(res.count)")
         }
       } while !res.isIncluded(resTemp)
+      
+      if res.isIncluded(resFixedPointCardinality) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res.contains(marking: marking)
   }
@@ -995,10 +1173,12 @@ extension CTL {
     }
     var res = psi
     var resTemp: SVS
-    let saturatedStarter = saturated ? 1 : net.capacity.first!.value
+    var resFixedPointCardinality: SVS
+    var n = saturated ? 1 : net.capacity.first!.value
     
-    for n in saturatedStarter ..< net.capacity.first!.value + 1 {
+    while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
+      resFixedPointCardinality = res
       repeat {
         if res.contains(marking: marking) {
           return true
@@ -1014,6 +1194,17 @@ extension CTL {
           print("Predicate structure number during AU evaluation: \(res.count)")
         }
       } while !res.isIncluded(resTemp)
+      
+      if res.isIncluded(resFixedPointCardinality) {
+        if let weight = orderedNetWeightArray.first(where: {$0 > n && n <= net.capacity.first!.value}) {
+          n = weight
+        } else {
+          break
+        }
+      } else {
+        n += 1
+      }
+      
     }
     return res.contains(marking: marking)
   }

@@ -985,9 +985,27 @@ final class SVTests: XCTestCase {
 //
 //    print(sps3.subtract(sps4))
 //    print(sps4.subtract(sps3))
-//    
+//
 //    let spsAll = SPS(values: [PS(value: ([net.zeroMarking()], []), net: net)])
-//    
+//
 //    print(sps4.not().isEquiv(spsAll.subtract(sps4)))
 //  }
+  func testSaturation() {
+    var net = PetriNet(
+      places: ["p0", "p1", "p2"],
+      transitions: ["t0", "t1", "t2"],
+      arcs: .pre(from: "p0", to: "t0", labeled: 1000),
+      .pre(from: "p1", to: "t1", labeled: 4),
+      .pre(from: "p2", to: "t2", labeled: 1),
+      capacity: ["p0": 1, "p1": 1, "p2": 1]
+    )
+
+    net.capacity = net.createCapacityVectorBasedOnANat(n: 100)
+    let ctl1 = CTL(formula: .EF(.or(.or(.isFireable("t0"), .isFireable("t1")), .isFireable("t2"))), net: net, canonicityLevel: .full)
+
+    XCTAssertEqual(ctl1.eval().count, 2)
+    net.capacity = net.createCapacityVectorBasedOnANat(n: 1000)
+    XCTAssertEqual(ctl1.eval().count, 3)
+  }
+
 }
