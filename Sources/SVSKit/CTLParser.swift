@@ -1,5 +1,7 @@
 import Foundation
-
+#if canImport(FoundationXML)
+import FoundationXML
+#endif
 
 /// CTL parser for the Model Checking Contest of 2022
 /// It takes a xml file and extracts all CTL formulas.
