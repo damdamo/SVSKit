@@ -485,9 +485,7 @@ public struct CTL {
       repeat {
         resTemp = res
         let r1 = res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity)
-        print("r1: \(r1)")
         res = phi.intersection(r1.union(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
-//        print("res: \(res)")
         if simplified {
           res = res.simplified()
         }
@@ -1162,7 +1160,6 @@ extension CTL {
         if simplified {
           res = res.simplified()
         }
-        //      print(res)
         if debug {
           print("Predicate structure number during EU evaluation: \(res.count)")
         }
