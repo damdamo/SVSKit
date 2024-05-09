@@ -1007,5 +1007,32 @@ final class SVTests: XCTestCase {
     net.capacity = net.createCapacityVectorBasedOnANat(n: 1000)
     XCTAssertEqual(ctl1.eval().count, 3)
   }
-
+  
+//  func testThesis() {
+//    var net = PetriNet(
+//      places: ["ready", "coin", "checking", "waiting"],
+//      transitions: ["insert", "accept", "reject", "refund", "choose"],
+//      arcs: .pre(from: "ready", to: "insert", labeled: 1),
+//      .pre(from: "coin", to: "insert", labeled: 1),
+//      .post(from: "insert", to: "checking", labeled: 1),
+//      .pre(from: "checking", to: "accept", labeled: 1),
+//      .post(from: "accept", to: "waiting", labeled: 1),
+//      .pre(from: "checking", to: "reject", labeled: 1),
+//      .post(from: "reject", to: "ready", labeled: 1),
+//      .post(from: "reject", to: "coin", labeled: 1),
+//      .pre(from: "waiting", to: "choose", labeled: 1),
+//      .post(from: "choose", to: "ready", labeled: 1),
+//      .pre(from: "waiting", to: "refund", labeled: 1),
+//      .post(from: "refund", to: "ready", labeled: 1),
+//      .post(from: "refund", to: "coin", labeled: 1),
+//      capacity: ["ready": 1000, "coin": 1000, "checking": 1000, "waiting": 1000]
+//    )
+//
+////    net.capacity = net.createCapacityVectorBasedOnANat(n: 100)
+//    let ctl1 = CTL(formula: .EF(.or(.isFireable("reject"), .isFireable("refund"))), net: net, canonicityLevel: .full)
+//
+////    let ctl1 = CTL(formula: .EX(.isFireable("accept")), net: net, canonicityLevel: .full)
+//    print(ctl1.eval())
+//  }
+  
 }

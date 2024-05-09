@@ -1,23 +1,28 @@
-# Symbolic Vector Set Kit (SVSKit): CTL Model Checking on Petri nets with Parametric Markings
+# Symbolic Vector Set Kit (SVSKit): CTL Global Model Checking on Petri nets
 
-This package aims at verifying CTL formulas on Petri nets with weighted arcs and potential capacity on places.
-Unlike the usual technique where an initial marking is required, this is not the case here.
-It can create the set of all markings that satisfy a CTL formula, using a symbolic representation called **Symbolic vector set**.
-Furthermore, this structure allows to represent finite and infinite sets of markings.
-This means that the number of markings can be unbounded.
+This package aims to verify CTL formulas on Petri nets with weighted arcs and potential capacity on places.
+Unlike local model checking, which requires an initial marking and returns whether the formula is satisfied for it, global model checking aims to find all markings satisfying a formula.
+It creates the set of all markings that satisfy a CTL formula, using a symbolic representation called the **Symbolic vector set**.
+Furthermore, this structure allows for the representation of finite and infinite sets of markings, meaning the number of markings can be unbounded.
 
-The theory has been originally invented by Pascal Racloz & Didier Buchs [1].
-In addition to the first theory, a canonical form has been invented in order to keep a unique form during manipulation. 
-Currently, this canonical form does not provide results that are more efficient than the usual technique.
-However, the current state will be evolving and thanks to the canonical form new optimisations will be made.
+The theory was originally developed by Pascal Racloz and Didier Buchs [1]. This theory has been further refined and expanded through a PhD thesis and an article available in [2][3].
+
+In addition, two optimisations called *query reduction* and *saturation* are available and discussed in [2][3] for more information. 
+
 
 ## What are symbolic vectors and symbolic vector sets ?
+
+
+Symbolic vectors could also be termed intervals of vectors.
+Similar to intervals of natural integers, which represent all values between two bounds, symbolic vectors aim to mimic this behaviour for vectors. 
+However, due to the partial order on vectors, wherein some vectors are not comparable (e.g., (0,1) ⊈ (1,0) and (1,0) ⊈ (0,1)), the structure becomes more complex.
+It's important to note that we're dealing with a structure that generalises the concept of intervals to operate on structures beyond integers. 
 
 A symbolic vector is a couple `(a,b)`:
 - `a` is a set of markings (vectors)
 - `b` is a set of markings (vectors)
 
-A marking `m` belongs to a symbolic vector if all markings of `a` are included in `m` and all markings of `b` are not included in `m`.
+A marking `m` belongs to a symbolic vector if all markings of `a` are included or equal to `m` and all markings of `b` are not included or equal to `m`.
 Formally writing:
 m ∈ (a,b) ⟺ ∀ m_a ∈ a, ∀ m_b ∈ b, m_a ⊆ m, m_b ⊈ m
 
@@ -41,8 +46,8 @@ For a symbolic vector set `svs`, a marking `m` belongs to it if there is at leas
 - Create a symbolic vector set containing all markings that satisfy a CTL formula / return a symbolic vector set as a set of markings.
 - Check if a marking satisfies a CTL formula.
 - PNML parser to import Petri nets from `pnml` file from a local source or a url.
-- XML parser to import CTL formulas.
-- Query reduction for a CTL formula: From the paper in [2].
+- XML parser to import CTL formulas (for formulas of the Model Checking Contest (MCC)).
+- Query reduction for a CTL formula: From the paper in [4].
 
 ## CTL syntax
 
@@ -95,7 +100,7 @@ Note that you must provide the parameter `canonicityLevel`, which has two possib
 - `.none`: No application of the canonicity
 - `.full`: Application of all canonical reductions
 
-Although there are two possibilities that could be resolved by a logical value, this option leaves open the possibility of an intermediate canonical version.
+Although there are two possibilities that could be resolved by a boolean value, this option leaves open the possibility of an intermediate canonical version.
 
 For `intExpr`, type `Expression` and `Operator` are expressible as follows:
 - `Expression`:
@@ -225,52 +230,27 @@ if let url = URL(string: "https://www.pnml.org/version-2009/examples/philo.pnml"
 
 ### From a local file:
 
-This is a bit tricky because of Swift.
-You need to specify explicitly in the Swift package the folder where you will put your own pnml files. Follow the instructions below to include them:
-
-- First, create a `Resources` folder at the same level of your `main.swift`.
-
-- Then, modify your `Package.swift` to add the following line in `targets/executableTarget`:
-`resources: [.process("Resources/")]`
-It works the same way if you just have `target` instead of `executableTarget`:
-
-Here is a complete example of the definition of a package:
-```Swift
-let package = Package(
-    name: "Test",
-    dependencies: [
-        .package(url: "https://github.com/damdamo/SVSKit.git", branch :"main"),
-    ],
-    targets: [
-        .executableTarget(
-            name: "Test",
-            dependencies: ["SVSKit"],
-            resources: [.process("Resources/")]
-        ),
-        .testTarget(
-            name: "TestTests",
-            dependencies: ["Test"]),
-    ]
-)
-```  
-
-- Now, you can import your pnml file as follows:
+You need to give the path of your file.
 
 ```Swift
 let parser = PnmlParser()
-let (net, marking) = parser.loadPN(filePath: "nameOfYourFile.pnml")
+let (net, marking) = parser.loadPN(filePath: "/my/path/to/the/folder/nameOfYourFile.pnml")
 ```
 
 For examples, look at the folder `Tests/SVSKitTests` and the file `ListExampleTests.swift`.
 
-## TODO:
+<!--## TODO:-->
 
 <!--- Integrate linear expressions with Predicate structure. For now, linear expressions can be written but not be evaluated.-->
-- When a Petri net contains a transition without a pre arc and only a post arc, the old function pre for all returns a result when it should be empty. The reason is we cannot avoid to fire this transition, thus the logic of pre for all cannot be handled.
+<!--- When a Petri net contains a transition without a pre arc and only a post arc, the old function pre for all returns a result when it should be empty. The reason is we cannot avoid to fire this transition, thus the logic of pre for all cannot be handled.-->
 <!--- Uniformise with a the Petri net bound between two versions of pre for all (example test in ListExampleTests)-->
 
 ## References
 
 [1] Racloz, P., & Buchs, D. (1994). Properties of Petri Nets Modellings: the temporal way. In 7th International Conference on Formal Description Techniques for Distributed Systems Communications Protocols. Services, Technologies.
 
-[2] Bønneland, F., Dyhr, J., Jensen, P. G., Johannsen, M., & Srba, J. (2018). Simplification of CTL formulae for efficient model checking of Petri nets. In Application and Theory of Petri Nets and Concurrency: 39th International Conference, PETRI NETS 2018, Bratislava, Slovakia, June 24-29, 2018, Proceedings 39 (pp. 143-163). Springer International Publishing.
+[2] Morard, D. (2024). Global Symbolic Model Checking based on Generalised Intervals. PhD thesis published in the open archives of the University of Geneva.
+
+[3] Morard, D., & Donati, L., & Buchs, D. (2024). Symbolic Model Checking using Intervals of Vectors. In 45th International Conference on Application and Theory of Petri Nets and Concurrency, PETRI NETS 2024, Geneva, Switzerland, June 24-28, 2024. Springer International Publishing.
+
+[4] Bønneland, F., Dyhr, J., Jensen, P. G., Johannsen, M., & Srba, J. (2018). Simplification of CTL formulae for efficient model checking of Petri nets. In Application and Theory of Petri Nets and Concurrency: 39th International Conference, PETRI NETS 2018, Bratislava, Slovakia, June 24-29, 2018, Proceedings 39 (pp. 143-163). Springer International Publishing.
