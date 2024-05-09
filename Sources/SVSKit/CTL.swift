@@ -203,6 +203,22 @@ public struct CTL {
           res = [
             SV(value: (marking, []), net: net)
           ]
+//          var constraintVectors: Set<Marking> = []
+//          var dicMarking: [String: Int]
+//          for (place1, cap) in net.capacity {
+//            dicMarking = [:]
+//            for place2 in net.places {
+//              if place1 == place2 {
+//                dicMarking[place2] = cap
+//              } else {
+//                dicMarking[place2] = 0
+//              }
+//            }
+//            constraintVectors.insert(Marking(dicMarking, net: net))
+//          }
+//          res = [
+//            SV(value: (marking, constraintVectors), net: net)
+//          ]
         } else {
           res = [
             SV(value: (net.zeroMarking(), [net.zeroMarking()]), net: net)
@@ -385,6 +401,7 @@ public struct CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = phi
       repeat {
         resTemp = res
         res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel)
@@ -424,6 +441,7 @@ public struct CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = phi
       repeat {
         resTemp = res
         res = phi.union(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -463,6 +481,7 @@ public struct CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = phi
       repeat {
         resTemp = res
         let r1 = res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity)
@@ -506,6 +525,7 @@ public struct CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = phi
       repeat {
         resTemp = res
         res = phi.intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel)
@@ -548,6 +568,7 @@ public struct CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = psi
       repeat {
         resTemp = res
         res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -590,6 +611,7 @@ public struct CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = psi
       repeat {
         resTemp = res
         res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity).intersection(res.revertTilde(net: net, canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
@@ -937,6 +959,7 @@ extension CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = phi
       repeat {
         if res.contains(marking: marking) {
           return true
@@ -982,6 +1005,7 @@ extension CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = phi
       repeat {
         if res.contains(marking: marking) {
           return true
@@ -1028,6 +1052,7 @@ extension CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = phi
       repeat {
         if !res.contains(marking: marking) {
           return false
@@ -1072,6 +1097,7 @@ extension CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = phi
       repeat {
         if !res.contains(marking: marking) {
           return false
@@ -1124,6 +1150,7 @@ extension CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = psi
       repeat {
         if res.contains(marking: marking) {
           return true
@@ -1131,9 +1158,6 @@ extension CTL {
         resTemp = res
         // We do not need to apply the union with res, because we are looking for a predicate structure that includes our marking.
         // Thus, if a predicate structure is not valid, we just use it to compute the revert and do not reinsert it.
-        //      let res1 = res.revert(canonicityLevel: canonicityLevel)
-        //      let res2 = phi.intersection(res1, canonicityLevel: canonicityLevel)
-        //      let res = psi.union(res2, canonicityLevel: canonicityLevel)
         res = psi.union(phi.intersection(res.revert(canonicityLevel: canonicityLevel, capacity: newCapacity), canonicityLevel: canonicityLevel), canonicityLevel: canonicityLevel)
         if simplified {
           res = res.simplified()
@@ -1182,6 +1206,7 @@ extension CTL {
     while n < net.capacity.first!.value + 1 {
       let newCapacity = net.createCapacityVectorBasedOnANat(n: n)
       resFixedPointCardinality = res
+      res = psi
       repeat {
         if res.contains(marking: marking) {
           return true
