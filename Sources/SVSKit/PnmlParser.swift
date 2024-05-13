@@ -138,7 +138,7 @@ public class PnmlParser: NSObject, XMLParserDelegate {
   }
 
   public func parserDidEndDocument(_ parser: XMLParser) {
-    print("Parsing complete")
+//    print("Parsing complete")
   }
   
   

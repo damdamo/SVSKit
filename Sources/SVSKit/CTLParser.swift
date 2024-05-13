@@ -19,19 +19,6 @@ public class CTLParser: NSObject, XMLParserDelegate {
   /// Load CTL formulas from a local xml file.
   /// - Parameter filePath: The path name in the Resource folder
   /// - Returns: CTL formulas bound to their ID
-//  public func loadCTL(filePath: String) -> [String: CTL.Formula] {
-//    reset()
-//    setTransitions = []
-//    CTLStringDictionnary = [:]
-//    if let url = Bundle.module.url(forResource: filePath, withExtension: nil) {
-//      let parser = XMLParser(contentsOf: url)!
-//      parser.delegate = self
-//      parser.parse()
-//    } else {
-//      print("Did not find a file to parse")
-//    }
-//    return createCTLFormulas()
-//  }
   public func loadCTL(filePath: String) -> [String: CTL.Formula] {
     reset()
     setTransitions = []
@@ -138,7 +125,7 @@ public class CTLParser: NSObject, XMLParserDelegate {
     if currentID != "" {
       CTLStringDictionnary[currentID] = CTLArray
     }
-    print("Parsing complete")
+//    print("Parsing complete")
   }
   
   
